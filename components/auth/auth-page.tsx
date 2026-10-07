@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays, CircleAlert, Heart, MailCheck, Users } from "lucide-react";
+import { CalendarDays, CircleAlert, CircleCheck, Heart, MailCheck, Users } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { unsplash } from "@/lib/images";
@@ -22,8 +22,8 @@ const COPY = {
   register: { title: "Create your account", subtitle: "Join a community of home cooks. It only takes a minute.", image: "1556909114-f6e7ad7d3136" },
 };
 
-/** `error` comes from the email-link callback (e.g. an expired confirmation link). */
-export function AuthPage({ mode, error }: { mode: "login" | "register"; error?: string }) {
+/** `error` and `notice` come from the email-link callback (e.g. an expired link, or a confirmed email). */
+export function AuthPage({ mode, error, notice }: { mode: "login" | "register"; error?: string; notice?: string }) {
   const [success, setSuccess] = useState<string | null>(null);
   const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
   const copy = COPY[mode];
@@ -93,6 +93,12 @@ export function AuthPage({ mode, error }: { mode: "login" | "register"; error?: 
                   <p className="text-muted-foreground">{copy.subtitle}</p>
                 </div>
               </div>
+              {notice && (
+                <p role="status" className="flex gap-2.5 rounded-xl bg-herb-soft p-3 text-sm font-medium text-herb">
+                  <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  {notice}
+                </p>
+              )}
               {error && (
                 <p role="alert" className="flex gap-2.5 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
                   <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />

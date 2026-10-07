@@ -8,7 +8,13 @@ export const metadata: Metadata = {
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
-  const { error } = await searchParams;
-  // Set by /auth/callback when an email link is invalid or expired.
-  return <AuthPage mode="login" error={typeof error === "string" ? error.slice(0, 200) : undefined} />;
+  const { error, confirmed } = await searchParams;
+  // Both are set by /auth/callback after someone opens a link from our emails.
+  return (
+    <AuthPage
+      mode="login"
+      error={typeof error === "string" ? error.slice(0, 200) : undefined}
+      notice={confirmed === "1" ? "Your email is confirmed. Log in with your password to get started." : undefined}
+    />
+  );
 }
