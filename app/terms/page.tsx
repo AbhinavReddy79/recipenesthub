@@ -13,7 +13,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       icon={<FileText />}
-      eyebrow="Ground rules"
+      eyebrow="Legal"
       title="Terms of Use"
       description="By using RecipeNest you agree to these terms. They're written to be read, not skimmed past."
       updated="October 7, 2026"
