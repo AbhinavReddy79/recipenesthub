@@ -24,6 +24,7 @@ Without the Supabase variables the catalog still works; sign-in and personal fea
    - Site URL: your production origin, e.g. `https://recipe-nest-tan.vercel.app`
    - Redirect URLs: `http://localhost:3000/auth/callback` and `https://recipe-nest-tan.vercel.app/auth/callback`
    - Keep **Confirm email** enabled (**Authentication → Sign In / Providers → Email**). For real traffic, set up custom SMTP: the built-in email sender is heavily rate-limited.
+   - **Branded emails**: set up custom SMTP (**Authentication → Emails → SMTP Settings**, sender name `RecipeNest`), then paste the templates from [`supabase/templates/`](supabase/templates) into **Confirm sign up**, **Reset password** and **Change email address**. Their `token_hash` links work in any browser (the default links only sign in from the browser that started the flow).
 4. **Make yourself an admin** after signing up once:
    ```sql
    update public.profiles set role = 'admin' where username = 'your_username';
