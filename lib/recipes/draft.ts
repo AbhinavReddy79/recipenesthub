@@ -1,4 +1,4 @@
-import { createId, slugify } from "@/lib/utils";
+import { createId, newId, slugify } from "@/lib/utils";
 import type {
   CategorySlug,
   CuisineSlug,
@@ -131,7 +131,7 @@ export function draftToRecipe(
   const { existing, profile, status } = options;
   const slug = existing?.slug ?? `${slugify(draft.title) || "recipe"}-${createId("").slice(1, 6)}`;
   return {
-    id: existing?.id ?? slug,
+    id: existing?.id ?? newId(),
     slug,
     title: draft.title.trim() || "Untitled recipe",
     description: draft.description.trim(),

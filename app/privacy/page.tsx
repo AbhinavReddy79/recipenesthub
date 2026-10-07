@@ -18,10 +18,10 @@ export default function PrivacyPage() {
       description="This Privacy Policy explains how RecipeNest collects, uses, stores and protects information when you use our website and services."
       updated="October 7, 2026"
       keyPoints={[
-        "Your profile and personal content are stored locally in your browser on your own device. We do not operate a database of user accounts.",
-        "Passwords are salted and hashed on your device and are never stored in plain text or transmitted to us.",
+        "Your account and personal content are stored securely with our database provider, Supabase, so they sync across your devices.",
+        "Passwords are handled by Supabase Authentication, stored only as salted hashes, and never visible to RecipeNest.",
         "We do not use advertising, analytics or tracking technologies, and we do not sell or share your personal information.",
-        "You can delete your information at any time from Settings or by clearing your browser data.",
+        "You can permanently delete your account and everything in it at any time from Settings.",
       ]}
       sections={[
         {
@@ -70,7 +70,7 @@ export default function PrivacyPage() {
             <>
               <p>Information is used solely to provide and improve the Service, including to:</p>
               <ul>
-                <li>Create and maintain your profile and allow you to sign in on your device.</li>
+                <li>Create and maintain your account, confirm your email address and let you sign in on any device.</li>
                 <li>Save your recipes, collections, meal plans and shopping lists.</li>
                 <li>Personalise recommendations based on your dietary and cuisine preferences.</li>
                 <li>Display prices and pack sizes appropriate to your region.</li>
@@ -85,23 +85,26 @@ export default function PrivacyPage() {
           body: (
             <>
               <p>
-                RecipeNest currently stores profile and personal content exclusively in your web browser&apos;s local
-                storage on the device you use. This information is not transmitted to, or stored on, RecipeNest
-                servers.
+                Your account and personal content are stored in a database and file storage operated for RecipeNest by
+                Supabase, Inc. This lets you sign in and see the same saved recipes, collections, meal plans and
+                shopping lists on any device.
               </p>
-              <p>As a result:</p>
               <ul>
-                <li>Your information is available only on the browser and device where it was created.</li>
-                <li>Other users, and RecipeNest, cannot access the information stored on your device.</li>
                 <li>
-                  Information is not synchronised between devices, and clearing your browser data permanently removes
-                  it.
+                  <strong>Private by default.</strong> Saved recipes, collections, meal plans, shopping lists, cooking
+                  history and settings are visible only to you. Database access rules ensure that no other user can
+                  read or change them.
+                </li>
+                <li>
+                  <strong>Public when you choose.</strong> Your name, username, photo, bio and location appear on your
+                  public profile, and recipes you publish and reviews you write are visible to everyone. Drafts stay
+                  private.
+                </li>
+                <li>
+                  <strong>On your device.</strong> A few preferences (colour theme, pricing region and unsaved recipe
+                  drafts) are kept in your browser&apos;s local storage and never leave your device.
                 </li>
               </ul>
-              <p>
-                If we introduce online accounts in the future, we will update this Privacy Policy before any
-                information is stored on our servers.
-              </p>
             </>
           ),
         },
@@ -110,8 +113,8 @@ export default function PrivacyPage() {
           body: (
             <>
               <p>
-                We do not sell, rent or trade your personal information. Because profile data remains on your device,
-                RecipeNest does not hold it and therefore does not disclose it to third parties.
+                We do not sell, rent or trade your personal information. We share it only with the service providers
+                that run RecipeNest on our behalf (see section 7), and only as needed to provide the Service.
               </p>
               <p>
                 Technical request information is processed by our service providers only as necessary to operate the
@@ -124,9 +127,9 @@ export default function PrivacyPage() {
           title: "Cookies and similar technologies",
           body: (
             <p>
-              RecipeNest does not use advertising, analytics or third-party tracking cookies. We use your browser&apos;s
-              local storage only for essential functionality, such as keeping you signed in, saving your content and
-              remembering preferences like your colour theme and region. Disabling browser storage will prevent these
+              RecipeNest does not use advertising, analytics or third-party tracking cookies. We use strictly necessary
+              cookies to keep you signed in securely, and your browser&apos;s local storage to remember preferences such
+              as your colour theme and region. Disabling cookies or browser storage will prevent sign-in and these
               features from working.
             </p>
           ),
@@ -137,6 +140,15 @@ export default function PrivacyPage() {
             <>
               <p>The Service relies on the following third parties:</p>
               <ul>
+                <li>
+                  <strong>Supabase, Inc.</strong> provides authentication, the database and file storage for accounts,
+                  personal content and uploaded photos, and sends account emails such as address confirmation and
+                  password resets. See the{" "}
+                  <a href="https://supabase.com/privacy" target="_blank" rel="noopener noreferrer">
+                    Supabase Privacy Policy
+                  </a>
+                  .
+                </li>
                 <li>
                   <strong>Vercel Inc.</strong> hosts the website and processes technical request data to deliver it.
                   See the{" "}
@@ -163,9 +175,10 @@ export default function PrivacyPage() {
           body: (
             <p>
               We take reasonable measures to protect your information. The Service is delivered exclusively over
-              encrypted HTTPS connections with standard security headers, and passwords are salted and hashed before
-              being stored on your device. However, no method of electronic storage or transmission is completely
-              secure. You are responsible for keeping your device secure and for choosing a strong, unique password.
+              encrypted HTTPS connections with standard security headers. Passwords are stored only as salted hashes by
+              Supabase Authentication, and row-level security rules in our database limit every account to its own
+              personal data. However, no method of electronic storage or transmission is completely secure. Please
+              choose a strong, unique password and keep it private.
             </p>
           ),
         },
@@ -173,18 +186,15 @@ export default function PrivacyPage() {
           title: "Data retention and deletion",
           body: (
             <>
-              <p>
-                Information stored in your browser remains there until you delete it. You can remove it at any time:
-              </p>
+              <p>We keep your account information for as long as your account exists. You can remove it at any time:</p>
               <ul>
                 <li>
-                  <strong>Delete my profile</strong> in <Link href="/settings#account">Settings → Account</Link>{" "}
-                  removes your profile and all associated content.
+                  <strong>Delete my account</strong> in <Link href="/settings#account">Settings → Account</Link>{" "}
+                  permanently deletes your account, sign-in, uploaded photos and all associated content.
                 </li>
                 <li>
-                  <strong>Clear all data in this browser</strong> removes every RecipeNest profile stored on the device.
+                  <strong>Reset this device</strong> clears the preferences and drafts kept in your browser.
                 </li>
-                <li>Clearing your browser&apos;s site data for RecipeNest has the same effect.</li>
               </ul>
               <p>Technical request logs are retained by our hosting provider in line with its own retention policies.</p>
             </>
@@ -195,10 +205,9 @@ export default function PrivacyPage() {
           body: (
             <p>
               Depending on where you live, you may have rights to access, correct, delete or restrict the use of your
-              personal information. Because your profile data is stored on your own device, you can exercise these
-              rights directly: view and edit your details in <Link href="/settings">Settings</Link>, and delete them
-              as described in section 9. For requests relating to technical information processed by our hosting
-              provider, please contact us using the details below.
+              personal information. You can exercise most of these rights directly: view and edit your details in{" "}
+              <Link href="/settings">Settings</Link>, and delete your account as described in section 9. For any other
+              request, please contact us using the details below.
             </p>
           ),
         },
@@ -217,9 +226,8 @@ export default function PrivacyPage() {
           body: (
             <p>
               We may update this Privacy Policy from time to time to reflect changes to the Service or applicable law.
-              When we do, we will revise the &ldquo;Last updated&rdquo; date at the top of this page. Material changes,
-              including the introduction of online accounts, will be communicated on the website before they take
-              effect.
+              When we do, we will revise the &ldquo;Last updated&rdquo; date at the top of this page. Material changes will
+              be communicated on the website before they take effect.
             </p>
           ),
         },

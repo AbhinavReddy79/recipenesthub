@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function LoginPage() {
-  return <AuthPage mode="login" />;
+export default async function LoginPage({ searchParams }: PageProps<"/login">) {
+  const { error } = await searchParams;
+  // Set by /auth/callback when an email link is invalid or expired.
+  return <AuthPage mode="login" error={typeof error === "string" ? error.slice(0, 200) : undefined} />;
 }

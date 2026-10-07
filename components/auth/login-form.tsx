@@ -28,6 +28,7 @@ export function LoginForm({ onSuccess, switchToRegister, idPrefix = "login" }: L
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
   const [resetInfo, setResetInfo] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const validate = (v = { email, password }): FieldErrors<Field> => ({
     email: validateEmail(v.email),
@@ -55,15 +56,27 @@ export function LoginForm({ onSuccess, switchToRegister, idPrefix = "login" }: L
     setTouched({ email: true, password: true });
     if (hasErrors(next)) return;
     setFormError(null);
-    const result = await authClient.signIn({ email, password, remember });
+    setSubmitting(true);
+    const result = await authClient.signIn({ email, password, remember }).finally(() => setSubmitting(false));
     if (result.ok) return onSuccess(result.profile.name);
     if (result.field === "email" || result.field === "password") setErrors((e) => ({ ...e, [result.field as Field]: result.error }));
     else setFormError(result.error);
   };
 
   const onForgot = async () => {
-    const result = await authClient.requestPasswordReset();
-    setResetInfo(result.error);
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setTouched((t) => ({ ...t, email: true }));
+      setErrors((e) => ({ ...e, email: "Enter your email above, then choose “Forgot password?” again." }));
+      return;
+    }
+    setResetInfo(null);
+    const result = await authClient.requestPasswordReset(email);
+    setResetInfo(
+      result.ok
+        ? `If an account exists for ${email.trim()}, we've emailed a link to reset your password.`
+        : result.error,
+    );
   };
 
   return (
@@ -131,8 +144,8 @@ export function LoginForm({ onSuccess, switchToRegister, idPrefix = "login" }: L
         </Label>
       </div>
 
-      <Button type="submit" size="lg" className="w-full">
-        Log in
+      <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+        {submitting ? "Logging in…" : "Log in"}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">New to RecipeNest? {switchToRegister}</p>

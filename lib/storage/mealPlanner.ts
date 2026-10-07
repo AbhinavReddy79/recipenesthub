@@ -1,48 +1,87 @@
 import { emptyWeek } from "@/data/mealPlans";
+import type { RecipeNestClient } from "@/lib/supabase/client";
 import { DAYS, MEAL_SLOTS, type DayOfWeek, type MealSlotType, type PlannedMeal, type WeekPlan } from "@/types/mealPlan";
-import { createPersistentStore, isRecord, isString } from "./core";
+import { createMemoryStore } from "./core";
+import { persist, persistAll, userContext } from "./remote";
 
 export interface SlotRef {
   day: DayOfWeek;
   slot: MealSlotType;
 }
 
-const isMeal = (value: unknown): value is PlannedMeal =>
-  isRecord(value) && isString(value.recipeSlug) && typeof value.servings === "number" && value.servings > 0;
+/** The signed-in user's week (one row per filled slot in meal_plan_entries). Starts empty. */
+export const mealPlanStore = createMemoryStore<WeekPlan>(emptyWeek);
 
-/** Rebuilds a clean week, keeping only well-formed meals. */
-function sanitizeWeek(value: unknown): WeekPlan | null {
-  if (!isRecord(value)) return null;
-  const week: WeekPlan = { ...emptyWeek };
-  for (const day of DAYS) {
-    const saved = value[day];
-    const clean: WeekPlan[DayOfWeek] = {};
-    if (isRecord(saved)) {
-      for (const slot of MEAL_SLOTS) {
-        if (isMeal(saved[slot])) clean[slot] = saved[slot] as PlannedMeal;
-      }
-    }
-    week[day] = clean;
+const isDay = (value: string): value is DayOfWeek => (DAYS as readonly string[]).includes(value);
+const isSlot = (value: string): value is MealSlotType => (MEAL_SLOTS as readonly string[]).includes(value);
+
+async function load(supabase: RecipeNestClient, userId: string): Promise<void> {
+  const { data, error } = await supabase.from("meal_plan_entries").select("day, slot, recipe_slug, servings").eq("user_id", userId);
+  if (error) throw error;
+  const week: WeekPlan = Object.fromEntries(DAYS.map((day) => [day, {}])) as WeekPlan;
+  for (const row of data) {
+    if (isDay(row.day) && isSlot(row.slot)) week[row.day][row.slot] = { recipeSlug: row.recipe_slug, servings: row.servings };
   }
-  return week;
+  mealPlanStore.set(week);
 }
 
-/** The signed-in user's week. Starts empty. */
-export const mealPlanStore = createPersistentStore<WeekPlan>("meal-plan", emptyWeek, sanitizeWeek, "user");
+const reload = () => {
+  const ctx = userContext();
+  if (ctx) void load(ctx.supabase, ctx.userId).catch(() => {});
+};
+
+const same = (a: PlannedMeal | undefined, b: PlannedMeal | undefined) =>
+  a?.recipeSlug === b?.recipeSlug && a?.servings === b?.servings;
+
+/** Applies a change locally, then saves only the slots that changed. */
+function commit(action: string, change: (prev: WeekPlan) => WeekPlan) {
+  const ctx = userContext();
+  if (!ctx) return;
+  const prev = mealPlanStore.get();
+  const next = change(prev);
+  mealPlanStore.set(next);
+
+  const upserts: { user_id: string; day: string; slot: string; recipe_slug: string; servings: number; updated_at: string }[] = [];
+  const removals: SlotRef[] = [];
+  for (const day of DAYS) {
+    for (const slot of MEAL_SLOTS) {
+      const before = prev[day][slot];
+      const after = next[day][slot];
+      if (same(before, after)) continue;
+      if (after) {
+        upserts.push({ user_id: ctx.userId, day, slot, recipe_slug: after.recipeSlug, servings: after.servings, updated_at: new Date().toISOString() });
+      } else {
+        removals.push({ day, slot });
+      }
+    }
+  }
+  persistAll(
+    action,
+    async () => {
+      for (const { day, slot } of removals) {
+        const removed = await ctx.supabase.from("meal_plan_entries").delete().eq("user_id", ctx.userId).eq("day", day).eq("slot", slot);
+        if (removed.error) return removed;
+      }
+      if (upserts.length) return ctx.supabase.from("meal_plan_entries").upsert(upserts, { onConflict: "user_id,day,slot" });
+    },
+    reload,
+  );
+}
 
 export const mealPlanStorage = {
+  load,
   assign({ day, slot }: SlotRef, recipeSlug: string, servings: number) {
-    mealPlanStore.set((prev) => ({ ...prev, [day]: { ...prev[day], [slot]: { recipeSlug, servings } } }));
+    commit("plan that meal", (prev) => ({ ...prev, [day]: { ...prev[day], [slot]: { recipeSlug, servings } } }));
   },
   remove({ day, slot }: SlotRef) {
-    mealPlanStore.set((prev) => {
+    commit("clear that slot", (prev) => {
       const nextDay = { ...prev[day] };
       delete nextDay[slot];
       return { ...prev, [day]: nextDay };
     });
   },
   setServings({ day, slot }: SlotRef, servings: number) {
-    mealPlanStore.set((prev) => {
+    commit("change the servings", (prev) => {
       const meal = prev[day][slot];
       if (!meal) return prev;
       return { ...prev, [day]: { ...prev[day], [slot]: { ...meal, servings } } };
@@ -50,7 +89,7 @@ export const mealPlanStorage = {
   },
   /** Moves a meal to another slot, swapping with whatever is already there. */
   move(from: SlotRef, to: SlotRef) {
-    mealPlanStore.set((prev) => {
+    commit("move that meal", (prev) => {
       const moving = prev[from.day][from.slot];
       if (!moving) return prev;
       const displaced = prev[to.day][to.slot];
@@ -63,21 +102,16 @@ export const mealPlanStorage = {
     });
   },
   clearDay(day: DayOfWeek) {
+    const ctx = userContext();
+    if (!ctx) return;
     mealPlanStore.set((prev) => ({ ...prev, [day]: {} }));
+    persist("clear that day", ctx.supabase.from("meal_plan_entries").delete().eq("user_id", ctx.userId).eq("day", day), reload);
   },
   clearWeek() {
+    const ctx = userContext();
+    if (!ctx) return;
     mealPlanStore.set(emptyWeek);
-  },
-  /** Removes every planned meal that uses a recipe (used when a recipe is deleted). */
-  purgeRecipe(slug: string) {
-    mealPlanStore.set((prev) => {
-      const next = { ...prev };
-      for (const day of DAYS) {
-        const entries = Object.entries(prev[day]).filter(([, meal]) => meal?.recipeSlug !== slug);
-        next[day] = Object.fromEntries(entries);
-      }
-      return next;
-    });
+    persist("clear the week", ctx.supabase.from("meal_plan_entries").delete().eq("user_id", ctx.userId), reload);
   },
 };
 

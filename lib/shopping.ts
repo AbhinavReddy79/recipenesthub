@@ -1,5 +1,5 @@
 import { scaleQuantity } from "@/lib/recipes/query";
-import { createId } from "@/lib/utils";
+import { newId } from "@/lib/utils";
 import { DAYS, type ShoppingItem, type WeekPlan } from "@/types/mealPlan";
 import type { IngredientAisle, Recipe } from "@/types/recipe";
 
@@ -33,7 +33,7 @@ export function buildShoppingList(
           if (!existing.sources.includes(recipe.title)) existing.sources.push(recipe.title);
         } else {
           items.set(key, {
-            id: createId("item"),
+            id: newId(),
             name: ingredient.name,
             quantity,
             unit: ingredient.unit,

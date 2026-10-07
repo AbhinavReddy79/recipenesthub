@@ -35,7 +35,7 @@ const STEPS = [
   { title: "Publish", description: "Share it with the community or keep it as a draft." },
 ];
 const EDITABLE_STEPS = 4;
-/** Multi-step create/edit form for the signed-in author. Render only after hydration (it reads localStorage on init). */
+/** Multi-step create/edit form for the signed-in author. Render only after hydration (it restores autosaved progress from localStorage on init). */
 export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: UserProfile }) {
   const [restored] = useState(() => {
     if (existing) return null;
@@ -48,6 +48,7 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
   const [maxVisited, setMaxVisited] = useState(existing ? STEPS.length - 1 : 0);
   const [errors, setErrors] = useState<StepErrors>({});
   const [done, setDone] = useState<Recipe | null>(null);
+  const [saving, setSaving] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
 
   // Autosave in-progress new recipes so a refresh doesn't lose work.
@@ -98,7 +99,8 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
     goTo(target);
   };
 
-  const save = (status: RecipeStatus) => {
+  const save = async (status: RecipeStatus) => {
+    if (saving) return;
     if (status === "published") {
       for (let s = 0; s < EDITABLE_STEPS; s++) {
         const stepErrors = validateDraftStep(s, draft);
@@ -112,9 +114,14 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
       return showErrors({ title: "Add a title before saving a draft." });
     }
     const recipe = draftToRecipe(draft, { status, existing, profile });
-    userRecipeActions.save(recipe);
+    setSaving(true);
+    const result = await userRecipeActions.save(recipe).finally(() => setSaving(false));
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
     if (!existing) recipeFormAutosave.clear();
-    setDone(recipe);
+    setDone(result.recipe);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -129,7 +136,7 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
           <h2 className="text-3xl font-semibold">{published ? (existing ? "Recipe updated!" : "Your recipe is live!") : "Draft saved"}</h2>
           <p className="mx-auto max-w-md text-muted-foreground">
             {published
-              ? `“${done.title}” now appears in My Recipes, Recipes and Search on this device.`
+              ? `“${done.title}” now appears in My Recipes, Recipes and Search for everyone.`
               : `“${done.title}” is saved in your drafts. Finish it whenever you're ready.`}
           </p>
         </div>
@@ -243,16 +250,19 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
                 <button
                   type="button"
                   onClick={() => save("published")}
-                  className="grid gap-2 rounded-2xl border-2 border-primary bg-accent p-5 text-left transition duration-300 hover:-translate-y-1 hover:shadow-lift"
+                  disabled={saving}
+                  aria-busy={saving}
+                  className="grid gap-2 rounded-2xl border-2 border-primary disabled:pointer-events-none disabled:opacity-60 bg-accent p-5 text-left transition duration-300 hover:-translate-y-1 hover:shadow-lift"
                 >
                   <Rocket className="size-6 text-primary" aria-hidden />
-                  <span className="text-lg font-semibold">{existing ? "Save & publish" : "Publish now"}</span>
+                  <span className="text-lg font-semibold">{saving ? "Saving…" : existing ? "Save & publish" : "Publish now"}</span>
                   <span className="text-sm text-muted-foreground">Visible in My Recipes, Recipes and Search.</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => save("draft")}
-                  className="grid gap-2 rounded-2xl border-2 bg-card p-5 text-left transition duration-300 hover:-translate-y-1 hover:border-amber/60 hover:shadow-lift"
+                  disabled={saving}
+                  className="grid gap-2 rounded-2xl border-2 bg-card disabled:pointer-events-none disabled:opacity-60 p-5 text-left transition duration-300 hover:-translate-y-1 hover:border-amber/60 hover:shadow-lift"
                 >
                   <FileText className="size-6 text-amber" aria-hidden />
                   <span className="text-lg font-semibold">Save as draft</span>
@@ -270,7 +280,7 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
           </Button>
           <div className="flex gap-2">
             {step < 5 && (
-              <Button type="button" variant="outline" onClick={() => save("draft")}>
+              <Button type="button" variant="outline" onClick={() => save("draft")} disabled={saving}>
                 <Save />
                 <span className="hidden sm:inline">Save draft</span>
               </Button>

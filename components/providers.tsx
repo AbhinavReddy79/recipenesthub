@@ -5,11 +5,11 @@ import { ThemeProvider } from "next-themes";
 import { AuthDialogProvider } from "@/components/auth/auth-dialog";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { accountsStorage } from "@/lib/storage/accounts";
+import { startSync } from "@/lib/storage/sync";
 
 export function Providers({ children }: { children: ReactNode }) {
-  // End "don't remember me" sessions left over from a previous browser session.
-  useEffect(() => accountsStorage.expireIfNeeded(), []);
+  // Follow Supabase Auth: load the signed-in user's data, clear it on sign-out.
+  useEffect(() => startSync(), []);
 
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>

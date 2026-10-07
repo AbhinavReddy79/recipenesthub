@@ -18,7 +18,7 @@ export function RouteError({
   error,
   retry,
   title = "Something went wrong",
-  description = "An unexpected error occurred. Your saved recipes and plans are safe on this device.",
+  description = "An unexpected error occurred. Your saved recipes and plans are safe in your account.",
 }: RouteErrorProps) {
   useEffect(() => {
     console.error(error);

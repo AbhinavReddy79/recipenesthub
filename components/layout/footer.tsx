@@ -79,7 +79,7 @@ export function Footer() {
         <div className="container-page flex flex-col gap-2 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} RecipeNest. Made for people who love to cook.</p>
           <p className="flex flex-wrap gap-x-4 gap-y-1">
-            <span>Your profiles and plans are stored in this browser.</span>
+            <span>Your account and plans sync securely across your devices.</span>
             <Link href="/privacy" className="underline-offset-4 hover:text-foreground hover:underline">
               Privacy
             </Link>

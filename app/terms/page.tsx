@@ -23,9 +23,9 @@ export default function TermsPage() {
           body: (
             <p>
               RecipeNest is a free site for discovering recipes, planning meals and making shopping lists. You can
-              browse without a profile. Profiles are stored only in your browser (see the{" "}
-              <Link href="/privacy">Privacy Policy</Link>), so you&apos;re responsible for keeping your device and password
-              safe.
+              browse without an account. If you create one, keep your password private and your details accurate;
+              you&apos;re responsible for activity on your account. How we handle your data is explained in the{" "}
+              <Link href="/privacy">Privacy Policy</Link>.
             </p>
           ),
         },
@@ -57,8 +57,8 @@ export default function TermsPage() {
           body: (
             <p>
               Recipes you write belong to you. Only publish recipes and photos that you created or have permission to
-              use, and keep them respectful. Because profiles are stored in your browser, what you publish is
-              currently visible on your device only.
+              use, and keep them respectful. Published recipes and reviews are visible to everyone, and RecipeNest
+              may remove content or suspend accounts that break these terms.
             </p>
           ),
         },
@@ -77,7 +77,7 @@ export default function TermsPage() {
           body: (
             <p>
               RecipeNest is provided as is, without warranties of any kind. To the extent the law allows, RecipeNest
-              isn&apos;t liable for losses arising from use of the site, including lost data stored in your browser.
+              isn&apos;t liable for losses arising from use of the site, including loss of data.
             </p>
           ),
         },

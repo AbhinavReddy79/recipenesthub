@@ -10,6 +10,15 @@ const securityHeaders = [
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" },
 ];
 
+/** Public Supabase Storage (avatars, recipe photos); also covers a custom Supabase domain. */
+const supabaseHost = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname;
+  } catch {
+    return null;
+  }
+})();
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
@@ -37,6 +46,14 @@ const nextConfig: NextConfig = {
         hostname: "thumb.wikimedia.org",
         pathname: "/wikipedia/commons/**",
       },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+      ...(supabaseHost && !supabaseHost.endsWith(".supabase.co")
+        ? [{ protocol: "https" as const, hostname: supabaseHost, pathname: "/storage/v1/object/public/**" }]
+        : []),
     ],
     qualities: [70, 75, 85],
   },

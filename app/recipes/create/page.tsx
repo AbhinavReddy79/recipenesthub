@@ -17,7 +17,7 @@ export default function CreateRecipePage() {
         icon={<ChefHat />}
         eyebrow="Share your cooking"
         title="Create a recipe"
-        description="Walk through six quick steps. Your progress is saved automatically on this device."
+        description="Walk through six quick steps. Your progress is saved automatically as you go."
       />
       <div className="container-page py-10 pb-24">
         <RecipeFormPage />

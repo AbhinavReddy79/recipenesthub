@@ -5,7 +5,7 @@ import { Camera, Trash2 } from "lucide-react";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { Button } from "@/components/ui/button";
 
-/** Crops the uploaded photo to a 256px square so it fits comfortably in localStorage. */
+/** Crops the chosen photo to a 256px square before it is uploaded to Supabase Storage. */
 async function toAvatarDataUrl(file: File): Promise<string> {
   const bitmap = await createImageBitmap(file);
   const size = Math.min(bitmap.width, bitmap.height);

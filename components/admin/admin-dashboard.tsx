@@ -23,9 +23,9 @@ export function AdminDashboard({ platformRecipes }: { platformRecipes: number })
 
   const cards = [
     { label: "Platform recipes", value: platformRecipes, note: "Official RecipeNest catalog", icon: BookOpen, href: "/admin/recipes", tone: "brand" },
-    { label: "Users", value: accounts.length, note: accounts.length ? "Profiles created on this device" : "No profiles yet", icon: Users, href: "/admin/users", tone: "ocean" },
+    { label: "Users", value: accounts.length, note: accounts.length ? "Registered accounts" : "No profiles yet", icon: Users, href: "/admin/users", tone: "ocean" },
     { label: "User recipes", value: all.length, note: `${published.length} published · ${all.length - published.length} drafts`, icon: ChefHat, href: "/admin/recipes?source=user", tone: "herb" },
-    { label: "Reviews", value: reviews, note: reviews ? "Left by cooks on this device" : "No reviews yet", icon: Star, href: "/admin/recipes", tone: "amber" },
+    { label: "Reviews", value: reviews, note: reviews ? "Left by the community" : "No reviews yet", icon: Star, href: "/admin/recipes", tone: "amber" },
   ];
   const newestRecipes = [...all].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
   const newestUsers = [...accounts].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);

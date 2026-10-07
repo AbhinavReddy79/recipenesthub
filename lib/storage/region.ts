@@ -1,8 +1,8 @@
 import { isRegionCode, type RegionCode } from "@/lib/regions";
-import { createPersistentStore } from "./core";
+import { createLocalStore } from "./core";
 
-/** The pricing region chosen on this browser; `null` means detect it automatically. */
-export const regionStore = createPersistentStore<RegionCode | null>("region", null, (v) => (isRegionCode(v) ? v : null));
+/** The pricing region chosen on this browser (works for visitors too); `null` means detect it automatically. */
+export const regionStore = createLocalStore<RegionCode | null>("region", null, (v) => (isRegionCode(v) ? v : null));
 
 export const regionStorage = {
   setRegion: (code: RegionCode | null) => regionStore.set(code),

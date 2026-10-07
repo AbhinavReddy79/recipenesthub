@@ -33,7 +33,7 @@ import type { UserProfile } from "@/types/user";
 import { AdminToolbar } from "./admin-toolbar";
 import { StatusBadge } from "./status-badge";
 
-/** Profiles created on this device. Suspending one blocks its login; deleting removes it and its data. */
+/** Every registered account. Suspending one blocks its login; deleting removes it and its data. */
 export function AdminUsersTable() {
   const hydrated = useHydrated();
   const { accounts, setStatus, remove } = useAccounts();
@@ -173,7 +173,7 @@ export function AdminUsersTable() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {deleting?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              Their profile, recipes and personal data will be permanently removed from this browser.
+              Their account, sign-in, recipes and personal data will be permanently deleted. This can&apos;t be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

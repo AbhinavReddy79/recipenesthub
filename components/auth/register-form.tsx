@@ -23,7 +23,8 @@ type Field = "name" | "username" | "email" | "password" | "confirm" | "bio";
 const STRENGTH_LABELS = ["Too weak", "Weak", "Okay", "Strong", "Excellent"];
 
 interface RegisterFormProps {
-  onSuccess: (name: string) => void;
+  /** Receives the new profile's name, and the email address when it still needs confirming. */
+  onSuccess: (name: string, confirmEmail?: string) => void;
   switchToLogin: React.ReactNode;
   idPrefix?: string;
 }
@@ -39,6 +40,7 @@ export function RegisterForm({ onSuccess, switchToLogin, idPrefix = "register" }
   });
   const [avatar, setAvatar] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FieldErrors<Field>>({});
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
 
@@ -58,7 +60,7 @@ export function RegisterForm({ onSuccess, switchToLogin, idPrefix = "register" }
   });
 
   const set = (field: Field) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const value = field === "username" ? event.target.value.toLowerCase().replace(/s+/g, "") : event.target.value;
+    const value = field === "username" ? event.target.value.toLowerCase().replace(/\s+/g, "") : event.target.value;
     const next = { ...values, [field]: value };
     setValues(next);
     if (touched[field]) setErrors(validate(next));
@@ -76,15 +78,18 @@ export function RegisterForm({ onSuccess, switchToLogin, idPrefix = "register" }
     setTouched({ name: true, username: true, email: true, password: true, confirm: true, bio: true });
     if (hasErrors(next)) return;
     setFormError(null);
-    const result = await authClient.signUp({
+    setSubmitting(true);
+    const result = await authClient
+      .signUp({
       name: values.name,
       username: values.username,
       email: values.email,
       password: values.password,
       avatar,
       bio: values.bio,
-    });
-    if (result.ok) return onSuccess(result.profile.name);
+      })
+      .finally(() => setSubmitting(false));
+    if (result.ok) return onSuccess(result.profile.name, result.pendingEmailConfirmation ? result.profile.email : undefined);
     if (result.field === "email" || result.field === "username") setErrors((e) => ({ ...e, [result.field as Field]: result.error }));
     else setFormError(result.error);
   };
@@ -201,12 +206,12 @@ export function RegisterForm({ onSuccess, switchToLogin, idPrefix = "register" }
         )}
       </FormField>
 
-      <Button type="submit" size="lg" className="w-full">
-        Create profile
+      <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+        {submitting ? "Creating your profile…" : "Create profile"}
       </Button>
       <p className="text-center text-xs leading-relaxed text-muted-foreground">
-        Your profile is stored securely in this browser (your password is hashed, never saved as text). Accounts
-        aren&apos;t synced to a server yet.
+        We&apos;ll email you a link to confirm your address. Your saved recipes and plans sync securely across your
+        devices.
       </p>
       <p className="text-center text-sm text-muted-foreground">Already have an account? {switchToLogin}</p>
     </form>

@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: PageProps<"/recipes/[slug]">)
   const { slug } = await params;
   const recipe = await getRecipeBySlug(slug);
   if (!recipe) {
-    // Possibly a recipe created on this device; it renders client-side.
+    // Possibly a community recipe from Supabase; it renders client-side.
     return { title: "Recipe", robots: { index: false } };
   }
   const title = `${recipe.title} Recipe`;

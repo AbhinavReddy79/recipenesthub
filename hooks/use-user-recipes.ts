@@ -1,29 +1,18 @@
 import { useMemo } from "react";
-import { accountsStore } from "@/lib/storage/accounts";
-import { sessionStore, useStore } from "@/lib/storage/core";
+import { useStore } from "@/lib/storage/core";
 import { recipesStorage, userRecipesStore } from "@/lib/storage/recipes";
+import { authStore } from "@/lib/storage/session";
 
 export const userRecipeActions = recipesStorage;
 
 /**
- * Recipes written on this device. Bylines are resolved live from the author's
- * account, so profile edits show up everywhere immediately.
+ * Community recipes from Supabase: everyone's published recipes plus the
+ * signed-in author's drafts (admins also see everyone's drafts).
  */
 export function useUserRecipes() {
-  const stored = useStore(userRecipesStore);
-  const accounts = useStore(accountsStore);
-  const { userId } = useStore(sessionStore);
+  const all = useStore(userRecipesStore);
+  const userId = useStore(authStore).user?.id ?? null;
 
-  const all = useMemo(
-    () =>
-      stored.flatMap((r) => {
-        const account = accounts.find((a) => a.id === r.authorId);
-        // Recipes whose author no longer exists are not shown.
-        if (!account) return [];
-        return [{ ...r, author: { id: account.id, name: account.name, username: account.username, avatar: account.avatar } }];
-      }),
-    [stored, accounts],
-  );
   const published = useMemo(() => all.filter((r) => r.status === "published"), [all]);
   const mine = useMemo(() => (userId ? all.filter((r) => r.authorId === userId) : []), [all, userId]);
   const myPublished = useMemo(() => mine.filter((r) => r.status === "published"), [mine]);

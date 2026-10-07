@@ -12,6 +12,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { recipesStorage } from "@/lib/storage/recipes";
+import { reloadPersonalData } from "@/lib/storage/sync";
 import type { Recipe } from "@/types/recipe";
 
 interface DeleteRecipeDialogProps {
@@ -28,7 +29,7 @@ export function DeleteRecipeDialog({ recipe, onOpenChange, onDeleted }: DeleteRe
         <AlertDialogHeader>
           <AlertDialogTitle>Delete this recipe?</AlertDialogTitle>
           <AlertDialogDescription>
-            “{recipe?.title}” will be permanently removed from this device, along with any saves, collection entries and
+            “{recipe?.title}” will be permanently deleted for everyone, along with any saves, collection entries and
             meal-plan slots that use it. This can&apos;t be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -36,11 +37,13 @@ export function DeleteRecipeDialog({ recipe, onOpenChange, onDeleted }: DeleteRe
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
-            onClick={() => {
+            onClick={async () => {
               if (!recipe) return;
-              recipesStorage.remove(recipe.id);
+              if (!(await recipesStorage.remove(recipe.id))) return;
               toast(`Deleted “${recipe.title}”`);
               onDeleted?.();
+              // The database already dropped saves, collection entries and plan slots for it.
+              void reloadPersonalData();
             }}
           >
             Delete

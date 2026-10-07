@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays, Heart, Users } from "lucide-react";
+import { CalendarDays, CircleAlert, Heart, MailCheck, Users } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { unsplash } from "@/lib/images";
@@ -22,8 +22,10 @@ const COPY = {
   register: { title: "Create your account", subtitle: "Join a community of home cooks. It only takes a minute.", image: "1556909114-f6e7ad7d3136" },
 };
 
-export function AuthPage({ mode }: { mode: "login" | "register" }) {
+/** `error` comes from the email-link callback (e.g. an expired confirmation link). */
+export function AuthPage({ mode, error }: { mode: "login" | "register"; error?: string }) {
   const [success, setSuccess] = useState<string | null>(null);
+  const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
   const copy = COPY[mode];
 
   return (
@@ -56,10 +58,21 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
       <div className="relative isolate flex items-center justify-center overflow-hidden bg-warm-glow px-4 py-12 sm:px-6">
         <div aria-hidden className="absolute inset-0 -z-10 bg-dots opacity-60 [mask-image:radial-gradient(closest-side,black,transparent)]" />
         <div className="w-full max-w-md rounded-3xl bg-card p-6 shadow-lift ring-1 ring-border/70 animate-rise sm:p-8">
-          {success ? (
+          {confirmEmail ? (
+            <AuthSuccess
+              icon={<MailCheck aria-hidden />}
+              title="Check your inbox"
+              description={`We sent a confirmation link to ${confirmEmail}. Open it to finish creating your profile, then you'll be signed in.`}
+              actions={
+                <Button asChild variant="outline" size="lg">
+                  <Link href="/recipes">Browse recipes meanwhile</Link>
+                </Button>
+              }
+            />
+          ) : success ? (
             <AuthSuccess
               title={mode === "login" ? "You're signed in" : `Welcome, ${success.split(" ")[0]}!`}
-              description="Your profile is ready. Saved recipes, collections and plans are kept with your profile in this browser."
+              description="Your profile is ready. Your saved recipes, collections and plans are kept with your account on every device."
               actions={
                 <>
                   <Button asChild variant="outline" size="lg">
@@ -80,6 +93,12 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                   <p className="text-muted-foreground">{copy.subtitle}</p>
                 </div>
               </div>
+              {error && (
+                <p role="alert" className="flex gap-2.5 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+                  <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  {error}
+                </p>
+              )}
               {mode === "login" ? (
                 <LoginForm
                   onSuccess={setSuccess}
@@ -91,7 +110,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                 />
               ) : (
                 <RegisterForm
-                  onSuccess={setSuccess}
+                  onSuccess={(name, email) => (email ? setConfirmEmail(email) : setSuccess(name))}
                   switchToLogin={
                     <Link href="/login" className="font-medium text-primary underline-offset-4 hover:underline">
                       Log in

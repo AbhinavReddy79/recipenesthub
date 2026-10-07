@@ -3,8 +3,8 @@ import type { Recipe } from "@/types/recipe";
 import { useUserRecipes } from "./use-user-recipes";
 
 /**
- * Merges the server-provided catalog with recipes users have published on
- * this device, so their creations show up everywhere.
+ * Merges the built-in catalog with recipes the community has published, so
+ * their creations show up everywhere.
  */
 export function useCatalog(serverRecipes: Recipe[]) {
   const { published } = useUserRecipes();

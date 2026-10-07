@@ -32,7 +32,6 @@ import {
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { authClient } from "@/lib/auth";
-import { features } from "@/lib/site";
 import { THEME_OPTIONS } from "./theme-toggle";
 
 export const accountLinks = [
@@ -46,7 +45,7 @@ export const accountLinks = [
 
 export function UserMenu() {
   const hydrated = useHydrated();
-  const { user } = useCurrentUser();
+  const { user, isAdmin } = useCurrentUser();
   const { openAuth } = useAuthDialog();
   const signedIn = hydrated && user;
   const { theme, setTheme } = useTheme();
@@ -87,7 +86,7 @@ export function UserMenu() {
               ))}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            {features.admin && (
+            {isAdmin && (
               <>
                 <DropdownMenuItem asChild>
                   <Link href="/admin">

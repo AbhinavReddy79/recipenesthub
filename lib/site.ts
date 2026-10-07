@@ -30,12 +30,6 @@ export const isPlatformAuthor = (authorId: string) => authorId === PLATFORM_AUTH
  * NEXT_PUBLIC_* values are fixed at build time.
  */
 export const features = {
-  /**
-   * The admin console only sees data stored in the visitor's own browser, so it
-   * stays off on the public site until real accounts exist. Turned on for local
-   * development in .env.development.local (never read by production builds).
-   */
-  admin: process.env.NEXT_PUBLIC_ENABLE_ADMIN === "true",
   /** No email service is connected yet, so the newsletter sign-up is hidden rather than promising emails. */
   newsletter: false,
 };

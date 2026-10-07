@@ -22,7 +22,7 @@ const GALLERY = [
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
-/** Downscales an uploaded photo so it fits comfortably in localStorage. */
+/** Downscales a chosen photo before it is uploaded to Supabase Storage. */
 async function compress(file: File): Promise<string> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));

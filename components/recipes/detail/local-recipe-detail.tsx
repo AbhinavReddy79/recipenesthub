@@ -14,9 +14,9 @@ import { RecipeDetail } from "./recipe-detail";
 import { RecipeNotFound } from "./recipe-not-found";
 
 /**
- * Renders recipes created by people on this device. Published recipes are
- * public; drafts are only visible to their author. With a backend these would
- * be served like any other recipe.
+ * Renders community recipes stored in Supabase (they aren't part of the
+ * static catalog, so they load client-side). Published recipes are public;
+ * drafts are only visible to their author (enforced by RLS).
  */
 export function LocalRecipeDetail({ slug }: { slug: string }) {
   const hydrated = useHydrated();

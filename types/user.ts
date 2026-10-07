@@ -1,29 +1,27 @@
 import type { CuisineSlug, Diet } from "./recipe";
 
 export type AccountStatus = "active" | "suspended";
+export type AccountRole = "user" | "admin";
 
 /**
- * A profile created by a real visitor on this device.
- * Frontend-only: replace with your auth provider's user record later.
+ * A RecipeNest account as the UI sees it: the public profile (profiles table)
+ * plus the private email from Supabase Auth, which is only filled in for the
+ * signed-in user and for admins.
  */
-export interface UserAccount {
+export interface UserProfile {
   id: string;
   name: string;
   username: string;
+  /** Empty for other people's profiles. */
   email: string;
-  /** Uploaded photo as a data URL, or "" to show initials. */
+  /** Public image URL, or "" to show initials. */
   avatar: string;
   bio: string;
   location: string;
   createdAt: string;
   status: AccountStatus;
-  /** Salted SHA-256 hash. Never the plain password. */
-  passwordHash: string;
-  passwordSalt: string;
+  role: AccountRole;
 }
-
-/** The account fields that are safe to pass around the UI. */
-export type UserProfile = Omit<UserAccount, "passwordHash" | "passwordSalt">;
 
 export interface UserPreferences {
   diet: Diet | "None";
@@ -39,11 +37,4 @@ export interface NotificationSettings {
 export interface UserSettings {
   preferences: UserPreferences;
   notifications: NotificationSettings;
-}
-
-/** Which account is signed in on this device, if any. */
-export interface Session {
-  userId: string | null;
-  /** When false the session ends with the browser session. */
-  remember: boolean;
 }

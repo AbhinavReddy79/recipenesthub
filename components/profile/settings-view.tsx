@@ -42,8 +42,8 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import type { Tone } from "@/components/shared/module-tone";
 import { RegionSelect } from "@/components/shared/region-select";
 import { useNewsletter, useSettings } from "@/hooks/use-settings";
-import { accountsStorage } from "@/lib/storage/accounts";
-import { clearAllLocalData } from "@/lib/storage/core";
+import { authClient } from "@/lib/auth";
+import { clearLocalData } from "@/lib/storage/core";
 import { CUISINE_LABELS, CUISINE_SLUGS } from "@/lib/labels";
 import { DIETS } from "@/lib/recipes/query";
 import { features } from "@/lib/site";
@@ -107,17 +107,20 @@ export function SettingsView() {
     toast.success(message);
   };
 
-  const deleteProfile = () => {
+  const deleteProfile = async () => {
     if (!user) return;
-    accountsStorage.remove(user.id);
-    toast("Your profile and its data were deleted from this browser.");
+    const result = await authClient.deleteAccount();
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+    toast("Your account and all of its data were permanently deleted.");
     router.push("/");
   };
 
   const clearBrowser = () => {
-    clearAllLocalData();
-    toast("All RecipeNest data was cleared from this browser.");
-    router.push("/");
+    clearLocalData();
+    toast("RecipeNest preferences were cleared from this device.");
   };
 
   const sections = user ? SECTIONS : SECTIONS.filter((s) => s.id === "appearance" || s.id === "region");
@@ -313,31 +316,31 @@ export function SettingsView() {
           </ul>
         </Section>
 
-        <Section id="account" title="Account" description="Your profile and everything in it are stored in this browser.">
+        <Section id="account" title="Account" description="Your account is stored securely on RecipeNest's servers and syncs across your devices.">
           <div className="grid gap-4">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4">
               <div className="grid gap-0.5">
-                <p className="text-sm font-medium">Delete my profile</p>
-                <p className="text-sm text-muted-foreground">Removes your profile, recipes, saved recipes, collections, meal plan and shopping list.</p>
+                <p className="text-sm font-medium">Delete my account</p>
+                <p className="text-sm text-muted-foreground">Permanently removes your account, recipes, reviews, saved recipes, collections, meal plan and shopping list.</p>
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" className="text-destructive hover:text-destructive">
                     <Trash2 />
-                    Delete profile
+                    Delete account
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete your profile?</AlertDialogTitle>
+                    <AlertDialogTitle>Delete your account?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This permanently removes @{user.username} and all of its data from this browser. This can&apos;t be undone.
+                      This permanently deletes @{user.username}, your sign-in and everything you&apos;ve saved or published, on every device. This can&apos;t be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction variant="destructive" onClick={deleteProfile}>
-                      Delete profile
+                      Delete account
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -345,27 +348,27 @@ export function SettingsView() {
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4">
               <div className="grid gap-0.5">
-                <p className="text-sm font-medium">Clear all data in this browser</p>
-                <p className="text-sm text-muted-foreground">Removes every profile and recipe stored by RecipeNest on this device.</p>
+                <p className="text-sm font-medium">Reset this device</p>
+                <p className="text-sm text-muted-foreground">Clears region, recipe drafts and other preferences saved in this browser. Your account data isn&apos;t affected.</p>
               </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="ghost" className="text-destructive hover:text-destructive">
                     <Eraser />
-                    Clear browser data
+                    Reset device
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Clear all RecipeNest data?</AlertDialogTitle>
+                    <AlertDialogTitle>Reset this device?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Every profile, recipe, collection, meal plan and shopping list stored in this browser will be removed. The recipe catalog is not affected.
+                      Preferences and unsaved recipe drafts stored in this browser will be cleared. Your account, recipes, collections, meal plan and shopping list stay safe.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction variant="destructive" onClick={clearBrowser}>
-                      Clear everything
+                      Reset device
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

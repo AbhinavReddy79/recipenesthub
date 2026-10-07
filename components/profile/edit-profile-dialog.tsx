@@ -26,7 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { hasErrors, validateRequired, type FieldErrors } from "@/lib/validation";
 
-type Field = "name" | "username" | "bio";
+type Field = "name" | "username" | "bio" | "location";
 
 export function EditProfileDialog() {
   const [open, setOpen] = useState(false);
@@ -64,23 +64,29 @@ function ProfileFormFields({ profile, onDone, embedded = false }: { profile: Use
     avatar: profile.avatar,
   });
   const [errors, setErrors] = useState<FieldErrors<Field>>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const validate = (): FieldErrors<Field> => ({
     name: validateRequired(values.name, "Name", 2),
     username:
       validateRequired(values.username, "Username", 3) ??
-      (/^[a-z0-9_]+$/.test(values.username) ? undefined : "Use lowercase letters, numbers and underscores only."),
+      (/^[a-z0-9_]{3,24}$/.test(values.username) ? undefined : "Use 3–24 lowercase letters, numbers or underscores."),
     bio: values.bio.length > 160 ? "Keep your bio under 160 characters." : undefined,
+    location: values.location.trim().length > 80 ? "Keep your location under 80 characters." : undefined,
   });
 
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
     const next = validate();
     setErrors(next);
     if (hasErrors(next)) return;
-    const result = update(profile.id, { ...values, name: values.name.trim(), bio: values.bio.trim(), location: values.location.trim() });
+    setFormError(null);
+    setSaving(true);
+    const result = await update(profile.id, values).finally(() => setSaving(false));
     if (!result.ok) {
-      setErrors((e) => ({ ...e, username: result.error }));
+      if (result.field === "username") setErrors((e) => ({ ...e, username: result.error }));
+      else setFormError(result.error);
       return;
     }
     // In Settings these fields live in the Preferences section instead.
@@ -99,6 +105,11 @@ function ProfileFormFields({ profile, onDone, embedded = false }: { profile: Use
           <DialogTitle className="text-xl font-semibold">Edit profile</DialogTitle>
           <DialogDescription>Your name and photo appear on recipes you publish.</DialogDescription>
         </DialogHeader>
+      )}
+      {formError && (
+        <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+          {formError}
+        </p>
       )}
       <AvatarField id="profile-avatar" name={values.name} value={values.avatar} onChange={(avatar) => setValues((v) => ({ ...v, avatar }))} />
       <div className="grid gap-4 sm:grid-cols-2">
@@ -119,7 +130,7 @@ function ProfileFormFields({ profile, onDone, embedded = false }: { profile: Use
       <FormField id="profile-bio" label="Bio" error={errors.bio} hint={`${values.bio.length}/160`}>
         {(c) => <Textarea {...c} rows={3} value={values.bio} onChange={set("bio")} />}
       </FormField>
-      <FormField id="profile-location" label="Location" hint="Optional">
+      <FormField id="profile-location" label="Location" hint="Optional" error={errors.location}>
         {(c) => <Input {...c} value={values.location} onChange={set("location")} placeholder="City, Country" />}
       </FormField>
       {!embedded && (
@@ -169,8 +180,8 @@ function ProfileFormFields({ profile, onDone, embedded = false }: { profile: Use
       )}
       {embedded ? (
         <div>
-          <Button type="submit" size="lg">
-            Save profile
+          <Button type="submit" size="lg" disabled={saving}>
+            {saving ? "Saving…" : "Save profile"}
           </Button>
         </div>
       ) : (
@@ -178,7 +189,9 @@ function ProfileFormFields({ profile, onDone, embedded = false }: { profile: Use
           <Button type="button" variant="outline" onClick={onDone}>
             Cancel
           </Button>
-          <Button type="submit">Save changes</Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? "Saving…" : "Save changes"}
+          </Button>
         </DialogFooter>
       )}
     </form>

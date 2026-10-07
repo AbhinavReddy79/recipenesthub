@@ -1,14 +1,17 @@
-import { useMemo } from "react";
-import { accountsStore, toProfile } from "@/lib/storage/accounts";
+import { useEffect, useMemo } from "react";
 import { useStore } from "@/lib/storage/core";
-import { cookedStore, reviewsStorage, reviewsStore } from "@/lib/storage/reviews";
+import {
+  cookedStore,
+  loadReviews,
+  ratingsStore,
+  reviewsBySlugStore,
+  reviewsStorage,
+  type ReviewWithAuthor,
+} from "@/lib/storage/reviews";
 import type { Review } from "@/types/review";
-import type { UserProfile } from "@/types/user";
 import { useCurrentUser } from "./use-current-user";
 
-export interface ReviewWithAuthor extends Review {
-  author: UserProfile;
-}
+export type { ReviewWithAuthor };
 
 export interface RatingSummary {
   count: number;
@@ -25,19 +28,20 @@ export function summarize(reviews: Pick<Review, "rating">[]): RatingSummary {
   return { count, average: count ? reviews.reduce((s, r) => s + r.rating, 0) / count : 0, breakdown };
 }
 
-/** Real reviews of one recipe from profiles on this device, newest first. */
+const NO_REVIEWS: ReviewWithAuthor[] = [];
+
+/** Real reviews of one recipe, newest first (loaded when the recipe page opens). */
 export function useRecipeReviews(recipeSlug: string) {
-  const all = useStore(reviewsStore);
-  const accounts = useStore(accountsStore);
+  const bySlug = useStore(reviewsBySlugStore);
   const cooked = useStore(cookedStore);
   const { user } = useCurrentUser();
 
+  useEffect(() => {
+    void loadReviews(recipeSlug);
+  }, [recipeSlug]);
+
   return useMemo(() => {
-    const byId = new Map(accounts.map((a) => [a.id, toProfile(a)]));
-    const reviews: ReviewWithAuthor[] = all
-      .filter((r) => r.recipeSlug === recipeSlug && byId.has(r.authorId))
-      .map((r) => ({ ...r, author: byId.get(r.authorId)! }))
-      .sort((a, b) => (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt));
+    const reviews = bySlug[recipeSlug] ?? NO_REVIEWS;
     return {
       reviews,
       summary: summarize(reviews),
@@ -46,19 +50,20 @@ export function useRecipeReviews(recipeSlug: string) {
       cookedAt: cooked[recipeSlug] ?? null,
       ...reviewsStorage,
     };
-  }, [all, accounts, cooked, recipeSlug, user]);
+  }, [bySlug, cooked, recipeSlug, user]);
 }
 
-/** Total number of reviews on this device (admin dashboard). */
+/** Total number of reviews (admin dashboard). */
 export function useReviewCount() {
-  return useStore(reviewsStore).length;
+  const ratings = useStore(ratingsStore);
+  return useMemo(() => Object.values(ratings).reduce((sum, r) => sum + r.count, 0), [ratings]);
 }
 
 /** Average rating for one recipe from real reviews, or null when it has none. */
 export function useRatingSummary(recipeSlug: string): RatingSummary | null {
-  const all = useStore(reviewsStore);
-  return useMemo(() => {
-    const summary = summarize(all.filter((r) => r.recipeSlug === recipeSlug));
-    return summary.count ? summary : null;
-  }, [all, recipeSlug]);
+  const totals = useStore(ratingsStore)[recipeSlug];
+  return useMemo(
+    () => (totals && totals.count > 0 ? { count: totals.count, average: totals.average, breakdown: [] } : null),
+    [totals],
+  );
 }

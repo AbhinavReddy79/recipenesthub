@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LoginForm } from "./login-form";
@@ -28,12 +29,14 @@ export function AuthDialogProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<AuthMode>("login");
   const [success, setSuccess] = useState<string | null>(null);
+  const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
   const [reason, setReason] = useState<string | null>(null);
 
   const openAuth = useCallback((next: AuthMode, why?: string) => {
     setReason(why ?? null);
     setMode(next);
     setSuccess(null);
+    setConfirmEmail(null);
     setOpen(true);
   }, []);
 
@@ -54,7 +57,18 @@ export function AuthDialogProvider({ children }: { children: ReactNode }) {
       {children}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 sm:max-w-md sm:p-8">
-          {success ? (
+          {confirmEmail ? (
+            <>
+              <DialogTitle className="sr-only">Confirm your email</DialogTitle>
+              <DialogDescription className="sr-only">A confirmation link has been sent to your email.</DialogDescription>
+              <AuthSuccess
+                icon={<MailCheck aria-hidden />}
+                title="Check your inbox"
+                description={`We sent a confirmation link to ${confirmEmail}. Open it to finish creating your profile, then you'll be signed in.`}
+                actions={<Button onClick={() => setOpen(false)}>Got it</Button>}
+              />
+            </>
+          ) : success ? (
             <>
               <DialogTitle className="sr-only">Signed in</DialogTitle>
               <DialogDescription className="sr-only">You are now signed in.</DialogDescription>
@@ -100,7 +114,7 @@ export function AuthDialogProvider({ children }: { children: ReactNode }) {
               ) : (
                 <RegisterForm
                   idPrefix="dialog-register"
-                  onSuccess={(name) => setSuccess(name)}
+                  onSuccess={(name, email) => (email ? setConfirmEmail(email) : setSuccess(name))}
                   switchToLogin={switchLink("login", "Log in")}
                 />
               )}

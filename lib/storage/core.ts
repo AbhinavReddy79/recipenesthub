@@ -1,24 +1,18 @@
 import { useSyncExternalStore } from "react";
-import type { Session } from "@/types/user";
 
 /**
- * Minimal external stores persisted to localStorage.
+ * Small external stores the hooks subscribe to.
  *
- * Two scopes:
- * - "device": shared by everyone using this browser (accounts, the session,
- *   published community recipes).
- * - "user": namespaced by the signed-in account. With nobody signed in these
- *   read as their empty default and writes are ignored, so personal data can
- *   never leak between accounts or exist without one.
+ * - Memory stores hold data loaded from Supabase (the source of truth for
+ *   accounts and personal data). Updates are applied optimistically and then
+ *   saved; see lib/storage/remote.ts.
+ * - Local stores persist device-only preferences to localStorage (pricing
+ *   region, unsaved recipe-form progress) that work without an account.
  *
- * The server (and the hydration pass) always sees the default value, so markup
- * matches; the client re-renders with saved data right after hydration. Every
- * read goes through `sanitize`, so missing or corrupted data falls back safely.
- *
- * When a backend arrives, the modules in lib/storage keep their API and only
- * their implementation changes.
+ * The server (and the hydration pass) always sees the initial value, so markup
+ * matches; the client re-renders once data has loaded.
  */
-export interface PersistentStore<T> {
+export interface Store<T> {
   get(): T;
   getServerSnapshot(): T;
   set(next: T | ((prev: T) => T)): void;
@@ -69,83 +63,64 @@ export function arrayOf<T>(guard: (item: unknown) => item is T): Sanitizer<T[]> 
   return (value) => (Array.isArray(value) ? value.filter(guard) : null);
 }
 
-/* ---------- Store factory ---------- */
+/* ---------- Stores ---------- */
 
-type Scope = "device" | "user";
-
-const registry: Array<{ scope: Scope; reset: () => void; invalidate: () => void }> = [];
-const scopeListeners = new Set<() => void>();
-let activeUserCache: { value: string | null } | null = null;
-
-/** The signed-in account id, read straight from the persisted session. */
-export function getActiveUserId(): string | null {
-  if (typeof window === "undefined") return null;
-  if (!activeUserCache) {
-    const raw = readJSON(SESSION_KEY);
-    activeUserCache = { value: isRecord(raw) && isString(raw.userId) ? raw.userId : null };
-  }
-  return activeUserCache.value;
-}
-
-/** Storage key prefix for one account's personal data. */
-export const userKeyPrefix = (userId: string) => `${STORAGE_PREFIX}u:${userId}:`;
-
-function notifyScopeChange() {
-  activeUserCache = null;
-  registry.forEach((s) => s.scope === "user" && s.invalidate());
-  scopeListeners.forEach((listener) => listener());
-}
-
-export function createPersistentStore<T>(
-  name: string,
-  initial: T,
-  sanitize: Sanitizer<T>,
-  scope: Scope = "device",
-): PersistentStore<T> {
+/** In-memory store for data loaded from Supabase. */
+export function createMemoryStore<T>(initial: T): Store<T> {
+  let value = initial;
   const listeners = new Set<() => void>();
-  let cache: { key: string | null; value: T } | null = null;
-
-  const keyFor = (): string | null => {
-    if (scope === "device") return STORAGE_PREFIX + name;
-    const userId = getActiveUserId();
-    return userId ? userKeyPrefix(userId) + name : null;
+  const emit = () => listeners.forEach((listener) => listener());
+  const store: Store<T> = {
+    get: () => value,
+    getServerSnapshot: () => initial,
+    set(next) {
+      value = typeof next === "function" ? (next as (prev: T) => T)(value) : next;
+      emit();
+    },
+    reset() {
+      value = initial;
+      emit();
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
   };
+  return store;
+}
 
+/** Device-only store persisted to localStorage and synced across tabs. */
+export function createLocalStore<T>(name: string, initial: T, sanitize: Sanitizer<T>): Store<T> {
+  const key = STORAGE_PREFIX + name;
+  const listeners = new Set<() => void>();
+  let cache: { value: T } | null = null;
   const emit = () => listeners.forEach((listener) => listener());
 
-  const store: PersistentStore<T> = {
+  const store: Store<T> = {
     get() {
       if (typeof window === "undefined") return initial;
-      const key = keyFor();
-      if (!cache || cache.key !== key) {
-        const parsed = key ? readJSON(key) : undefined;
-        cache = { key, value: parsed === undefined ? initial : (sanitize(parsed) ?? initial) };
+      if (!cache) {
+        const parsed = readJSON(key);
+        cache = { value: parsed === undefined ? initial : (sanitize(parsed) ?? initial) };
       }
       return cache.value;
     },
-    getServerSnapshot() {
-      return initial;
-    },
+    getServerSnapshot: () => initial,
     set(next) {
-      const key = keyFor();
-      if (!key) return; // user-scoped data needs a signed-in account
       const value = typeof next === "function" ? (next as (prev: T) => T)(store.get()) : next;
-      cache = { key, value };
+      cache = { value };
       writeJSON(key, value);
       emit();
     },
     reset() {
-      const key = keyFor();
-      if (key) removeKey(key);
+      removeKey(key);
       cache = null;
       emit();
     },
     subscribe(listener) {
       listeners.add(listener);
-      if (scope === "user") scopeListeners.add(listener);
       const onStorage = (event: StorageEvent) => {
-        if (event.key === null || event.key === keyFor() || event.key === SESSION_KEY) {
-          if (event.key === SESSION_KEY) activeUserCache = null;
+        if (event.key === null || event.key === key) {
           cache = null;
           listener();
         }
@@ -153,24 +128,18 @@ export function createPersistentStore<T>(
       window.addEventListener("storage", onStorage);
       return () => {
         listeners.delete(listener);
-        scopeListeners.delete(listener);
         window.removeEventListener("storage", onStorage);
       };
     },
   };
-
-  registry.push({
-    scope,
-    reset: store.reset,
-    invalidate: () => {
-      cache = null;
-    },
-  });
+  localStores.push(store);
   return store;
 }
 
-/** Clears every RecipeNest key in this browser (all accounts and their data). */
-export function clearAllLocalData(): void {
+const localStores: Pick<Store<unknown>, "reset">[] = [];
+
+/** Clears everything RecipeNest keeps in this browser (preferences and unsaved drafts). */
+export function clearLocalData(): void {
   try {
     Object.keys(window.localStorage)
       .filter((k) => k.startsWith(STORAGE_PREFIX))
@@ -178,42 +147,9 @@ export function clearAllLocalData(): void {
   } catch {
     // ignore
   }
-  registry.forEach((s) => s.invalidate());
-  notifyScopeChange();
-  sessionStore.reset();
+  localStores.forEach((store) => store.reset());
 }
 
-/** Removes every personal key that belongs to one account. */
-export function clearUserData(userId: string): void {
-  const prefix = userKeyPrefix(userId);
-  try {
-    Object.keys(window.localStorage)
-      .filter((k) => k.startsWith(prefix))
-      .forEach((k) => window.localStorage.removeItem(k));
-  } catch {
-    // ignore
-  }
-  notifyScopeChange();
-}
-
-export function useStore<T>(store: PersistentStore<T>): T {
+export function useStore<T>(store: Store<T>): T {
   return useSyncExternalStore(store.subscribe, store.get, store.getServerSnapshot);
-}
-
-/* ---------- Session ---------- */
-
-const SESSION_KEY = `${STORAGE_PREFIX}session`;
-const signedOut: Session = { userId: null, remember: true };
-
-/**
- * Which account is signed in on this device. Changing it switches every
- * user-scoped store to that account's data.
- */
-export const sessionStore = createPersistentStore<Session>("session", signedOut, (v) =>
-  isRecord(v) ? { userId: isString(v.userId) ? v.userId : null, remember: v.remember !== false } : null,
-);
-
-export function setSession(session: Session): void {
-  sessionStore.set(session);
-  notifyScopeChange();
 }
