@@ -545,3 +545,25 @@ create policy "Users replace their own images"
 create policy "Users delete their own images"
   on storage.objects for delete to authenticated
   using (bucket_id in ('avatars', 'recipe-images') and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- ---------------------------------------------------------------------------
+-- Data API grants. New Supabase projects don't expose public tables to the
+-- API roles automatically, so grant exactly what the app needs. RLS above
+-- still decides which rows each role can see or change.
+-- ---------------------------------------------------------------------------
+
+grant usage on schema public to anon, authenticated;
+
+grant select on public.profiles, public.recipes, public.recipe_ingredients, public.recipe_steps,
+  public.reviews, public.recipe_ratings to anon;
+
+grant select, update on public.profiles to authenticated;
+grant select, insert, update on public.user_settings to authenticated;
+grant select, insert, update, delete on public.recipes, public.recipe_ingredients, public.recipe_steps,
+  public.favorites, public.collections, public.collection_recipes, public.meal_plan_entries,
+  public.shopping_list_items, public.reviews, public.cooked_log to authenticated;
+grant select on public.recipe_ratings to authenticated;
+
+-- Policies call these helpers, so the API roles must be able to execute them.
+grant execute on function public.is_admin() to anon, authenticated;
+grant execute on function public.is_active_user() to anon, authenticated;
