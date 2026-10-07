@@ -1,26 +1,525 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: var(--font-body);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-heading: var(--font-display);
+  --font-display: var(--font-display);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* RecipeNest brand tokens */
+  --color-surface: var(--surface);
+  --color-herb: var(--herb);
+  --color-herb-foreground: var(--herb-foreground);
+  --color-herb-soft: var(--herb-soft);
+  --color-terracotta: var(--terracotta);
+  --color-terracotta-soft: var(--terracotta-soft);
+  --color-saffron: var(--saffron);
+  --color-success: var(--success);
+  --color-ink: var(--ink);
+  --color-coral: var(--coral);
+  --color-berry: var(--berry);
+  --color-berry-soft: var(--berry-soft);
+  --color-ocean: var(--ocean);
+  --color-ocean-soft: var(--ocean-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+
+  /* The current module's accent — set with data-tone="herb|berry|ocean|amber" on any wrapper */
+  --color-tone: var(--tone);
+  --color-tone-soft: var(--tone-soft);
+  --color-tone-foreground: var(--tone-foreground);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --shadow-soft: 0 1px 2px oklch(0.25 0.03 170 / 0.06), 0 2px 8px -2px oklch(0.25 0.03 170 / 0.07);
+  --shadow-card: 0 1px 2px oklch(0.25 0.03 170 / 0.05), 0 6px 18px -6px oklch(0.25 0.04 170 / 0.13);
+  --shadow-lift: 0 2px 4px oklch(0.25 0.03 170 / 0.06), 0 22px 40px -14px oklch(0.25 0.05 170 / 0.3);
+  --shadow-glow: 0 8px 24px -8px color-mix(in oklch, var(--primary) 55%, transparent);
+
+  --animate-heart-pop: heart-pop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+
+  @keyframes heart-pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  --animate-page-in: page-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-float-slow: float 9s ease-in-out infinite;
+  --animate-ken-burns: ken-burns 26s ease-in-out infinite alternate;
+  --animate-pop: pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+  --animate-gradient-x: gradient-x 5s ease-in-out infinite;
+  --animate-wiggle: wiggle 0.6s ease-in-out;
+  --animate-spin-slow: spin 22s linear infinite;
+  --animate-bounce-soft: bounce-soft 2.2s ease-in-out infinite;
+
+  @keyframes page-in {
+    from { opacity: 0; transform: translateY(14px); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes ken-burns {
+    from { transform: scale(1.04) translate3d(0, 0, 0); }
+    to { transform: scale(1.14) translate3d(-1.5%, -1%, 0); }
+  }
+  @keyframes pop {
+    0% { opacity: 0; transform: scale(0.6); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes gradient-x {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-8deg); }
+    75% { transform: rotate(8deg); }
+  }
+  @keyframes bounce-soft {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  @keyframes shimmer {
+    from { background-position: 150% 0; }
+    to { background-position: -50% 0; }
+  }
+
+  --animate-rise: rise 0.6s ease-out both;
+    --animate-draw: draw 1s cubic-bezier(0.65, 0, 0.35, 1) 0.7s both;
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes draw {
+    from { stroke-dashoffset: 1; }
+    to { stroke-dashoffset: 0; }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:root {
+  --radius: 0.75rem;
+
+  /* Ivory page, deep green-black ink, white cards that sit up off the page */
+  --background: oklch(0.985 0.01 95);
+  --foreground: oklch(0.22 0.03 170);
+  --surface: oklch(0.96 0.016 95);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.03 170);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.03 170);
+
+  /* Emerald — the main brand and action colour */
+  --primary: oklch(0.48 0.095 168);
+  --primary-foreground: oklch(0.99 0.005 95);
+
+  /* Gold — highlights, stars and decorative accents (not for text) */
+  --saffron: oklch(0.79 0.14 80);
+
+  /* Coral-red for hearts and saves */
+  --terracotta: oklch(0.58 0.19 27);
+  --terracotta-soft: oklch(0.95 0.025 35);
+
+  /* Leaf green — diets, "you have this", lunch */
+  --herb: oklch(0.52 0.13 135);
+  --herb-foreground: oklch(0.99 0.005 95);
+  --herb-soft: oklch(0.95 0.04 130);
+
+  /* Pale gold chips */
+  --secondary: oklch(0.95 0.04 88);
+  --secondary-foreground: oklch(0.42 0.09 70);
+
+  --muted: oklch(0.955 0.012 95);
+  --muted-foreground: oklch(0.48 0.025 170);
+  --accent: oklch(0.95 0.03 165);
+  --accent-foreground: oklch(0.38 0.08 168);
+
+  --success: oklch(0.52 0.12 150);
+  --destructive: oklch(0.55 0.2 27);
+
+  --border: oklch(0.91 0.015 95);
+  --input: oklch(0.87 0.02 95);
+  --ring: oklch(0.48 0.095 168);
+
+  /* Deep emerald band (footer, meal-plan CTA, photo fallbacks) */
+  --ink: oklch(0.25 0.045 170);
+
+  /* Module accents */
+  --coral: oklch(0.56 0.16 35);
+  --berry: oklch(0.52 0.17 355);
+  --berry-soft: oklch(0.955 0.03 355);
+  --ocean: oklch(0.5 0.1 235);
+  --ocean-soft: oklch(0.955 0.025 230);
+  --amber: oklch(0.55 0.12 72);
+  --amber-soft: oklch(0.96 0.045 88);
+  --on-tone: oklch(0.99 0.005 95);
+
+  --chart-1: oklch(0.48 0.095 168);
+  --chart-2: oklch(0.79 0.14 80);
+  --chart-3: oklch(0.56 0.16 35);
+  --chart-4: oklch(0.5 0.1 235);
+  --chart-5: oklch(0.52 0.13 135);
+}
+
+.dark {
+  /* Warm charcoal, slightly lifted surfaces; emerald stays for actions and accents */
+  --background: oklch(0.17 0.006 70);
+  --foreground: oklch(0.95 0.01 90);
+  --surface: oklch(0.2 0.007 70);
+  --card: oklch(0.22 0.008 70);
+  --card-foreground: oklch(0.95 0.01 90);
+  --popover: oklch(0.24 0.008 70);
+  --popover-foreground: oklch(0.95 0.01 90);
+
+  --primary: oklch(0.74 0.13 165);
+  --primary-foreground: oklch(0.18 0.03 170);
+
+  --saffron: oklch(0.83 0.14 82);
+
+  --terracotta: oklch(0.7 0.17 27);
+  --terracotta-soft: oklch(0.28 0.04 30);
+
+  --herb: oklch(0.78 0.14 135);
+  --herb-foreground: oklch(0.18 0.03 135);
+  --herb-soft: oklch(0.27 0.045 135);
+
+  --secondary: oklch(0.27 0.035 85);
+  --secondary-foreground: oklch(0.88 0.08 85);
+
+  --muted: oklch(0.26 0.008 70);
+  --muted-foreground: oklch(0.74 0.012 85);
+  --accent: oklch(0.27 0.04 165);
+  --accent-foreground: oklch(0.9 0.07 165);
+
+  --success: oklch(0.76 0.13 150);
+  --destructive: oklch(0.68 0.17 27);
+
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.74 0.13 165);
+
+  --ink: oklch(0.19 0.008 70);
+
+  --coral: oklch(0.74 0.14 35);
+  --berry: oklch(0.75 0.14 355);
+  --berry-soft: oklch(0.27 0.045 355);
+  --ocean: oklch(0.76 0.1 225);
+  --ocean-soft: oklch(0.26 0.035 225);
+  --amber: oklch(0.82 0.13 80);
+  --amber-soft: oklch(0.28 0.045 80);
+  --on-tone: oklch(0.18 0.03 170);
+
+  --chart-1: oklch(0.74 0.13 165);
+  --chart-2: oklch(0.83 0.14 82);
+  --chart-3: oklch(0.74 0.14 35);
+  --chart-4: oklch(0.76 0.1 225);
+  --chart-5: oklch(0.78 0.14 135);
+}
+
+/*
+ * Warm charcoal bands (footer, meal-plan CTA). Used together with .dark so the
+ * light-on-dark tokens apply, but with neutral surfaces instead of green ones.
+ */
+.dark.band-charcoal {
+  --ink: oklch(0.19 0.008 70);
+  --background: oklch(0.19 0.008 70);
+  --surface: oklch(0.22 0.008 70);
+  --card: oklch(0.24 0.009 70);
+  --popover: oklch(0.26 0.009 70);
+  --muted: oklch(0.27 0.009 70);
+  --muted-foreground: oklch(0.75 0.012 85);
+  --foreground: oklch(0.96 0.008 90);
+  --card-foreground: oklch(0.96 0.008 90);
+}
+
+/*
+ * Module accent. Declared on :root and .dark (so it follows the theme) and on
+ * every [data-tone] wrapper (so --tone-soft is computed from that tone).
+ */
+:root,
+.dark,
+[data-tone] {
+  --tone: var(--primary);
+  --tone-foreground: var(--primary-foreground);
+  --tone-soft: color-mix(in oklch, var(--tone) 13%, transparent);
+}
+[data-tone="herb"] { --tone: var(--herb); --tone-foreground: var(--herb-foreground); }
+[data-tone="berry"] { --tone: var(--berry); --tone-foreground: var(--on-tone); }
+[data-tone="ocean"] { --tone: var(--ocean); --tone-foreground: var(--on-tone); }
+[data-tone="amber"] { --tone: var(--amber); --tone-foreground: var(--on-tone); }
+[data-tone="red"] { --tone: var(--terracotta); --tone-foreground: var(--on-tone); }
+[data-tone="coral"] { --tone: var(--coral); --tone-foreground: var(--on-tone); }
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3 {
+    @apply font-display;
+    font-optical-sizing: auto;
+    letter-spacing: -0.015em;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 25%, transparent);
+  }
+}
+
+@layer utilities {
+  .container-page {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  /* Soft dotted texture for page headers and feature panels */
+  .bg-dots {
+    background-image: radial-gradient(color-mix(in oklch, var(--tone) 18%, transparent) 1px, transparent 1.5px);
+    background-size: 20px 20px;
+  }
+  /* Warm glow behind page headers */
+  .bg-warm-glow {
+    background:
+      radial-gradient(60% 120% at 100% 0%, color-mix(in oklch, var(--tone) 14%, transparent), transparent 70%),
+      radial-gradient(50% 100% at 0% 100%, color-mix(in oklch, var(--saffron) 14%, transparent), transparent 70%),
+      var(--surface);
+  }
+}
+
+@layer components {
+  /*
+   * A light sweep across solid buttons on hover. In the components layer so
+   * utilities like `absolute` on a particular button still win.
+   */
+  [data-slot="button"][data-variant="default"] {
+    position: relative;
+    overflow: hidden;
+  }
+  [data-slot="button"][data-variant="default"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(110deg, transparent 30%, oklch(1 0 0 / 0.3) 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform 0.75s ease;
+  }
+  [data-slot="button"][data-variant="default"]:hover::after {
+    transform: translateX(120%);
+  }
+
+  /* Loading placeholders sweep instead of blinking. */
+  .skeleton-shimmer {
+    background-color: var(--muted);
+    background-image: linear-gradient(
+      100deg,
+      transparent 20%,
+      color-mix(in oklch, var(--card) 70%, transparent) 50%,
+      transparent 80%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: shimmer 1.6s linear infinite;
+  }
+
+  /* Shimmering gold for accent words in headlines over photos. */
+  .text-gradient-gold {
+    background-image: linear-gradient(
+      90deg,
+      var(--saffron),
+      oklch(0.9 0.11 92),
+      var(--saffron),
+      oklch(0.74 0.14 70),
+      var(--saffron)
+    );
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: var(--animate-gradient-x);
+  }
+}
+
+/*
+ * Scroll reveal (every page). Hidden states only apply once <ScrollReveal /> has
+ * added .js-reveal to <html>, so content is always visible without JS or with
+ * reduced motion. One-shot animations (not transitions) so nothing lingers to
+ * interfere with an element's own hover effects afterwards.
+ */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* Sections fade up as they enter the viewport. */
+.js-reveal [data-reveal]:not([data-reveal-grid]):not([data-revealed]) {
+  opacity: 0;
+}
+.js-reveal [data-reveal]:not([data-reveal-grid])[data-revealed] {
+  animation: reveal-up 0.6s ease-out backwards;
+}
+
+/*
+ * Grid items follow one after another — either the grid is observed itself
+ * (data-reveal + data-reveal-grid) or it sits inside an observed section.
+ */
+.js-reveal [data-reveal-grid][data-reveal]:not([data-revealed]) > *,
+.js-reveal [data-reveal]:not([data-revealed]) [data-reveal-grid]:not([data-reveal]) > * {
+  opacity: 0;
+}
+.js-reveal [data-reveal-grid][data-reveal][data-revealed] > *,
+.js-reveal [data-reveal][data-revealed] [data-reveal-grid]:not([data-reveal]) > * {
+  animation: reveal-up 0.5s ease-out backwards;
+  animation-delay: calc(var(--reveal-i, 0) * 60ms + 80ms);
+}
+[data-reveal-grid] > :nth-child(2) { --reveal-i: 1; }
+[data-reveal-grid] > :nth-child(3) { --reveal-i: 2; }
+[data-reveal-grid] > :nth-child(4) { --reveal-i: 3; }
+[data-reveal-grid] > :nth-child(5) { --reveal-i: 4; }
+[data-reveal-grid] > :nth-child(6) { --reveal-i: 5; }
+[data-reveal-grid] > :nth-child(7) { --reveal-i: 6; }
+[data-reveal-grid] > :nth-child(n + 8) { --reveal-i: 7; }
+
+/* Logo intro (homepage and admin dashboard): plays once, then rests. */
+.logo-animated .logo-mark {
+  animation: logo-in 0.5s ease-out both;
+}
+.logo-animated .logo-leaf {
+  transform-box: fill-box;
+  animation: logo-leaf-in 0.5s ease-out 0.2s both;
+}
+.logo-animated .logo-leaf-big {
+  transform-origin: 0% 100%;
+}
+.logo-animated .logo-leaf-small {
+  transform-origin: 100% 100%;
+  animation-delay: 0.3s;
+}
+
+@keyframes logo-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes logo-leaf-in {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  header,
+  footer,
+  nav,
+  [data-print-hide],
+  [data-sonner-toaster],
+  [role="dialog"],
+  nextjs-portal {
+    display: none !important;
+  }
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  [data-print-root] * {
+    color: black !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    animation: none !important;
+  }
+  [data-print-root] h1 {
+    font-size: 26pt;
+  }
+  /* Print everything, even sections that were never scrolled into view. */
+  [data-reveal],
+  [data-reveal-grid] > * {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+  [data-print-root] li,
+  [data-print-root] dl > div {
+    break-inside: avoid;
+  }
 }

@@ -1,0 +1,43 @@
+import { cn } from "@/lib/utils";
+
+interface LogoProps {
+  showWordmark?: boolean;
+  className?: string;
+  /** Plays a short one-time intro (the mark settles in and the sprig grows). */
+  animated?: boolean;
+}
+
+/** RecipeNest mark: a bowl cradling a sprig, drawn in brand tokens. */
+export function Logo({ showWordmark = true, className, animated = false }: LogoProps) {
+  return (
+    <span className={cn("inline-flex items-center gap-2.5", animated && "logo-animated")}>
+      <span
+        className={cn(
+          "logo-mark relative flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-saffron via-[color-mix(in_oklch,var(--saffron),var(--coral)_55%)] to-coral text-white shadow-[0_6px_18px_-6px_var(--coral)] ring-2 ring-saffron/35 ring-offset-2 ring-offset-background transition-transform duration-300 group-hover/logo:-rotate-6 group-hover/logo:scale-110",
+          className,
+        )}
+        aria-hidden
+      >
+        <svg viewBox="0 0 32 32" className="size-[62%]" fill="none">
+          <path d="M5 15.5h22c0 6.1-4.9 11-11 11s-11-4.9-11-11Z" fill="currentColor" />
+          <path
+            className="logo-leaf logo-leaf-big fill-primary"
+            d="M16 14c0-4.2 2.6-7.4 6.5-8.5-.3 4.3-2.9 7.6-6.5 8.5Z"
+          />
+          <path
+            className="logo-leaf logo-leaf-small"
+            d="M16 14c0-3-1.8-5.4-4.6-6.3.1 3.1 2 5.6 4.6 6.3Z"
+            fill="currentColor"
+            opacity="0.75"
+          />
+        </svg>
+      </span>
+      {showWordmark && (
+        <span className="font-display text-[1.5rem] font-bold leading-none tracking-tight">
+          Recipe
+          <span className="bg-gradient-to-r from-coral to-amber bg-clip-text text-transparent">Nest</span>
+        </span>
+      )}
+    </span>
+  );
+}
