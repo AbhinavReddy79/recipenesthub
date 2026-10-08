@@ -16,7 +16,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <TooltipProvider delayDuration={300}>
         <AuthDialogProvider>
           {children}
-          <Toaster position="bottom-center" mobileOffset={{ bottom: "calc(5rem + env(safe-area-inset-bottom))" }} />
+          <Toaster position="bottom-center" mobileOffset={{ bottom: "calc(5.75rem + env(safe-area-inset-bottom))" }} />
         </AuthDialogProvider>
       </TooltipProvider>
     </ThemeProvider>

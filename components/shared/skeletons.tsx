@@ -21,7 +21,7 @@ export function RecipeGridSkeleton({ count = 8, columns = 4 }: { count?: number;
       role="status"
       aria-label="Loading recipes"
       className={cn(
-        "grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6",
+        "grid grid-cols-2 gap-x-3 gap-y-4 sm:gap-6",
         columns === 4 ? "lg:grid-cols-3 xl:grid-cols-4" : "lg:grid-cols-3",
       )}
     >

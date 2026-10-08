@@ -66,9 +66,9 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  --shadow-soft: 0 1px 2px oklch(0.25 0.03 170 / 0.06), 0 2px 8px -2px oklch(0.25 0.03 170 / 0.07);
-  --shadow-card: 0 1px 2px oklch(0.25 0.03 170 / 0.05), 0 6px 18px -6px oklch(0.25 0.04 170 / 0.13);
-  --shadow-lift: 0 2px 4px oklch(0.25 0.03 170 / 0.06), 0 22px 40px -14px oklch(0.25 0.05 170 / 0.3);
+  --shadow-soft: 0 1px 2px oklch(0.25 0.03 170 / 0.04), 0 4px 14px -4px oklch(0.25 0.03 170 / 0.09);
+  --shadow-card: 0 1px 3px oklch(0.25 0.03 170 / 0.04), 0 10px 30px -12px oklch(0.25 0.04 170 / 0.16);
+  --shadow-lift: 0 2px 6px oklch(0.25 0.03 170 / 0.05), 0 26px 50px -18px oklch(0.25 0.05 170 / 0.26);
   --shadow-glow: 0 8px 24px -8px color-mix(in oklch, var(--primary) 55%, transparent);
 
   --animate-heart-pop: heart-pop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.4);
@@ -141,7 +141,7 @@
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 0.875rem;
 
   /* Ivory page, deep green-black ink, white cards that sit up off the page */
   --background: oklch(0.985 0.01 95);
@@ -180,8 +180,8 @@
   --success: oklch(0.52 0.12 150);
   --destructive: oklch(0.55 0.2 27);
 
-  --border: oklch(0.91 0.015 95);
-  --input: oklch(0.87 0.02 95);
+  --border: oklch(0.925 0.013 95);
+  --input: oklch(0.885 0.018 95);
   --ring: oklch(0.48 0.095 168);
 
   /* Deep emerald band (footer, meal-plan CTA, photo fallbacks) */

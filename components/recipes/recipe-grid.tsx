@@ -32,7 +32,7 @@ export function RecipeGrid({
       className={cn(
         mobileCarousel
           ? "-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-px-4 px-4 pt-1 pb-5 scrollbar-none sm:mx-0 sm:grid sm:snap-none sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pt-0 sm:pb-0"
-          : "grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6",
+          : cn("grid gap-x-3 gap-y-4 sm:grid-cols-2 sm:gap-6", renderActions ? "grid-cols-1" : "grid-cols-2"),
         columns === 4 ? "lg:grid-cols-3 xl:grid-cols-4" : "lg:grid-cols-3",
         className,
       )}
@@ -48,8 +48,8 @@ export function RecipeGrid({
             actions={renderActions?.(recipe)}
             sizes={
               columns === 4
-                ? "(min-width: 1280px) 22vw, (min-width: 1024px) 30vw, (min-width: 640px) 46vw, 92vw"
-                : "(min-width: 1024px) 28vw, (min-width: 640px) 46vw, 92vw"
+                ? `(min-width: 1280px) 22vw, (min-width: 1024px) 30vw, (min-width: 640px) 46vw, ${mobileCarousel ? "80vw" : "48vw"}`
+                : `(min-width: 1024px) 28vw, (min-width: 640px) 46vw, ${mobileCarousel ? "80vw" : "48vw"}`
             }
           />
         </li>

@@ -21,7 +21,7 @@ export function MobileTabBar() {
   return (
     <nav
       aria-label="Quick navigation"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/85 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_20px_-12px_oklch(0.25_0.03_170/0.25)] backdrop-blur-xl backdrop-saturate-150 md:hidden print:hidden"
+      className="fixed inset-x-3 bottom-[calc(0.625rem+env(safe-area-inset-bottom))] z-40 rounded-[1.75rem] border border-white/70 bg-card/80 shadow-[0_12px_32px_-12px_oklch(0.25_0.04_170/0.28),0_2px_6px_-2px_oklch(0.25_0.03_170/0.08)] backdrop-blur-xl backdrop-saturate-150 md:hidden print:hidden dark:border-white/10 dark:bg-card/85"
     >
       <ul className="mx-auto grid max-w-md grid-cols-5">
         {TABS.map(({ href, label, icon: Icon }) => {
@@ -32,14 +32,14 @@ export function MobileTabBar() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "group flex h-16 flex-col items-center justify-center gap-1 text-[0.6875rem] font-semibold transition-colors",
+                  "group flex h-[3.75rem] flex-col items-center justify-center gap-0.5 text-[0.6875rem] font-semibold transition-colors",
                   active ? "text-primary" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <span
                   className={cn(
                     "flex h-8 w-12 items-center justify-center rounded-full transition-all duration-300",
-                    active ? "bg-primary/12 scale-105" : "group-active:scale-90",
+                    active ? "bg-primary/12 shadow-[inset_0_1px_2px_oklch(0.25_0.04_170/0.08)]" : "group-active:scale-90",
                   )}
                 >
                   <Icon className={cn("size-5", active && href === "/saved" && "fill-current")} strokeWidth={active ? 2.25 : 1.9} aria-hidden />
