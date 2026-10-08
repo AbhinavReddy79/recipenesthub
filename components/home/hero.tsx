@@ -105,7 +105,7 @@ function FeaturedCard({ recipe }: { recipe: Recipe }) {
         </span>
       </div>
       <div className="grid gap-3 px-2 pt-4 pb-2">
-        <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
+        <p className="text-xs font-semibold tracking-[0.14em] text-gold-ink uppercase">
           {CUISINE_LABELS[recipe.cuisine]}
         </p>
         <h2 className="text-2xl leading-tight font-semibold">

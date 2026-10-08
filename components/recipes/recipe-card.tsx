@@ -71,7 +71,7 @@ export function RecipeCard({
       </div>
 
       <div className="flex flex-1 flex-col p-3 @3xs:p-4 @xs:p-5">
-        <p className="truncate text-[0.625rem] font-bold tracking-[0.12em] text-primary uppercase @3xs:text-[0.6875rem] @3xs:tracking-[0.14em]">
+        <p className="truncate text-[0.625rem] font-bold tracking-[0.12em] text-gold-ink uppercase @3xs:text-[0.6875rem] @3xs:tracking-[0.14em]">
           {CUISINE_LABELS[recipe.cuisine]}
         </p>
         <h3 className="mt-1 font-display text-[0.9375rem] leading-snug font-semibold @3xs:mt-1.5 @3xs:text-[1.1875rem]">

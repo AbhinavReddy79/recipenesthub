@@ -53,7 +53,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   // The site opens in the light theme by default, so the browser bar matches it.
-  themeColor: "#fcfaf3",
+  themeColor: "#fbfaf7",
 };
 
 async function buildSearchIndex(): Promise<SearchIndexItem[]> {

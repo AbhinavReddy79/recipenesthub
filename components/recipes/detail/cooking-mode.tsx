@@ -170,7 +170,7 @@ export function CookingMode() {
               </div>
             ) : (
               <div key={step.id} className="grid gap-8 animate-fade-up">
-                <p className="text-sm font-semibold tracking-[0.14em] text-primary uppercase">
+                <p className="text-sm font-semibold tracking-[0.14em] text-gold-ink uppercase">
                   Step {index + 1} of {total}
                 </p>
                 <p

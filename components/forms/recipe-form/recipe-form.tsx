@@ -210,7 +210,7 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
       <section aria-labelledby="step-title" className="min-w-0 rounded-3xl border bg-card p-5 shadow-card sm:p-8">
         <Progress value={((step + 1) / STEPS.length) * 100} aria-label="Recipe form progress" className="mb-6" />
         <header className="mb-8 grid gap-1 border-b pb-6">
-          <p className="text-xs font-semibold tracking-[0.14em] text-primary uppercase">
+          <p className="text-xs font-semibold tracking-[0.14em] text-gold-ink uppercase">
             Step {step + 1} of {STEPS.length}
           </p>
           <h2 id="step-title" className="text-2xl font-semibold sm:text-3xl">

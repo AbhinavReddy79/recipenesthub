@@ -17,7 +17,7 @@ export function CompactRecipeList({ recipes }: { recipes: Recipe[] }) {
               <Image src={recipe.image} alt="" fill sizes="112px" className="object-cover transition-transform duration-500 group-hover:scale-105" />
             </span>
             <div className="grid min-w-0 flex-1 gap-1">
-              <p className="text-[0.6875rem] font-bold tracking-[0.14em] text-primary uppercase">
+              <p className="text-[0.6875rem] font-bold tracking-[0.14em] text-gold-ink uppercase">
                 {CUISINE_LABELS[recipe.cuisine]}
               </p>
               <h3 className="font-display text-lg leading-snug font-semibold">
