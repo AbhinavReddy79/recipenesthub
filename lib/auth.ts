@@ -7,7 +7,9 @@ import { fetchProfile, toProfile, type AccountResult } from "@/lib/storage/accou
 import { removeUserImages } from "@/lib/storage/remote";
 import { getActiveUserId } from "@/lib/storage/session";
 import { rememberSignIn, stashPendingAvatar } from "@/lib/storage/sync";
+import { createClient } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase/client";
+import { isSupabaseConfigured, supabaseKey, supabaseUrl } from "@/lib/supabase/env";
 
 export type AuthResult = AccountResult;
 export type SimpleResult = { ok: true } | { ok: false; error: string };
@@ -19,6 +21,17 @@ const EMAIL_RATE_LIMITED =
 /** Supabase caps how many auth emails a project can send per hour. */
 const isEmailRateLimited = (error: { code?: string; status?: number }) =>
   error.code === "over_email_send_rate_limit" || error.status === 429;
+
+/**
+ * Sends the password-reset email with the implicit flow, so the link carries
+ * its own one-time session and works in any browser or mail app (the default
+ * PKCE link only works in the browser that asked for it). Nothing is stored.
+ */
+function recoveryClient() {
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: { flowType: "implicit", persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+}
 
 /** Where links in auth emails (confirmation, password reset) should land. */
 const callbackUrl = (next: string) => `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
@@ -111,13 +124,35 @@ export const authClient = {
     };
   },
 
-  /** Emails a reset link that opens /reset-password signed in. */
+  /** Emails a reset link that opens /reset-password signed in (see completePasswordRecovery). */
   async requestPasswordReset(email: string): Promise<SimpleResult> {
-    const supabase = getSupabase();
-    if (!supabase) return { ok: false, error: NOT_CONFIGURED };
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: callbackUrl("/reset-password") });
+    if (!isSupabaseConfigured) return { ok: false, error: NOT_CONFIGURED };
+    const { error } = await recoveryClient().auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
     if (!error) return { ok: true };
-    return { ok: false, error: isEmailRateLimited(error) ? EMAIL_RATE_LIMITED : error.message };
+    console.error("password reset request failed:", error.code, error.message);
+    if (error.code === "over_request_rate_limit") {
+      return { ok: false, error: "You just asked for a reset link. Please wait a minute, then try again." };
+    }
+    return { ok: false, error: isEmailRateLimited(error) ? EMAIL_RATE_LIMITED : "We couldn't send the reset email. Please try again." };
+  },
+
+  /**
+   * Signs in from a reset link. The link lands on /reset-password with the
+   * one-time session in the URL fragment (never sent to our server).
+   * Returns "none" when the URL has no reset details.
+   */
+  async completePasswordRecovery(): Promise<"none" | "ok" | "invalid"> {
+    const supabase = getSupabase();
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    if (!hash.has("access_token") && !hash.has("error")) return "none";
+    window.history.replaceState(null, "", window.location.pathname);
+    const accessToken = hash.get("access_token");
+    const refreshToken = hash.get("refresh_token");
+    if (!supabase || !accessToken || !refreshToken) return "invalid";
+    const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    return error ? "invalid" : "ok";
   },
 
   async updatePassword(password: string): Promise<SimpleResult> {

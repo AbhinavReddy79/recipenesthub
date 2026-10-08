@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Info } from "lucide-react";
+import Link from "next/link";
 import { FormField } from "@/components/forms/form-field";
 import { PasswordInput } from "@/components/forms/password-input";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,6 @@ export function LoginForm({ onSuccess, switchToRegister, idPrefix = "login" }: L
   const [remember, setRemember] = useState(true);
   const [errors, setErrors] = useState<FieldErrors<Field>>({});
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
-  const [resetInfo, setResetInfo] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -63,30 +62,8 @@ export function LoginForm({ onSuccess, switchToRegister, idPrefix = "login" }: L
     else setFormError(result.error);
   };
 
-  const onForgot = async () => {
-    const emailError = validateEmail(email);
-    if (emailError) {
-      setTouched((t) => ({ ...t, email: true }));
-      setErrors((e) => ({ ...e, email: "Enter your email above, then choose “Forgot password?” again." }));
-      return;
-    }
-    setResetInfo(null);
-    const result = await authClient.requestPasswordReset(email);
-    setResetInfo(
-      result.ok
-        ? `If an account exists for ${email.trim()}, we've emailed a link to reset your password.`
-        : result.error,
-    );
-  };
-
   return (
     <form onSubmit={onSubmit} noValidate className="grid gap-4">
-      {resetInfo && (
-        <div role="status" className="flex gap-3 rounded-lg border bg-muted p-3 text-sm text-muted-foreground">
-          <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <p>{resetInfo}</p>
-        </div>
-      )}
       {formError && (
         <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
           {formError}
@@ -112,13 +89,12 @@ export function LoginForm({ onSuccess, switchToRegister, idPrefix = "login" }: L
         label="Password"
         error={touched.password ? errors.password : undefined}
         labelAction={
-          <button
-            type="button"
-            onClick={onForgot}
+          <Link
+            href="/forgot-password"
             className="text-[0.8125rem] font-medium text-primary underline-offset-4 hover:underline"
           >
             Forgot password?
-          </button>
+          </Link>
         }
       >
         {(control) => (

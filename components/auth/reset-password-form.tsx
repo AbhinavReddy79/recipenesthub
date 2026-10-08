@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { KeyRound } from "lucide-react";
 import { FormField } from "@/components/forms/form-field";
@@ -17,8 +17,9 @@ import { AuthSuccess } from "./auth-success";
 type Field = "password" | "confirm";
 
 /**
- * Landing page for the password-reset email. /auth/callback has already
- * exchanged the link for a session, so the user is signed in here.
+ * Landing page for the password-reset email. The link carries a one-time
+ * session in the URL fragment, which signs the user in here (older links go
+ * through /auth/callback first and arrive already signed in).
  */
 export function ResetPasswordForm() {
   const hydrated = useHydrated();
@@ -28,6 +29,17 @@ export function ResetPasswordForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [recovery, setRecovery] = useState<"checking" | "none" | "ok" | "invalid">("checking");
+
+  useEffect(() => {
+    let active = true;
+    void authClient.completePasswordRecovery().then((result) => {
+      if (active) setRecovery(result);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const validate = (v = values): FieldErrors<Field> => ({
     password: validatePassword(v.password, { strict: true }),
@@ -46,7 +58,8 @@ export function ResetPasswordForm() {
     else setFormError(result.error);
   };
 
-  if (!hydrated) {
+  // Wait for the link to sign in and for the account to load.
+  if (!hydrated || recovery === "checking" || (recovery === "ok" && !user)) {
     return (
       <div className="grid gap-4" aria-busy>
         <Skeleton className="h-8 w-2/3" />
@@ -70,7 +83,7 @@ export function ResetPasswordForm() {
     );
   }
 
-  if (!user) {
+  if (!user || recovery === "invalid") {
     return (
       <AuthSuccess
         icon={<KeyRound aria-hidden />}
