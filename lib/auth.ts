@@ -13,6 +13,12 @@ export type AuthResult = AccountResult;
 export type SimpleResult = { ok: true } | { ok: false; error: string };
 
 const NOT_CONFIGURED = "Accounts aren't available right now. Please try again later.";
+const EMAIL_RATE_LIMITED =
+  "We're sending a lot of emails right now and couldn't send yours. Please wait a few minutes and try again.";
+
+/** Supabase caps how many auth emails a project can send per hour. */
+const isEmailRateLimited = (error: { code?: string; status?: number }) =>
+  error.code === "over_email_send_rate_limit" || error.status === 429;
 
 /** Where links in auth emails (confirmation, password reset) should land. */
 const callbackUrl = (next: string) => `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
@@ -74,6 +80,7 @@ export const authClient = {
         return { ok: false, field: "email", error: "An account with this email already exists. Log in instead." };
       }
       if (error.code === "weak_password") return { ok: false, field: "password", error: error.message };
+      if (isEmailRateLimited(error)) return { ok: false, error: EMAIL_RATE_LIMITED };
       if (error.message.toLowerCase().includes("database error")) {
         return { ok: false, field: "username", error: "That username is taken. Try another." };
       }
@@ -109,7 +116,8 @@ export const authClient = {
     const supabase = getSupabase();
     if (!supabase) return { ok: false, error: NOT_CONFIGURED };
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: callbackUrl("/reset-password") });
-    return error ? { ok: false, error: error.message } : { ok: true };
+    if (!error) return { ok: true };
+    return { ok: false, error: isEmailRateLimited(error) ? EMAIL_RATE_LIMITED : error.message };
   },
 
   async updatePassword(password: string): Promise<SimpleResult> {
