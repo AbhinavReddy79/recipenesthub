@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   BookOpen,
   CircleUser,
@@ -49,6 +50,7 @@ export function UserMenu() {
   const { openAuth } = useAuthDialog();
   const signedIn = hydrated && user;
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
 
   return (
     <DropdownMenu>
@@ -98,9 +100,12 @@ export function UserMenu() {
               </>
             )}
             <DropdownMenuItem
-              onSelect={() => {
-                void authClient.signOut();
+              onSelect={async () => {
+                await authClient.signOut();
                 toast("You've been signed out.");
+                // The site is members-only, so head back to the login screen.
+                router.replace("/login");
+                router.refresh();
               }}
             >
               <LogOut />

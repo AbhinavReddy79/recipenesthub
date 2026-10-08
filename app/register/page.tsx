@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthPage } from "@/components/auth/auth-page";
+import { safeNext } from "@/lib/auth-routes";
 
 export const metadata: Metadata = {
   title: "Create an account",
@@ -7,6 +8,7 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-export default function RegisterPage() {
-  return <AuthPage mode="register" />;
+export default async function RegisterPage({ searchParams }: PageProps<"/register">) {
+  const { next } = await searchParams;
+  return <AuthPage mode="register" next={safeNext(typeof next === "string" ? next : undefined)} />;
 }

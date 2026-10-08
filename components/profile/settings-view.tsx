@@ -115,7 +115,7 @@ export function SettingsView() {
       return;
     }
     toast("Your account and all of its data were permanently deleted.");
-    router.push("/");
+    router.replace("/login");
   };
 
   const clearBrowser = () => {

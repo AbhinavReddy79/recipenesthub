@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays, CircleAlert, CircleCheck, Heart, MailCheck, Users } from "lucide-react";
@@ -22,11 +23,29 @@ const COPY = {
   register: { title: "Create your account", subtitle: "Join a community of home cooks. It only takes a minute.", image: "1556909114-f6e7ad7d3136" },
 };
 
-/** `error` and `notice` come from the email-link callback (e.g. an expired link, or a confirmed email). */
-export function AuthPage({ mode, error, notice }: { mode: "login" | "register"; error?: string; notice?: string }) {
+interface AuthPageProps {
+  mode: "login" | "register";
+  /** From the email-link callback (e.g. an expired link). */
+  error?: string;
+  /** From the email-link callback (e.g. a confirmed email). */
+  notice?: string;
+  /** Where to go once signed in (the page the visitor originally asked for). */
+  next?: string;
+}
+
+export function AuthPage({ mode, error, notice, next = "/" }: AuthPageProps) {
+  const router = useRouter();
   const [success, setSuccess] = useState<string | null>(null);
   const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
   const copy = COPY[mode];
+  const withNext = (path: string) => (next === "/" ? path : `${path}?next=${encodeURIComponent(next)}`);
+
+  // Signed in: continue to the page they came for (the server lets them through now).
+  const enter = (name: string) => {
+    setSuccess(name);
+    router.replace(next);
+    router.refresh();
+  };
 
   return (
     <div className="grid flex-1 lg:grid-cols-2">
@@ -65,23 +84,18 @@ export function AuthPage({ mode, error, notice }: { mode: "login" | "register"; 
               description={`We sent a confirmation link to ${confirmEmail}. Open it to finish creating your profile, then you'll be signed in.`}
               actions={
                 <Button asChild variant="outline" size="lg">
-                  <Link href="/recipes">Browse recipes meanwhile</Link>
+                  <Link href="/login">Back to log in</Link>
                 </Button>
               }
             />
           ) : success ? (
             <AuthSuccess
               title={mode === "login" ? "You're signed in" : `Welcome, ${success.split(" ")[0]}!`}
-              description="Your profile is ready. Your saved recipes, collections and plans are kept with your account on every device."
+              description="Taking you to RecipeNest…"
               actions={
-                <>
-                  <Button asChild variant="outline" size="lg">
-                    <Link href="/recipes">Discover recipes</Link>
-                  </Button>
-                  <Button asChild size="lg">
-                    <Link href="/profile">Go to my profile</Link>
-                  </Button>
-                </>
+                <Button asChild size="lg">
+                  <Link href={next}>Continue</Link>
+                </Button>
               }
             />
           ) : (
@@ -107,18 +121,18 @@ export function AuthPage({ mode, error, notice }: { mode: "login" | "register"; 
               )}
               {mode === "login" ? (
                 <LoginForm
-                  onSuccess={setSuccess}
+                  onSuccess={enter}
                   switchToRegister={
-                    <Link href="/register" className="font-medium text-primary underline-offset-4 hover:underline">
+                    <Link href={withNext("/register")} className="font-medium text-primary underline-offset-4 hover:underline">
                       Create an account
                     </Link>
                   }
                 />
               ) : (
                 <RegisterForm
-                  onSuccess={(name, email) => (email ? setConfirmEmail(email) : setSuccess(name))}
+                  onSuccess={(name, email) => (email ? setConfirmEmail(email) : enter(name))}
                   switchToLogin={
-                    <Link href="/login" className="font-medium text-primary underline-offset-4 hover:underline">
+                    <Link href={withNext("/login")} className="font-medium text-primary underline-offset-4 hover:underline">
                       Log in
                     </Link>
                   }

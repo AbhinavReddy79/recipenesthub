@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { useAuthDialog } from "@/components/auth/auth-dialog";
 import { Button } from "@/components/ui/button";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { isPublicPath } from "@/lib/auth-routes";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { mainNav } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,8 @@ export function Navbar({ searchIndex }: { searchIndex: SearchIndexItem[] }) {
   const { openAuth } = useAuthDialog();
   const hydrated = useHydrated();
   const [scrolled, setScrolled] = useState(false);
+  // Before signing in only the public pages are reachable, so keep the header to the logo.
+  const guest = !user && isPublicPath(pathname);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -37,12 +40,12 @@ export function Navbar({ searchIndex }: { searchIndex: SearchIndexItem[] }) {
       )}
     >
       <div className="container-page flex h-[4.25rem] items-center gap-2">
-        <MobileNav />
+        {!guest && <MobileNav />}
         <Link href="/" className="group/logo mr-2 rounded-lg focus-visible:outline-offset-4" aria-label="RecipeNest home">
           <Logo animated={pathname === "/" || pathname === "/admin"} />
         </Link>
 
-        <nav aria-label="Main" className="ml-4 hidden items-center gap-0.5 lg:flex">
+        <nav aria-label="Main" className={cn("ml-4 hidden items-center gap-0.5", !guest && "lg:flex")}>
           {mainNav.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
@@ -63,6 +66,15 @@ export function Navbar({ searchIndex }: { searchIndex: SearchIndexItem[] }) {
           })}
         </nav>
 
+        {guest ? (
+          <div className="ml-auto">
+            <Button asChild variant={pathname === "/login" ? "default" : "outline"}>
+              <Link href={pathname === "/login" ? "/register" : "/login"}>
+                {pathname === "/login" ? "Create account" : "Log in"}
+              </Link>
+            </Button>
+          </div>
+        ) : (
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
           <SearchCommand index={searchIndex} />
 
@@ -83,6 +95,7 @@ export function Navbar({ searchIndex }: { searchIndex: SearchIndexItem[] }) {
             <UserMenu />
           </div>
         </div>
+        )}
       </div>
     </header>
   );

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarDays, Heart, Home, Search, ShoppingBasket } from "lucide-react";
+import { isPublicPath } from "@/lib/auth-routes";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -16,6 +17,7 @@ const TABS = [
 /** App-style tab bar for phones; hidden from tablet width up, where the top navigation has room. */
 export function MobileTabBar() {
   const pathname = usePathname();
+  if (isPublicPath(pathname) && pathname !== "/privacy" && pathname !== "/terms") return null;
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
 
   return (
