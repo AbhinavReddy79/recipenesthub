@@ -20,7 +20,7 @@ const PERKS = [
 
 const COPY = {
   login: { title: "Welcome back", subtitle: "Log in to your saved recipes, collections and meal plans.", image: "1556910103-1c02745aae4d" },
-  register: { title: "Create your account", subtitle: "Join a community of home cooks. It only takes a minute.", image: "1556909114-f6e7ad7d3136" },
+  register: { title: "Create your account", subtitle: "Join a community of home cooks. It only takes a minute.", image: "1528712306091-ed0763094c98" },
 };
 
 interface AuthPageProps {
