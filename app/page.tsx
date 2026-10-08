@@ -1,6 +1,7 @@
 import { CategoryGrid } from "@/components/home/category-grid";
 import { CommunityRecipes } from "@/components/community/community-recipes";
 import { CompactRecipeList } from "@/components/home/compact-recipe-list";
+import { FloatingBanners } from "@/components/home/floating-banners";
 import { Hero } from "@/components/home/hero";
 import { IngredientTeaser } from "@/components/home/ingredient-teaser";
 import { KitchenSpotlight } from "@/components/home/kitchen-spotlight";
@@ -59,6 +60,13 @@ export default async function HomePage() {
           <SectionHeading id="browse-by-meal" eyebrow="What's cooking" title="Browse by meal" />
           <CategoryGrid categories={categories} counts={categoryCounts} />
         </section>
+
+        <FloatingBanners
+          indianCount={cuisineCounts.indian ?? 0}
+          indianImage={recipesBySlug.get("butter-chicken")?.image}
+          quickCount={categoryCounts["quick-meals"] ?? quick.length}
+          quickImage={quick[0]?.image}
+        />
 
         <section data-reveal suppressHydrationWarning aria-labelledby="editors-picks" className="container-page">
           <SectionHeading
