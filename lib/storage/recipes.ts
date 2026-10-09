@@ -6,7 +6,7 @@ import { BUCKETS } from "@/lib/supabase/env";
 import type { Difficulty, IngredientAisle, MealType, Nutrition, Recipe } from "@/types/recipe";
 import { PUBLIC_PROFILE_COLUMNS, toProfile } from "./accounts";
 import { createMemoryStore, isRecord, readJSON, removeKey, STORAGE_PREFIX, writeJSON } from "./core";
-import { isDataUrl, reportError, uploadImage, userContext } from "./remote";
+import { isDataUrl, reportError, safeImageUrl, uploadImage, userContext } from "./remote";
 import { getActiveUserId } from "./session";
 
 const AISLES: IngredientAisle[] = ["Produce", "Dairy", "Meat", "Grains", "Spices", "Other"];
@@ -44,7 +44,7 @@ function fromRow(
     slug: row.slug,
     title: row.title,
     description: row.description,
-    image: row.image_url || FALLBACK_RECIPE_IMAGE,
+    image: safeImageUrl(row.image_url, BUCKETS.recipeImages) || FALLBACK_RECIPE_IMAGE,
     cuisine: row.cuisine as Recipe["cuisine"],
     categories: row.categories as Recipe["categories"],
     mealType: row.meal_type as MealType,

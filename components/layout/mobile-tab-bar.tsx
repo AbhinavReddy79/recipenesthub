@@ -17,7 +17,8 @@ const TABS = [
 /** App-style tab bar for phones; hidden from tablet width up, where the top navigation has room. */
 export function MobileTabBar() {
   const pathname = usePathname();
-  if (isPublicPath(pathname) && pathname !== "/privacy" && pathname !== "/terms") return null;
+  // Public pages (sign-in, legal) are what signed-out visitors see; the tabs lead behind the login.
+  if (isPublicPath(pathname)) return null;
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
 
   return (

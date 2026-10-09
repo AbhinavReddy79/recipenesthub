@@ -1,7 +1,26 @@
 import { toast } from "sonner";
 import { getSupabase, type RecipeNestClient } from "@/lib/supabase/client";
-import { BUCKETS } from "@/lib/supabase/env";
+import { BUCKETS, supabaseUrl } from "@/lib/supabase/env";
 import { getActiveUserId } from "./session";
+
+/**
+ * Image links saved by users are only shown when they point at our own
+ * storage bucket (or Unsplash, which the recipe form allows). Anything else
+ * (another site, a tracking pixel) is dropped, even if it was written
+ * straight to the API. The database enforces the same rule.
+ */
+export function safeImageUrl(url: string | null | undefined, bucket: (typeof BUCKETS)[keyof typeof BUCKETS]): string {
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return "";
+    if (parsed.hostname === "images.unsplash.com") return parsed.toString();
+    const storage = supabaseUrl ? new URL(`/storage/v1/object/public/${bucket}/`, supabaseUrl) : null;
+    return storage && parsed.origin === storage.origin && parsed.pathname.startsWith(storage.pathname) ? parsed.toString() : "";
+  } catch {
+    return "";
+  }
+}
 
 /** The Supabase client and signed-in user id, or null for visitors (personal writes are skipped). */
 export function userContext(): { supabase: RecipeNestClient; userId: string } | null {

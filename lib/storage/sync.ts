@@ -6,9 +6,9 @@ import { collectionsStorage, collectionsStore } from "./collections";
 import { readJSON, removeKey, STORAGE_PREFIX } from "./core";
 import { favoritesStorage, favoritesStore } from "./favorites";
 import { mealPlanStorage, mealPlanStore } from "./mealPlanner";
-import { recipesStorage } from "./recipes";
+import { recipesStorage, userRecipesStore } from "./recipes";
 import { reportError } from "./remote";
-import { cookedStore, loadCooked, loadRatings } from "./reviews";
+import { cookedStore, loadCooked, loadRatings, ratingsStore, reviewsBySlugStore } from "./reviews";
 import { authStore } from "./session";
 import { settingsStorage, settingsStore } from "./settings";
 import { shoppingListStore, shoppingStorage } from "./shoppingList";
@@ -61,9 +61,18 @@ async function uploadPendingAvatar(userId: string, email: string, currentAvatar:
 /* ---------- Session → data ---------- */
 
 function clearPersonalData(): void {
-  [favoritesStore, collectionsStore, mealPlanStore, shoppingListStore, settingsStore, cookedStore, accountsStore].forEach((store) =>
-    store.reset(),
-  );
+  [
+    favoritesStore,
+    collectionsStore,
+    mealPlanStore,
+    shoppingListStore,
+    settingsStore,
+    cookedStore,
+    accountsStore,
+    userRecipesStore,
+    ratingsStore,
+    reviewsBySlugStore,
+  ].forEach((store) => store.reset());
 }
 
 async function loadPersonalData(supabase: RecipeNestClient, userId: string): Promise<void> {
@@ -74,6 +83,7 @@ async function loadPersonalData(supabase: RecipeNestClient, userId: string): Pro
     shoppingStorage.load(supabase, userId),
     settingsStorage.load(supabase, userId),
     loadCooked(supabase, userId),
+    loadRatings(supabase),
     recipesStorage.load(supabase),
   ]);
 }
@@ -100,8 +110,6 @@ export function startSync(): () => void {
     return () => {};
   }
 
-  void loadRatings(supabase).catch((error: unknown) => reportError("load ratings", error));
-
   let currentUserId: string | null | undefined;
   let run = 0;
 
@@ -115,10 +123,10 @@ export function startSync(): () => void {
     currentUserId = userId;
     const thisRun = ++run;
 
+    // Members-only: signed-out visitors load nothing from the database.
     if (!user || !userId) {
       clearPersonalData();
       authStore.set({ ready: true, user: null });
-      await recipesStorage.load(supabase).catch((error: unknown) => reportError("load community recipes", error));
       return;
     }
 

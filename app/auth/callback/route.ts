@@ -1,7 +1,9 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
-import { safeNext } from "@/lib/auth-routes";
+import { safeNext, type AuthLinkError } from "@/lib/auth-routes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+const OTP_TYPES: readonly EmailOtpType[] = ["signup", "email", "recovery", "email_change", "invite", "magiclink"];
 
 /**
  * Landing route for links in Supabase emails (confirm sign-up, reset password).
@@ -12,7 +14,8 @@ export async function GET(request: NextRequest) {
   const next = safeNext(searchParams.get("next"), "/profile");
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
-  const type = searchParams.get("type") as EmailOtpType | null;
+  const typeParam = searchParams.get("type");
+  const type = OTP_TYPES.find((t) => t === typeParam) ?? null;
 
   const supabase = await createSupabaseServerClient();
   let error: { message: string } | null = null;
@@ -37,12 +40,8 @@ export async function GET(request: NextRequest) {
   if (error) {
     console.error("auth callback failed:", error.message);
     const url = new URL("/login", origin);
-    url.searchParams.set(
-      "error",
-      isReset
-        ? "This password reset link is invalid or has expired, or was opened in a different browser. Choose “Forgot password?” to get a new one."
-        : "This link is invalid or has expired. Log in, or create your account again to get a new link.",
-    );
+    // A fixed code, never free text: the login page only shows messages it knows.
+    url.searchParams.set("error", (isReset ? "reset_invalid" : "link_invalid") satisfies AuthLinkError);
     return NextResponse.redirect(url);
   }
   return NextResponse.redirect(new URL(next, origin));

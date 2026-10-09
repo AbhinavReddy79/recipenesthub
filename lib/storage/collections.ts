@@ -2,7 +2,8 @@ import type { RecipeNestClient } from "@/lib/supabase/client";
 import { newId } from "@/lib/utils";
 import type { Collection } from "@/types/collection";
 import { createMemoryStore } from "./core";
-import { persist, persistAll, userContext } from "./remote";
+import { BUCKETS } from "@/lib/supabase/env";
+import { persist, persistAll, safeImageUrl, userContext } from "./remote";
 
 /** The signed-in user's collections, newest first. Starts empty. */
 export const collectionsStore = createMemoryStore<Collection[]>([]);
@@ -19,7 +20,7 @@ async function load(supabase: RecipeNestClient, userId: string): Promise<void> {
       id: row.id,
       name: row.name,
       description: row.description,
-      ...(row.cover_url ? { cover: row.cover_url } : {}),
+      ...(safeImageUrl(row.cover_url, BUCKETS.recipeImages) ? { cover: safeImageUrl(row.cover_url, BUCKETS.recipeImages) } : {}),
       // Recipes are shown newest-added first.
       recipeSlugs: [...row.collection_recipes].sort((a, b) => b.added_at.localeCompare(a.added_at)).map((r) => r.recipe_slug),
       createdAt: row.created_at,

@@ -38,6 +38,19 @@ export async function proxy(request: NextRequest) {
     return redirectKeepingCookies(url, response);
   }
 
+  // The admin console is for active admins only. (The database enforces this
+  // for every admin action too; this keeps the pages themselves private.)
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, status")
+      .eq("id", data?.claims?.sub ?? "")
+      .maybeSingle();
+    if (profile?.role !== "admin" || profile.status !== "active") {
+      return redirectKeepingCookies(new URL("/", request.url), response);
+    }
+  }
+
   if (signedIn && isGuestOnlyPath(pathname)) {
     const next = safeNext(request.nextUrl.searchParams.get("next"));
     return redirectKeepingCookies(new URL(next, request.url), response);

@@ -1,0 +1,5 @@
+# Never upload local env files or tooling to Vercel (production uses Vercel env vars).
+.env*
+!.env.example
+.claude
+*.log

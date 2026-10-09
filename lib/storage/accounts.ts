@@ -3,7 +3,7 @@ import type { RecipeNestClient } from "@/lib/supabase/client";
 import { BUCKETS } from "@/lib/supabase/env";
 import type { UserProfile } from "@/types/user";
 import { createMemoryStore } from "./core";
-import { isDataUrl, reportError, uploadImage, userContext } from "./remote";
+import { isDataUrl, reportError, safeImageUrl, uploadImage, userContext } from "./remote";
 import { setCurrentProfile } from "./session";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
@@ -20,7 +20,7 @@ export function toProfile(
     name: row.name,
     username: row.username,
     email,
-    avatar: row.avatar_url,
+    avatar: safeImageUrl(row.avatar_url, BUCKETS.avatars),
     bio: row.bio,
     location: row.location,
     createdAt: row.created_at,

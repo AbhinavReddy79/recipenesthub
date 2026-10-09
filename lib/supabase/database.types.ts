@@ -269,6 +269,7 @@ export type Database = {
       is_active_user: { Args: Record<PropertyKey, never>; Returns: boolean };
       delete_my_account: { Args: Record<PropertyKey, never>; Returns: undefined };
       admin_delete_user: { Args: { target: string }; Returns: undefined };
+      username_available: { Args: { candidate: string }; Returns: boolean };
       admin_list_users: {
         Args: Record<PropertyKey, never>;
         Returns: {

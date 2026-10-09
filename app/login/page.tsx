@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AuthPage } from "@/components/auth/auth-page";
-import { safeNext } from "@/lib/auth-routes";
+import { authLinkError, safeNext } from "@/lib/auth-routes";
 
 export const metadata: Metadata = {
   title: "Log in",
@@ -10,11 +10,12 @@ export const metadata: Metadata = {
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { error, confirmed, next } = await searchParams;
-  // Both are set by /auth/callback after someone opens a link from our emails.
+  // Set by /auth/callback after someone opens a link from our emails. Only known
+  // codes map to a message, so nobody can put their own text on this page.
   return (
     <AuthPage
       mode="login"
-      error={typeof error === "string" ? error.slice(0, 200) : undefined}
+      error={authLinkError(error)}
       notice={confirmed === "1" ? "Your email is confirmed. Log in with your password to get started." : undefined}
       next={safeNext(typeof next === "string" ? next : undefined)}
     />

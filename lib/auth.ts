@@ -77,8 +77,9 @@ export const authClient = {
     const username = input.username.trim().toLowerCase();
     const email = input.email.trim().toLowerCase();
 
-    const { data: taken } = await supabase.from("profiles").select("id").eq("username", username).maybeSingle();
-    if (taken) return { ok: false, field: "username", error: "That username is taken. Try another." };
+    // Visitors can't read profiles, so ask the database whether the name is free.
+    const { data: available } = await supabase.rpc("username_available", { candidate: username });
+    if (available === false) return { ok: false, field: "username", error: "That username is taken. Try another." };
 
     const { data, error } = await supabase.auth.signUp({
       email,
