@@ -152,7 +152,9 @@ export function startSync(): () => void {
     }
   };
 
-  if (sessionExpired()) void supabase.auth.signOut();
+  // A sign-in link (password reset) is being opened in this tab: keep that session.
+  const openingSignInLink = window.location.hash.includes("access_token=");
+  if (sessionExpired() && !openingSignInLink) void supabase.auth.signOut();
 
   // Supabase recommends not awaiting other Supabase calls inside this callback.
   const { data } = supabase.auth.onAuthStateChange((_event, session) => {

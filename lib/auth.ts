@@ -149,6 +149,9 @@ export const authClient = {
     const hash = new URLSearchParams(window.location.hash.slice(1));
     if (!hash.has("access_token") && !hash.has("error")) return "none";
     window.history.replaceState(null, "", window.location.pathname);
+    // Mark this tab's session as wanted before anything else runs, so the
+    // "don't remember me" clean-up on page load can't sign the link back out.
+    if (hash.has("access_token")) rememberSignIn(true);
     const accessToken = hash.get("access_token");
     const refreshToken = hash.get("refresh_token");
     if (!supabase || !accessToken || !refreshToken) return "invalid";

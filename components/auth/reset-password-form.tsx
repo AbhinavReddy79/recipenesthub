@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { KeyRound } from "lucide-react";
+import { CircleCheck, KeyRound } from "lucide-react";
 import { FormField } from "@/components/forms/form-field";
 import { PasswordInput } from "@/components/forms/password-input";
 import { Logo } from "@/components/layout/logo";
@@ -58,10 +58,13 @@ export function ResetPasswordForm() {
     else setFormError(result.error);
   };
 
-  // Wait for the link to sign in and for the account to load.
+  // Step 1: verify the emailed link (it signs the user in), then load the account.
   if (!hydrated || recovery === "checking" || (recovery === "ok" && !user)) {
     return (
       <div className="grid gap-4" aria-busy>
+        <p role="status" className="text-sm font-medium text-muted-foreground">
+          Verifying your reset link…
+        </p>
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-10 w-full" />
@@ -107,6 +110,12 @@ export function ResetPasswordForm() {
           <p className="text-muted-foreground">For {user.email}</p>
         </div>
       </div>
+      {recovery === "ok" && (
+        <p role="status" className="flex gap-2.5 rounded-xl bg-herb-soft p-3 text-sm font-medium text-herb">
+          <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden />
+          Your email is verified. Now set a new password for your account.
+        </p>
+      )}
       {formError && (
         <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
           {formError}

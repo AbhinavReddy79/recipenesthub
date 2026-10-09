@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { ThemeProvider } from "next-themes";
 import { AuthDialogProvider } from "@/components/auth/auth-dialog";
+import { EmailLinkHandler } from "@/components/auth/email-link-handler";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { startSync } from "@/lib/storage/sync";
@@ -16,6 +17,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <TooltipProvider delayDuration={300}>
         <AuthDialogProvider>
           {children}
+          <EmailLinkHandler />
           <Toaster position="bottom-center" mobileOffset={{ bottom: "calc(5.75rem + env(safe-area-inset-bottom))" }} />
         </AuthDialogProvider>
       </TooltipProvider>
