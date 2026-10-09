@@ -238,6 +238,7 @@ export type Database = {
           text: string;
           created_at: string;
           updated_at: string | null;
+          moderated_at: string | null;
         };
         Insert: { id?: string; recipe_slug: string; author_id: string; rating: number; text?: string; updated_at?: string | null };
         Update: { rating?: number; text?: string; updated_at?: string | null };

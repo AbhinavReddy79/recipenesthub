@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Pencil, Star, Trash2 } from "lucide-react";
+import { CheckCircle2, Pencil, ShieldCheck, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { ReviewEditDialog } from "@/components/admin/review-edit-dialog";
 import { StarDisplay, StarInput, ratingLabel } from "@/components/shared/star-rating";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import {
@@ -26,6 +27,7 @@ import { useHydrated } from "@/hooks/use-hydrated";
 import { useRequireUser } from "@/hooks/use-require-user";
 import { useRecipeReviews, type RatingSummary, type ReviewWithAuthor } from "@/hooks/use-reviews";
 import { formatDate, pluralize } from "@/lib/format";
+import { reviewModeration } from "@/lib/storage/reviews";
 import { REVIEW_TEXT_MAX } from "@/types/review";
 import { useRecipeSession } from "./recipe-session";
 
@@ -223,9 +225,10 @@ function Composer({ editing, onDone }: { editing: boolean; onDone: () => void })
 }
 
 function ReviewItem({ review, onEdit }: { review: ReviewWithAuthor; onEdit: () => void }) {
-  const { user } = useCurrentUser();
+  const { user, isAdmin } = useCurrentUser();
   const { remove } = useRecipeReviews(review.recipeSlug);
   const own = user?.id === review.authorId;
+  const [moderating, setModerating] = useState(false);
   return (
     <li className="grid gap-3 py-5">
       <div className="flex items-start gap-3">
@@ -241,10 +244,54 @@ function ReviewItem({ review, onEdit }: { review: ReviewWithAuthor; onEdit: () =
             <span aria-hidden>·</span>
             <span>
               {formatDate(review.createdAt)}
-              {review.updatedAt && " (edited)"}
+              {review.updatedAt && !review.moderatedAt && " (edited)"}
             </span>
+            {review.moderatedAt && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-px text-xs">
+                <ShieldCheck className="size-3" aria-hidden />
+                Edited by a moderator
+              </span>
+            )}
           </div>
         </div>
+        {isAdmin && !own && (
+          <div className="flex shrink-0 gap-0.5">
+            <Button variant="ghost" size="icon-sm" onClick={() => setModerating(true)} aria-label={`Edit ${review.author.name}'s review (admin)`}>
+              <Pencil />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="hover:text-destructive"
+                  aria-label={`Delete ${review.author.name}'s review (admin)`}
+                >
+                  <Trash2 />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete {review.author.name}&apos;s review?</AlertDialogTitle>
+                  <AlertDialogDescription>Their rating and notes will be removed for everyone. This can&apos;t be undone.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    onClick={() => {
+                      reviewModeration.remove(review);
+                      toast("Review deleted");
+                    }}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <ReviewEditDialog review={moderating ? review : null} onClose={() => setModerating(false)} />
+          </div>
+        )}
         {own && (
           <div className="flex shrink-0 gap-0.5">
             <Button variant="ghost" size="icon-sm" onClick={onEdit} aria-label="Edit your review">

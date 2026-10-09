@@ -10,6 +10,8 @@ export interface Review {
   text: string;
   createdAt: string;
   updatedAt?: string;
+  /** Set when an admin edited the review. */
+  moderatedAt?: string;
 }
 
 export const REVIEW_TEXT_MAX = 1000;
