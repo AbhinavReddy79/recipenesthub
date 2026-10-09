@@ -7,6 +7,7 @@ import { IngredientTeaser } from "@/components/home/ingredient-teaser";
 import { KitchenSpotlight } from "@/components/home/kitchen-spotlight";
 import { MealPlanCta } from "@/components/home/meal-plan-cta";
 import { PickedForYou } from "@/components/home/picked-for-you";
+import { RecipeOfTheDay } from "@/components/home/recipe-of-the-day";
 import { WelcomeBar } from "@/components/home/welcome-bar";
 import { CuisineCard } from "@/components/recipes/cuisine-card";
 import { RecipeGrid } from "@/components/recipes/recipe-grid";
@@ -19,16 +20,18 @@ import {
   getQuickRecipes,
   getRecentRecipes,
   getRecipeBySlug,
+  getRecipeOfTheDay,
   getSeasonalRecipes,
   listRecipes,
 } from "@/lib/services/recipes";
 import type { Recipe } from "@/types/recipe";
 
-// "Seasonal ideas" follow the calendar, so refresh the page daily.
-export const revalidate = 86400;
+// "Recipe of the day" and "Seasonal ideas" follow the calendar; refresh hourly so
+// the daily pick changes within the hour after midnight.
+export const revalidate = 3600;
 
 export default async function HomePage() {
-  const [all, categories, cuisines, cuisineCounts, featuredList, quick, seasonal, recent, heroRecipe] = await Promise.all([
+  const [all, categories, cuisines, cuisineCounts, featuredList, quick, seasonal, recent, heroRecipe, ofTheDay] = await Promise.all([
     listRecipes(),
     listCategories(),
     listFeaturedCuisines(),
@@ -38,6 +41,7 @@ export default async function HomePage() {
     getSeasonalRecipes(),
     getRecentRecipes(4),
     getRecipeBySlug("hyderabadi-chicken-biryani"),
+    getRecipeOfTheDay(),
   ]);
 
   const categoryCounts = Object.fromEntries(
@@ -56,6 +60,8 @@ export default async function HomePage() {
       <Hero featured={(heroRecipe ?? featuredList[0]) as Recipe} stats={heroStats} />
 
       <div className="grid grid-cols-1 gap-20 py-14 sm:gap-24 sm:py-20">
+        {ofTheDay && <RecipeOfTheDay recipe={ofTheDay.recipe} date={ofTheDay.date} />}
+
         <section aria-labelledby="browse-by-meal" className="container-page">
           <SectionHeading id="browse-by-meal" eyebrow="What's cooking" title="Browse by meal" />
           <CategoryGrid categories={categories} counts={categoryCounts} />

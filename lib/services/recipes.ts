@@ -25,6 +25,43 @@ export async function getFeaturedRecipes(limit = 8): Promise<Recipe[]> {
   return [...published()].sort((a, b) => b.editorScore - a.editorScore).slice(0, limit);
 }
 
+/** Days are counted in India time, so the pick changes at local midnight for most cooks. */
+const DAY_TIME_ZONE = "Asia/Kolkata";
+
+/** Whole days since 1 Jan 1970 in DAY_TIME_ZONE, plus that day's date as YYYY-MM-DD. */
+function dayInTimeZone(now: Date): { index: number; iso: string } {
+  const iso = new Intl.DateTimeFormat("en-CA", { timeZone: DAY_TIME_ZONE, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  return { index: Math.floor(Date.parse(`${iso}T00:00:00Z`) / 86_400_000), iso };
+}
+
+/** A fixed shuffle of the catalog (seeded, so every server agrees on it). */
+function dailyOrder(list: Recipe[]): Recipe[] {
+  const order = [...list].sort((a, b) => a.slug.localeCompare(b.slug));
+  let seed = 20261012;
+  const random = () => {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 2 ** 32;
+  };
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return order;
+}
+
+/**
+ * Recipe of the day: walks through the whole catalog in a fixed shuffled order,
+ * one recipe per day, so every recipe gets its turn before any repeats.
+ * Drinks are skipped so the feature is always a dish to cook.
+ */
+export async function getRecipeOfTheDay(now = new Date()): Promise<{ recipe: Recipe; date: string } | null> {
+  const candidates = published().filter((r) => r.mealType !== "Drink");
+  if (candidates.length === 0) return null;
+  const day = dayInTimeZone(now);
+  const order = dailyOrder(candidates);
+  return { recipe: order[((day.index % order.length) + order.length) % order.length], date: day.iso };
+}
+
 export async function getQuickRecipes(limit = 4): Promise<Recipe[]> {
   return published()
     .filter((r) => totalMinutes(r) <= 30 && r.mealType !== "Drink" && r.mealType !== "Dessert")
