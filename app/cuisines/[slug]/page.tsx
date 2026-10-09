@@ -4,8 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { CuisineCard } from "@/components/recipes/cuisine-card";
-import { IndianExplorer } from "@/components/recipes/indian-explorer";
-import { MealSections } from "@/components/recipes/meal-sections";
+import { RegionExplorer } from "@/components/recipes/region-explorer";
 import { Button } from "@/components/ui/button";
 import { getCuisine, listCuisines } from "@/lib/services/catalog";
 import { countRecipesByCuisine, getRecipesByCuisine } from "@/lib/services/recipes";
@@ -84,7 +83,7 @@ export default async function CuisinePage({ params }: PageProps<"/cuisines/[slug
               <Link href={`/recipes?cuisine=${cuisine.slug}`}>Filter {cuisine.name.toLowerCase()} recipes</Link>
             </Button>
           </div>
-          {cuisine.slug === "indian" ? <IndianExplorer recipes={recipes} /> : <MealSections recipes={recipes} />}
+          <RegionExplorer cuisine={cuisine.slug} recipes={recipes} />
         </section>
 
         <section aria-labelledby="more-cuisines">

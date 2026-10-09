@@ -27,6 +27,7 @@ import { CookingMode } from "./cooking-mode";
 import { RecipeActions, StartCookingButton } from "./recipe-actions";
 import { RatingSummaryLink, RecipeReviews } from "./recipe-reviews";
 import { RecipeSessionProvider } from "./recipe-session";
+import { placeAnchor } from "@/lib/cuisine-regions";
 import { ShopIngredients } from "./shop-ingredients";
 
 interface RecipeDetailProps {
@@ -113,9 +114,9 @@ export function RecipeDetail({ recipe, related, notice }: RecipeDetailProps) {
                 {CUISINE_LABELS[recipe.cuisine]}
               </Link>
               {recipe.state && (
-                <Link href={`/cuisines/${recipe.cuisine}#explore-india`} className={`${chip} bg-accent text-accent-foreground hover:bg-secondary`}>
+                <Link href={`/cuisines/${recipe.cuisine}#${placeAnchor(recipe.state)}`} className={`${chip} bg-accent text-accent-foreground hover:bg-secondary`}>
                   {recipe.state}
-                  {recipe.region && ` · ${recipe.region} India`}
+                  {recipe.region && recipe.region !== recipe.state && ` · ${recipe.region}`}
                 </Link>
               )}
               {category && (

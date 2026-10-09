@@ -1,4 +1,4 @@
-import { regionOfState } from "@/lib/indian-states";
+import { regionOf } from "@/lib/cuisine-regions";
 import { PLATFORM_AUTHOR } from "@/lib/site";
 import type { IngredientAisle, Recipe } from "@/types/recipe";
 
@@ -16,8 +16,8 @@ export type RecipeInput = Omit<Recipe, "id" | "ingredients" | "steps" | "status"
 export function defineRecipe(input: RecipeInput): Recipe {
   return {
     ...input,
-    // The region always follows the state (one list in lib/indian-states).
-    ...(input.state ? { region: regionOfState(input.state) } : {}),
+    // The region always follows the place (one list per cuisine in lib/cuisine-regions).
+    ...(input.state ? { region: regionOf(input.cuisine, input.state) } : {}),
     id: input.slug,
     status: "published",
     authorId: PLATFORM_AUTHOR.id,

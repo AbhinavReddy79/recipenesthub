@@ -54,7 +54,7 @@ function haystack(recipe: Recipe): string {
     recipe.mealType,
     recipe.mealType === "Snack" ? "snacks" : "",
     recipe.state ?? "",
-    recipe.region ? `${recipe.region} indian` : "",
+    recipe.region ?? "",
     ...recipe.categories.map((c) => c.replace("-", " ")),
     ...recipe.diets,
     ...(recipe.tags ?? []),
