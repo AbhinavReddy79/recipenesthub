@@ -193,7 +193,7 @@ export function regionOf(cuisine: CuisineSlug, place: string): string {
   return found.region;
 }
 
-/** Anchor id of a place's section on its cuisine page, e.g. "place-tamil-nadu". */
-export function placeAnchor(name: string): string {
-  return `place-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+/** URL-friendly name of a place, used in ?place= on its cuisine page, e.g. "tamil-nadu". */
+export function placeSlug(name: string): string {
+  return `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 }
