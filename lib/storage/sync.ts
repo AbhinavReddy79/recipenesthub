@@ -75,17 +75,42 @@ function clearPersonalData(): void {
   ].forEach((store) => store.reset());
 }
 
+/** Gives up on a request that hangs, so a slow network never leaves the page loading forever. */
+function withTimeout<T>(promise: Promise<T>, ms = 12_000): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("Request timed out")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+/**
+ * Loads everything personal in parallel. Each part is independent: one slow or
+ * failed request is retried once and never blocks the others.
+ */
 async function loadPersonalData(supabase: RecipeNestClient, userId: string): Promise<void> {
-  await Promise.all([
-    favoritesStorage.load(supabase, userId),
-    collectionsStorage.load(supabase, userId),
-    mealPlanStorage.load(supabase, userId),
-    shoppingStorage.load(supabase, userId),
-    settingsStorage.load(supabase, userId),
-    loadCooked(supabase, userId),
-    loadRatings(supabase),
-    recipesStorage.load(supabase),
-  ]);
+  const loaders: (() => Promise<unknown>)[] = [
+    () => favoritesStorage.load(supabase, userId),
+    () => collectionsStorage.load(supabase, userId),
+    () => mealPlanStorage.load(supabase, userId),
+    () => shoppingStorage.load(supabase, userId),
+    () => settingsStorage.load(supabase, userId),
+    () => loadCooked(supabase, userId),
+    () => loadRatings(supabase),
+    () => recipesStorage.load(supabase),
+  ];
+  const attempt = (load: () => Promise<unknown>) => withTimeout(load()).catch(() => withTimeout(load()));
+  const results = await Promise.allSettled(loaders.map(attempt));
+  const failed = results.find((result): result is PromiseRejectedResult => result.status === "rejected");
+  if (failed) reportError("load some of your saved data", failed.reason);
 }
 
 /** Re-reads the signed-in user's data (e.g. after a recipe they used was deleted). */
@@ -132,20 +157,26 @@ export function startSync(): () => void {
 
     authStore.set({ ready: false, user: null });
     try {
-      const row = await fetchProfile(supabase, userId);
+      // Profile and personal data load at the same time (one round trip, not two).
+      const profileRequest = withTimeout(fetchProfile(supabase, userId)).catch(() => withTimeout(fetchProfile(supabase, userId)));
+      const dataRequest = loadPersonalData(supabase, userId);
+      const row = await profileRequest;
       if (thisRun !== run) return;
       if (!row) throw new Error("This account has no profile.");
       if (row.status === "suspended") {
+        await dataRequest;
+        clearPersonalData();
         await supabase.auth.signOut();
         toast.error("This account has been suspended. Contact the RecipeNest team if you think this is a mistake.");
         return;
       }
       const profile = toProfile(row, user.email ?? "");
       authStore.set({ ready: false, user: profile });
-      await loadPersonalData(supabase, userId);
-      await uploadPendingAvatar(userId, profile.email, profile.avatar);
+      await dataRequest;
       if (thisRun !== run) return;
       authStore.set((s) => ({ ...s, ready: true }));
+      // A photo picked at sign-up is uploaded in the background.
+      void uploadPendingAvatar(userId, profile.email, profile.avatar).catch((error: unknown) => console.error(error));
     } catch (error) {
       reportError("load your account", error);
       authStore.set((s) => ({ ...s, ready: true }));
