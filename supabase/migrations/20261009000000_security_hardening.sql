@@ -438,3 +438,21 @@ create policy "Users upload images to their own folder"
     and public.is_active_user()
     and public.my_image_count(bucket_id) < 200
   );
+
+-- ---------------------------------------------------------------------------
+-- 5. Trigger functions are never called directly; nobody needs EXECUTE on them.
+--    (Postgres checks that privilege when a trigger is created, not when it fires.)
+-- ---------------------------------------------------------------------------
+
+revoke execute on function
+  public.set_updated_at(),
+  public.guard_profile_columns(),
+  public.handle_new_user(),
+  public.purge_recipe_references(),
+  public.guard_recipe_slug(),
+  public.guard_recipe_image(),
+  public.guard_profile_avatar(),
+  public.guard_collection_cover(),
+  public.enforce_row_quota(),
+  public.enforce_hourly_rate()
+from public, anon, authenticated;
