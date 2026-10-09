@@ -4,7 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { CuisineCard } from "@/components/recipes/cuisine-card";
-import { RecipeGrid } from "@/components/recipes/recipe-grid";
+import { IndianExplorer } from "@/components/recipes/indian-explorer";
+import { MealSections } from "@/components/recipes/meal-sections";
 import { Button } from "@/components/ui/button";
 import { getCuisine, listCuisines } from "@/lib/services/catalog";
 import { countRecipesByCuisine, getRecipesByCuisine } from "@/lib/services/recipes";
@@ -83,7 +84,7 @@ export default async function CuisinePage({ params }: PageProps<"/cuisines/[slug
               <Link href={`/recipes?cuisine=${cuisine.slug}`}>Filter {cuisine.name.toLowerCase()} recipes</Link>
             </Button>
           </div>
-          <RecipeGrid recipes={recipes} priorityCount={4} />
+          {cuisine.slug === "indian" ? <IndianExplorer recipes={recipes} /> : <MealSections recipes={recipes} />}
         </section>
 
         <section aria-labelledby="more-cuisines">

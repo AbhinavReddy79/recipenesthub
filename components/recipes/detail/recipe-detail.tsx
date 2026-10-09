@@ -112,6 +112,12 @@ export function RecipeDetail({ recipe, related, notice }: RecipeDetailProps) {
               <Link href={`/cuisines/${recipe.cuisine}`} className={`${chip} bg-primary text-primary-foreground hover:bg-primary/90`}>
                 {CUISINE_LABELS[recipe.cuisine]}
               </Link>
+              {recipe.state && (
+                <Link href={`/cuisines/${recipe.cuisine}#explore-india`} className={`${chip} bg-accent text-accent-foreground hover:bg-secondary`}>
+                  {recipe.state}
+                  {recipe.region && ` · ${recipe.region} India`}
+                </Link>
+              )}
               {category && (
                 <Link href={`/recipes?category=${category}`} className={`${chip} bg-secondary text-secondary-foreground hover:bg-accent`}>
                   {CATEGORY_LABELS[category]}
@@ -125,6 +131,7 @@ export function RecipeDetail({ recipe, related, notice }: RecipeDetailProps) {
             </div>
             <p className="hidden text-sm print:block">
               {CUISINE_LABELS[recipe.cuisine]}
+              {recipe.state && ` · ${recipe.state}`}
               {category && ` · ${CATEGORY_LABELS[category]}`}
               {recipe.diets.length > 0 && ` · ${recipe.diets.slice(0, 3).join(", ")}`}
             </p>

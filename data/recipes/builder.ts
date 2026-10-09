@@ -1,3 +1,4 @@
+import { regionOfState } from "@/lib/indian-states";
 import { PLATFORM_AUTHOR } from "@/lib/site";
 import type { IngredientAisle, Recipe } from "@/types/recipe";
 
@@ -6,7 +7,7 @@ export type IngredientTuple = [number | null, string, string, IngredientAisle, s
 /** Plain text, or [text, timerMinutes]. */
 export type StepInput = string | [string, number];
 
-export type RecipeInput = Omit<Recipe, "id" | "ingredients" | "steps" | "status" | "author" | "authorId"> & {
+export type RecipeInput = Omit<Recipe, "id" | "ingredients" | "steps" | "status" | "author" | "authorId" | "region"> & {
   ingredients: IngredientTuple[];
   steps: StepInput[];
 };
@@ -15,6 +16,8 @@ export type RecipeInput = Omit<Recipe, "id" | "ingredients" | "steps" | "status"
 export function defineRecipe(input: RecipeInput): Recipe {
   return {
     ...input,
+    // The region always follows the state (one list in lib/indian-states).
+    ...(input.state ? { region: regionOfState(input.state) } : {}),
     id: input.slug,
     status: "published",
     authorId: PLATFORM_AUTHOR.id,

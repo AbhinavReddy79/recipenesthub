@@ -79,6 +79,9 @@ export interface ImageCredit {
   source: string;
 }
 
+/** Regions used to explore Indian food from north to south. */
+export type IndianRegion = "North" | "South" | "East" | "West" | "Northeast" | "Central";
+
 export interface Recipe {
   id: string;
   slug: string;
@@ -87,6 +90,10 @@ export interface Recipe {
   image: string;
   imageCredit?: ImageCredit;
   cuisine: CuisineSlug;
+  /** Indian recipes: the state or union territory the dish comes from. */
+  state?: string;
+  /** Indian recipes: the part of India that state belongs to. */
+  region?: IndianRegion;
   categories: CategorySlug[];
   mealType: MealType;
   difficulty: Difficulty;
