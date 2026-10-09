@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useRegion } from "@/hooks/use-region";
 import { useRequireUser } from "@/hooks/use-require-user";
 import { shoppingActions } from "@/hooks/use-shopping-list";
+import { productNeed } from "@/lib/product-quantities";
 import { productsForRecipe } from "@/lib/products";
 import { cn } from "@/lib/utils";
 import { PRODUCTS_SECTION_ID } from "../ingredient-list";
@@ -18,11 +19,13 @@ import { ServingsStepper } from "./servings-stepper";
 import { useRecipeSession } from "./recipe-session";
 
 /**
- * Generic pantry products for the ingredients the cook still needs, with an
- * estimated total. Folded away by default so the recipe stays the focus.
+ * Generic pantry products for the ingredients the cook still needs. Amounts
+ * and costs follow the chosen servings (only what the recipe uses), and the
+ * number of packs to buy is worked out from that. Folded away by default so
+ * the recipe stays the focus.
  */
 export function ShopIngredients() {
-  const { recipe, have, shopOpen, setShopOpen } = useRecipeSession();
+  const { recipe, have, shopOpen, setShopOpen, servings, setServings } = useRecipeSession();
   const router = useRouter();
   const requireUser = useRequireUser();
   const { region, price, format, packSize } = useRegion();
@@ -31,22 +34,36 @@ export function ShopIngredients() {
   // A product starts selected unless every ingredient it covers is ticked "I have this".
   // Choices made here override that.
   const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [packs, setPacks] = useState<Record<string, number>>({});
   const isSelected = (m: (typeof matches)[number]) =>
     selected[m.product.id] ?? !m.ingredientIds.every((id) => have.includes(id));
-  const packsOf = (id: string) => packs[id] ?? 1;
+
+  // What each product is needed for at the chosen servings.
+  const needs = useMemo(
+    () =>
+      new Map(
+        matches.map((m) => [
+          m.product.id,
+          productNeed(m.product, recipe.ingredients.filter((i) => m.ingredientIds.includes(i.id)), recipe.servings, servings),
+        ]),
+      ),
+    [matches, recipe, servings],
+  );
+  const needOf = (id: string) => needs.get(id) ?? { amount: "", packShare: null, packs: 1 };
+  /** Cost of the amount the recipe uses (a full pack when the share can't be estimated). */
+  const costOf = (m: (typeof matches)[number]) => price(m.product.price) * (needOf(m.product.id).packShare ?? 1);
 
   const chosen = matches.filter(isSelected);
-  const total = chosen.reduce((sum, m) => sum + price(m.product.price) * packsOf(m.product.id), 0);
+  const total = chosen.reduce((sum, m) => sum + costOf(m), 0);
+  const servingsLabel = `${servings} ${servings === 1 ? "serving" : "servings"}`;
   const allSelected = chosen.length === matches.length;
 
   if (matches.length === 0) return null;
 
   const addToList = () => {
     if (!requireUser("Create a free profile to build your shopping list.")) return;
-    shoppingActions.addProducts(chosen.map((m) => ({ product: m.product, packs: packsOf(m.product.id), source: recipe.title })));
+    shoppingActions.addProducts(chosen.map((m) => ({ product: m.product, packs: needOf(m.product.id).packs, source: recipe.title })));
     toast.success(`Added ${chosen.length} ${chosen.length === 1 ? "item" : "items"} to your shopping list`, {
-      description: `Estimated ${format(total)} (${region.name})`,
+      description: `About ${format(total)} for ${servingsLabel} (${region.name})`,
       action: { label: "View list", onClick: () => router.push("/shopping-list") },
     });
   };
@@ -59,7 +76,7 @@ export function ShopIngredients() {
             Products you&apos;ll need
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {chosen.length} of {matches.length} products selected · about {format(total)}
+            {chosen.length} of {matches.length} products selected · about {format(total)} for {servingsLabel}
           </p>
         </div>
         <Button variant="ghost" onClick={() => setShopOpen(!shopOpen)} aria-expanded={shopOpen} aria-controls="products-list">
@@ -71,8 +88,14 @@ export function ShopIngredients() {
       {shopOpen && (
         <div id="products-list">
           <div className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
-            <span className="text-muted-foreground">Prices for</span>
-            <RegionSelect className="h-8 w-auto max-w-60 text-sm" />
+            <span className="flex items-center gap-2">
+              <span className="text-muted-foreground">Servings</span>
+              <ServingsStepper label="Servings" size="sm" value={servings} min={1} max={48} onChange={setServings} />
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="text-muted-foreground">Prices for</span>
+              <RegionSelect className="h-8 w-auto max-w-60 text-sm" />
+            </span>
             <button
               type="button"
               className="ml-auto underline-offset-4 hover:underline"
@@ -86,7 +109,7 @@ export function ShopIngredients() {
             {matches.map((match) => {
               const { product, ingredientLabel } = match;
               const on = isSelected(match);
-              const count = packsOf(product.id);
+              const need = needOf(product.id);
               return (
                 <li key={product.id} className="group flex items-center gap-3 py-3">
                   <button
@@ -110,19 +133,17 @@ export function ShopIngredients() {
                   <div className={cn("grid min-w-0 flex-1", !on && "opacity-50")}>
                     <p className="truncate text-[0.9375rem] font-medium">{product.name}</p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {packSize(product.packSize)} · for {ingredientLabel}
+                      <span className="font-semibold text-foreground">{need.amount}</span> {ingredientLabel} · for {servingsLabel}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      Sold as {packSize(product.packSize)} · buy {need.packs} {need.packs === 1 ? "pack" : "packs"}
                     </p>
                   </div>
-                  <div className={cn("flex shrink-0 items-center gap-2 sm:gap-3", !on && "pointer-events-none opacity-40")}>
-                    <ServingsStepper
-                      label={`Packs of ${product.name}`}
-                      size="sm"
-                      value={count}
-                      min={1}
-                      max={12}
-                      onChange={(v) => setPacks((p) => ({ ...p, [product.id]: Math.max(1, Math.min(12, v)) }))}
-                    />
-                    <span className="w-16 text-right text-sm font-medium tabular-nums">{format(price(product.price) * count)}</span>
+                  <div className={cn("grid shrink-0 justify-items-end", !on && "opacity-40")}>
+                    <span className="text-sm font-medium tabular-nums">{format(costOf(match))}</span>
+                    <span className="text-[0.6875rem] text-muted-foreground">
+                      {need.packShare === null ? "per pack" : "for this recipe"}
+                    </span>
                   </div>
                   <OrderMenu item={product.name} compact />
                 </li>
@@ -133,7 +154,7 @@ export function ShopIngredients() {
           <div className="flex flex-wrap items-center justify-between gap-4 pt-4">
             <p>
               <span className="font-display text-2xl font-semibold tabular-nums">{format(total)}</span>{" "}
-              <span className="text-sm text-muted-foreground">estimated</span>
+              <span className="text-sm text-muted-foreground">estimated for {servingsLabel}</span>
             </p>
             <Button onClick={addToList} disabled={chosen.length === 0}>
               <ShoppingBasket data-icon="inline-start" />
@@ -144,7 +165,8 @@ export function ShopIngredients() {
             <p className="mt-3 text-xs text-muted-foreground">Not in the pantry catalog yet: {unmatched.join(", ")}.</p>
           )}
           <p className="mt-2 text-xs text-muted-foreground">
-            Generic products with typical prices for {region.name}. Estimates only — nothing is charged. The cart icon
+            Generic products with typical prices for {region.name}. Costs cover the amount this recipe uses at the
+            chosen servings; packs to buy are rounded up. Estimates only — nothing is charged. The cart icon
             opens a store&apos;s own search in a new tab; RecipeNest isn&apos;t affiliated with these stores.
           </p>
         </div>
