@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Ban, Crown, MoreHorizontal, RotateCcw, ShieldCheck, ShieldOff, Trash2, Users } from "lucide-react";
+import { Crown, MoreHorizontal, ShieldCheck, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ListSkeleton } from "@/components/shared/skeletons";
@@ -21,17 +21,17 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAccounts, useCurrentUser } from "@/hooks/use-current-user";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useUserRecipes } from "@/hooks/use-user-recipes";
 import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/types/user";
 import { AdminToolbar } from "./admin-toolbar";
-import { StatusBadge } from "./status-badge";
 
 /**
  * Every registered account. Suspending one blocks its login; deleting removes it
@@ -47,6 +47,7 @@ export function AdminUsersTable() {
   const [search, setSearch] = useState("");
   const [status, setStatusFilter] = useState("all");
   const [deleting, setDeleting] = useState<UserProfile | null>(null);
+  const [disabling, setDisabling] = useState<UserProfile | null>(null);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -85,9 +86,9 @@ export function AdminUsersTable() {
             value: status,
             onChange: setStatusFilter,
             options: [
-              { value: "all", label: "All statuses" },
-              { value: "active", label: "Active" },
-              { value: "suspended", label: "Suspended" },
+              { value: "all", label: "All accounts" },
+              { value: "active", label: "Enabled" },
+              { value: "suspended", label: "Disabled" },
             ],
           },
         ]}
@@ -98,7 +99,8 @@ export function AdminUsersTable() {
             <TableRow>
               <TableHead className="pl-4">User</TableHead>
               <TableHead className="hidden md:table-cell">Email</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Account</TableHead>
+              {isOwner && <TableHead>Admin</TableHead>}
               <TableHead className="hidden sm:table-cell">Recipes</TableHead>
               <TableHead className="hidden lg:table-cell">Joined</TableHead>
               <TableHead className="w-12 pr-4">
@@ -109,115 +111,136 @@ export function AdminUsersTable() {
           <TableBody>
             {visible.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={isOwner ? 7 : 6} className="py-12 text-center text-muted-foreground">
                   No users match these filters.
                 </TableCell>
               </TableRow>
             )}
-            {visible.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell className="pl-4">
-                  <div className="flex items-center gap-3">
-                    <UserAvatar name={user.name} src={user.avatar} className="size-9" />
-                    <div className="grid">
-                      <span className="flex items-center gap-1.5 font-medium">
-                        {user.name}
-                        {user.isOwner ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-metallic-gold px-2 py-px text-[0.6875rem] font-semibold text-[oklch(0.2_0.006_70)]">
-                            <Crown className="size-3" aria-hidden />
-                            Owner
-                          </span>
-                        ) : user.role === "admin" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-2 py-px text-[0.6875rem] font-semibold text-background">
-                            <ShieldCheck className="size-3" aria-hidden />
-                            Admin
-                          </span>
-                        ) : null}
-                        {user.id === me?.id && <span className="text-xs font-normal text-muted-foreground">(you)</span>}
-                      </span>
-                      <span className="text-xs text-muted-foreground">@{user.username}</span>
+            {visible.map((user) => {
+              // You and the owner can't be switched off; only the owner manages admins.
+              const locked = user.isOwner || user.id === me?.id;
+              const canChangeRole = isOwner && !locked;
+              const canModerate = !locked && (user.role !== "admin" || isOwner);
+              const enabled = user.status === "active";
+              return (
+                <TableRow key={user.id}>
+                  <TableCell className="pl-4">
+                    <div className="flex items-center gap-3">
+                      <UserAvatar name={user.name} src={user.avatar} className="size-9" />
+                      <div className="grid">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          {user.name}
+                          {user.isOwner ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-metallic-gold px-2 py-px text-[0.6875rem] font-semibold text-[oklch(0.2_0.006_70)]">
+                              <Crown className="size-3" aria-hidden />
+                              Owner
+                            </span>
+                          ) : user.role === "admin" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-2 py-px text-[0.6875rem] font-semibold text-background">
+                              <ShieldCheck className="size-3" aria-hidden />
+                              Admin
+                            </span>
+                          ) : null}
+                          {user.id === me?.id && <span className="text-xs font-normal text-muted-foreground">(you)</span>}
+                        </span>
+                        <span className="text-xs text-muted-foreground">@{user.username}</span>
+                      </div>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell className="hidden text-muted-foreground md:table-cell">{user.email}</TableCell>
-                <TableCell>
-                  <StatusBadge status={user.status} />
-                </TableCell>
-                <TableCell className="hidden tabular-nums sm:table-cell">{recipeCount(user.id)}</TableCell>
-                <TableCell className="hidden text-muted-foreground lg:table-cell">{formatDate(user.createdAt)}</TableCell>
-                <TableCell className="pr-4">
-                  {(() => {
-                    const locked = user.isOwner || user.id === me?.id;
-                    const canChangeRole = isOwner && !locked;
-                    const canModerate = !locked && (user.role !== "admin" || isOwner);
-                    if (!canChangeRole && !canModerate) return <span className="sr-only">No actions</span>;
-                    return (
+                  </TableCell>
+                  <TableCell className="hidden text-muted-foreground md:table-cell">{user.email}</TableCell>
+                  <TableCell>
+                    <label
+                      className="flex w-fit items-center gap-2.5"
+                      title={canModerate ? undefined : "This account can't be disabled by you"}
+                    >
+                      <Switch
+                        checked={enabled}
+                        disabled={!canModerate}
+                        aria-label={`${enabled ? "Disable" : "Enable"} ${user.name}'s account`}
+                        onCheckedChange={(on) => {
+                          if (on) {
+                            setStatus(user.id, "active");
+                            toast.success(`Enabled ${user.name} — they can log in again`);
+                          } else {
+                            setDisabling(user);
+                          }
+                        }}
+                      />
+                      <span className={cn("text-sm font-medium", enabled ? "text-herb" : "text-destructive")}>
+                        {enabled ? "Enabled" : "Disabled"}
+                      </span>
+                    </label>
+                  </TableCell>
+                  {isOwner && (
+                    <TableCell>
+                      <Switch
+                        checked={user.role === "admin"}
+                        disabled={!canChangeRole}
+                        title={canChangeRole ? undefined : "Your own admin access can't be changed"}
+                        aria-label={`${user.role === "admin" ? "Remove" : "Give"} admin access for ${user.name}`}
+                        onCheckedChange={(on) => {
+                          if (on) {
+                            setGranting(user);
+                          } else {
+                            setRole(user.id, "user");
+                            toast.success(`${user.name} is no longer an admin`);
+                          }
+                        }}
+                      />
+                    </TableCell>
+                  )}
+                  <TableCell className="hidden tabular-nums sm:table-cell">{recipeCount(user.id)}</TableCell>
+                  <TableCell className="hidden text-muted-foreground lg:table-cell">{formatDate(user.createdAt)}</TableCell>
+                  <TableCell className="pr-4">
+                    {canModerate ? (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${user.name}`}>
+                          <Button variant="ghost" size="icon-sm" aria-label={`More actions for ${user.name}`}>
                             <MoreHorizontal />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          {canChangeRole &&
-                            (user.role === "admin" ? (
-                              <DropdownMenuItem
-                                onSelect={() => {
-                                  setRole(user.id, "user");
-                                  toast.success(`${user.name} is no longer an admin`);
-                                }}
-                              >
-                                <ShieldOff />
-                                Remove admin access
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem onSelect={() => setGranting(user)}>
-                                <ShieldCheck />
-                                Make admin
-                              </DropdownMenuItem>
-                            ))}
-                          {canChangeRole && canModerate && <DropdownMenuSeparator />}
-                          {canModerate &&
-                            (user.status === "suspended" ? (
-                              <DropdownMenuItem
-                                onSelect={() => {
-                                  setStatus(user.id, "active");
-                                  toast.success(`Reactivated ${user.name}`);
-                                }}
-                              >
-                                <RotateCcw />
-                                Reactivate
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                onSelect={() => {
-                                  setStatus(user.id, "suspended");
-                                  toast.success(`Suspended ${user.name} — they can't log in until reactivated`);
-                                }}
-                              >
-                                <Ban />
-                                Suspend
-                              </DropdownMenuItem>
-                            ))}
-                          {canModerate && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(user)}>
-                                <Trash2 />
-                                Delete user
-                              </DropdownMenuItem>
-                            </>
-                          )}
+                          <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(user)}>
+                            <Trash2 />
+                            Delete user
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    );
-                  })()}
-                </TableCell>
-              </TableRow>
-            ))}
+                    ) : (
+                      <span className="sr-only">No actions</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={disabling !== null} onOpenChange={(open) => !open && setDisabling(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disable {disabling?.name}&apos;s account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They&apos;ll be signed out and can&apos;t log in, post recipes or write reviews until you enable them again.
+              Their recipes and data are kept.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (!disabling) return;
+                setStatus(disabling.id, "suspended");
+                toast.success(`Disabled ${disabling.name}'s account`);
+              }}
+            >
+              Disable account
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={granting !== null} onOpenChange={(open) => !open && setGranting(null)}>
         <AlertDialogContent>

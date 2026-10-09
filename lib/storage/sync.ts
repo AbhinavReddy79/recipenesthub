@@ -167,7 +167,7 @@ export function startSync(): () => void {
         await dataRequest;
         clearPersonalData();
         await supabase.auth.signOut();
-        toast.error("This account has been suspended. Contact the RecipeNest team if you think this is a mistake.");
+        toast.error("This account has been disabled by an admin. Contact the RecipeNest team if you think this is a mistake.");
         return;
       }
       const profile = toProfile(row, user.email ?? "");

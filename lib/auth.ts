@@ -56,7 +56,7 @@ export const authClient = {
     const row = await fetchProfile(supabase, data.user.id).catch(() => null);
     if (row?.status === "suspended") {
       await supabase.auth.signOut();
-      return { ok: false, error: "This account has been suspended." };
+      return { ok: false, error: "This account has been disabled by an admin. Contact the RecipeNest team if you think this is a mistake." };
     }
     rememberSignIn(credentials.remember);
     return row
