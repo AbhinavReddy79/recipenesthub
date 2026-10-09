@@ -283,6 +283,7 @@ export type Database = {
           role: "user" | "admin";
           status: "active" | "suspended";
           created_at: string;
+          is_owner: boolean;
         }[];
       };
     };

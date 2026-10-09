@@ -21,6 +21,8 @@ export interface UserProfile {
   createdAt: string;
   status: AccountStatus;
   role: AccountRole;
+  /** The site owner (only known in the admin console): the one account that controls admin access. */
+  isOwner?: boolean;
 }
 
 export interface UserPreferences {

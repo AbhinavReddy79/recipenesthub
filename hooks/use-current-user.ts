@@ -20,9 +20,11 @@ export function useCurrentUser(): {
 /** Every account (admin console only; loads on first use). */
 export function useAccounts() {
   const accounts = useStore(accountsStore);
-  const { isAdmin } = useCurrentUser();
+  const { user, isAdmin } = useCurrentUser();
   useEffect(() => {
     if (isAdmin) void accountsStorage.loadAll();
   }, [isAdmin]);
-  return { accounts, setStatus: accountsStorage.setStatus, remove: accountsStorage.remove };
+  // Only the console list knows who the owner is; it controls admin access.
+  const isOwner = Boolean(user && accounts.some((a) => a.id === user.id && a.isOwner));
+  return { accounts, isOwner, setStatus: accountsStorage.setStatus, setRole: accountsStorage.setRole, remove: accountsStorage.remove };
 }

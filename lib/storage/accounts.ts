@@ -96,7 +96,7 @@ export const accountsStorage = {
     if (!ctx) return;
     const { data, error } = await ctx.supabase.rpc("admin_list_users");
     if (error) return reportError("load accounts", error);
-    accountsStore.set((data ?? []).map((row) => toProfile(row, row.email)));
+    accountsStore.set((data ?? []).map((row) => ({ ...toProfile(row, row.email), isOwner: row.is_owner })));
   },
 
   setStatus(id: string, status: UserProfile["status"]): void {
@@ -110,6 +110,22 @@ export const accountsStorage = {
       .then(({ error }) => {
         if (!error) return;
         reportError("update that account", error);
+        void accountsStorage.loadAll();
+      });
+  },
+
+  /** Owner only: give someone admin access or take it away (the database enforces who may). */
+  setRole(id: string, role: UserProfile["role"]): void {
+    const ctx = userContext();
+    if (!ctx) return;
+    accountsStore.set((prev) => prev.map((a) => (a.id === id ? { ...a, role } : a)));
+    void ctx.supabase
+      .from("profiles")
+      .update({ role })
+      .eq("id", id)
+      .then(({ error }) => {
+        if (!error) return;
+        reportError("change that account's access", error);
         void accountsStorage.loadAll();
       });
   },
