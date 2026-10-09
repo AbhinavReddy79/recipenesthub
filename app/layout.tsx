@@ -6,6 +6,7 @@ import { Navbar } from "@/components/layout/navbar";
 import type { SearchIndexItem } from "@/components/layout/search-command";
 import { Providers } from "@/components/providers";
 import { ScrollReveal } from "@/components/shared/scroll-reveal";
+import { ScrollToTop } from "@/components/shared/scroll-to-top";
 import { formatMinutes } from "@/lib/format";
 import { CUISINE_LABELS } from "@/lib/labels";
 import { totalMinutes } from "@/lib/recipes/query";
@@ -79,6 +80,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pb-0">
         <Providers>
           <ScrollReveal />
+          <ScrollToTop />
           <a
             href="#main"
             className="sr-only z-50 rounded-md bg-primary px-4 py-2 text-primary-foreground focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
