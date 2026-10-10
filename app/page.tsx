@@ -1,6 +1,7 @@
 import { CategoryGrid } from "@/components/home/category-grid";
 import { CommunityRecipes } from "@/components/community/community-recipes";
 import { CompactRecipeList } from "@/components/home/compact-recipe-list";
+import { ContestTeaser } from "@/components/home/contest-teaser";
 import { FloatingBanners } from "@/components/home/floating-banners";
 import { Hero } from "@/components/home/hero";
 import { IngredientTeaser } from "@/components/home/ingredient-teaser";
@@ -62,6 +63,8 @@ export default async function HomePage() {
 
       <div className="grid grid-cols-1 gap-20 py-14 sm:gap-24 sm:py-20">
         {ofTheDay && <RecipeOfTheDay recipe={ofTheDay.recipe} date={ofTheDay.date} />}
+
+        <ContestTeaser />
 
         <section aria-labelledby="browse-by-meal" className="container-page">
           <SectionHeading id="browse-by-meal" eyebrow="What's cooking" title="Browse by meal" />

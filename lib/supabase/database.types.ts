@@ -7,6 +7,8 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 type Timestamps = { created_at: string; updated_at: string };
 
+export type SubscriptionStatus = "none" | "pending" | "active" | "cancelled" | "halted" | "paused" | "completed" | "granted";
+
 export type Database = {
   __InternalSupabase: { PostgrestVersion: "12" };
   public: {
@@ -258,6 +260,49 @@ export type Database = {
         Update: { cooked_at?: string };
         Relationships: [];
       };
+      /** Written only by the billing functions; members can read their own row. */
+      subscriptions: {
+        Row: {
+          user_id: string;
+          premium_until: string | null;
+          period: "monthly" | "yearly" | null;
+          status: SubscriptionStatus;
+          razorpay_subscription_id: string | null;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      contests: {
+        Row: {
+          id: string;
+          title: string;
+          description: string;
+          starts_at: string;
+          ends_at: string;
+          prize_amount: number;
+          winner_entry_id: string | null;
+          announced_at: string | null;
+          prize_paid: boolean;
+          created_at: string;
+        };
+        Insert: { id?: string; title: string; description?: string; starts_at: string; ends_at: string; prize_amount?: number };
+        Update: { title?: string; description?: string; starts_at?: string; ends_at?: string; prize_amount?: number; prize_paid?: boolean };
+        Relationships: [];
+      };
+      contest_entries: {
+        Row: { id: string; contest_id: string; recipe_id: string; user_id: string; created_at: string };
+        Insert: { id?: string; contest_id: string; recipe_id: string; user_id: string };
+        Update: never;
+        Relationships: [];
+      };
+      contest_votes: {
+        Row: { entry_id: string; user_id: string; created_at: string };
+        Insert: { entry_id: string; user_id: string };
+        Update: never;
+        Relationships: [];
+      };
     };
     Views: {
       recipe_ratings: {
@@ -272,6 +317,47 @@ export type Database = {
       delete_my_account: { Args: Record<PropertyKey, never>; Returns: undefined };
       admin_delete_user: { Args: { target: string }; Returns: undefined };
       username_available: { Args: { candidate: string }; Returns: boolean };
+      is_premium: { Args: { target?: string }; Returns: boolean };
+      my_plan: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          premium: boolean;
+          premium_until: string | null;
+          period: "monthly" | "yearly" | null;
+          status: SubscriptionStatus;
+          has_razorpay: boolean;
+          recipes_this_month: number;
+          monthly_limit: number | null;
+        }[];
+      };
+      billing_start: { Args: { p_subscription_id: string; p_period: "monthly" | "yearly" }; Returns: undefined };
+      billing_confirm: { Args: { p_payment_id: string; p_subscription_id: string; p_signature: string }; Returns: string };
+      billing_webhook: { Args: { p_body: string; p_signature: string }; Returns: undefined };
+      billing_mark_cancelled: { Args: Record<PropertyKey, never>; Returns: undefined };
+      admin_set_premium: { Args: { target: string; days: number }; Returns: undefined };
+      admin_list_plans: {
+        Args: Record<PropertyKey, never>;
+        Returns: { user_id: string; premium: boolean; premium_until: string | null; period: string | null; status: SubscriptionStatus }[];
+      };
+      contest_is_open: { Args: { p_contest: string }; Returns: boolean };
+      contest_entries_with_votes: {
+        Args: { p_contest: string };
+        Returns: {
+          entry_id: string;
+          recipe_id: string;
+          recipe_slug: string;
+          recipe_title: string;
+          recipe_image: string;
+          user_id: string;
+          author_name: string;
+          author_username: string;
+          author_avatar: string;
+          votes: number;
+          voted_by_me: boolean;
+          created_at: string;
+        }[];
+      };
+      admin_announce_winner: { Args: { p_contest: string }; Returns: string | null };
       admin_list_users: {
         Args: Record<PropertyKey, never>;
         Returns: {

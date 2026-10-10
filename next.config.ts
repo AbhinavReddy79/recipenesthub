@@ -20,15 +20,16 @@ const supabaseOrigins = ["https://*.supabase.co", ...(supabaseHost && !supabaseH
  */
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
+  `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com${isProduction ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https://images.unsplash.com https://www.themealdb.com https://upload.wikimedia.org https://thumb.wikimedia.org ${supabaseOrigins.join(" ")}`,
   "font-src 'self' data:",
-  `connect-src 'self' data: blob: ${supabaseOrigins.join(" ")} ${supabaseOrigins.map((o) => o.replace("https://", "wss://")).join(" ")}${isProduction ? "" : " ws: http://localhost:*"}`,
+  `connect-src 'self' data: blob: https://api.razorpay.com https://lumberjack.razorpay.com ${supabaseOrigins.join(" ")} ${supabaseOrigins.map((o) => o.replace("https://", "wss://")).join(" ")}${isProduction ? "" : " ws: http://localhost:*"}`,
   "media-src 'self'",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  "frame-src 'none'",
+  // Razorpay Checkout runs in its own frame.
+  "frame-src https://api.razorpay.com https://checkout.razorpay.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -41,9 +42,11 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()" },
+  // Razorpay Checkout may use the browser's payment features (e.g. UPI apps).
+  { key: "Permissions-Policy", value: 'camera=(), microphone=(), geolocation=(), payment=(self "https://api.razorpay.com"), usb=(), browsing-topics=()' },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
-  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  // Bank and UPI pages opened by Razorpay Checkout report back to this window.
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
   { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
 ];
 

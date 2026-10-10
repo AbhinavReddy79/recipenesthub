@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Crown, MoreHorizontal, ShieldCheck, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -29,6 +29,7 @@ import { useAccounts, useCurrentUser } from "@/hooks/use-current-user";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useUserRecipes } from "@/hooks/use-user-recipes";
 import { formatDate } from "@/lib/format";
+import { adminListPlans, adminSetPremium, type MemberPlan } from "@/lib/storage/plan";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/types/user";
 import { AdminToolbar } from "./admin-toolbar";
@@ -48,6 +49,21 @@ export function AdminUsersTable() {
   const [status, setStatusFilter] = useState("all");
   const [deleting, setDeleting] = useState<UserProfile | null>(null);
   const [disabling, setDisabling] = useState<UserProfile | null>(null);
+  const [plans, setPlans] = useState<Record<string, MemberPlan>>({});
+
+  const loadPlans = useCallback(() => {
+    adminListPlans()
+      .then(setPlans)
+      .catch(() => {});
+  }, []);
+  useEffect(loadPlans, [loadPlans]);
+
+  const givePremium = async (user: UserProfile, days: number) => {
+    const ok = await adminSetPremium(user.id, days);
+    if (!ok) return toast.error("We couldn't change that plan. Please try again.");
+    toast.success(days === 0 ? `${user.name} is back on the Free plan` : `Gave ${user.name} ${days === 365 ? "a year" : "a month"} of Premium`);
+    loadPlans();
+  };
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -101,6 +117,7 @@ export function AdminUsersTable() {
               <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead>Account</TableHead>
               {isOwner && <TableHead>Admin</TableHead>}
+              <TableHead className="hidden sm:table-cell">Plan</TableHead>
               <TableHead className="hidden sm:table-cell">Recipes</TableHead>
               <TableHead className="hidden lg:table-cell">Joined</TableHead>
               <TableHead className="w-12 pr-4">
@@ -111,7 +128,7 @@ export function AdminUsersTable() {
           <TableBody>
             {visible.length === 0 && (
               <TableRow>
-                <TableCell colSpan={isOwner ? 7 : 6} className="py-12 text-center text-muted-foreground">
+                <TableCell colSpan={isOwner ? 8 : 7} className="py-12 text-center text-muted-foreground">
                   No users match these filters.
                 </TableCell>
               </TableRow>
@@ -189,26 +206,54 @@ export function AdminUsersTable() {
                       />
                     </TableCell>
                   )}
+                  <TableCell className="hidden sm:table-cell">
+                    {plans[user.id]?.premium ? (
+                      <span className="grid">
+                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-metallic-gold px-2 py-px text-[0.6875rem] font-semibold text-[oklch(0.2_0.006_70)]">
+                          <Crown className="size-3" aria-hidden />
+                          Premium
+                        </span>
+                        {plans[user.id]?.premiumUntil && (
+                          <span className="text-xs text-muted-foreground">until {formatDate(plans[user.id]!.premiumUntil!)}</span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">Free</span>
+                    )}
+                  </TableCell>
                   <TableCell className="hidden tabular-nums sm:table-cell">{recipeCount(user.id)}</TableCell>
                   <TableCell className="hidden text-muted-foreground lg:table-cell">{formatDate(user.createdAt)}</TableCell>
                   <TableCell className="pr-4">
-                    {canModerate ? (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon-sm" aria-label={`More actions for ${user.name}`}>
-                            <MoreHorizontal />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon-sm" aria-label={`More actions for ${user.name}`}>
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {/* For members who pay another way (e.g. UPI), prizes or testing. */}
+                        <DropdownMenuItem onSelect={() => givePremium(user, 30)}>
+                          <Crown />
+                          Give 1 month Premium
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => givePremium(user, 365)}>
+                          <Crown />
+                          Give 1 year Premium
+                        </DropdownMenuItem>
+                        {plans[user.id]?.premium && (
+                          <DropdownMenuItem onSelect={() => givePremium(user, 0)}>
+                            <Crown />
+                            Remove Premium
+                          </DropdownMenuItem>
+                        )}
+                        {canModerate && (
                           <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(user)}>
                             <Trash2 />
                             Delete user
                           </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : (
-                      <span className="sr-only">No actions</span>
-                    )}
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               );

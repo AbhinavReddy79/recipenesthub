@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Plus } from "lucide-react";
+import { BookOpen, Crown, Plus } from "lucide-react";
 import { CollectionsGrid } from "@/components/collections/collections-view";
 import { RecipeGrid } from "@/components/recipes/recipe-grid";
 import { SavedView } from "@/components/recipes/saved-view";
@@ -17,6 +17,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { useSettings } from "@/hooks/use-settings";
 import { useUserRecipes } from "@/hooks/use-user-recipes";
 import { CUISINE_LABELS } from "@/lib/labels";
+import { usePlan } from "@/lib/storage/plan";
 import type { Recipe } from "@/types/recipe";
 import { EditProfileDialog } from "./edit-profile-dialog";
 import { ProfileHeader } from "./profile-header";
@@ -28,6 +29,7 @@ export function ProfileView({ recipes }: { recipes: Recipe[] }) {
   const { count: savedCount } = useFavorites();
   const { collections } = useCollections();
   const { preferences } = useSettings();
+  const plan = usePlan();
 
   if (!hydrated || !profile) return <ProfileSkeleton />;
 
@@ -41,6 +43,17 @@ export function ProfileView({ recipes }: { recipes: Recipe[] }) {
         location={profile.location}
         joinedAt={profile.createdAt}
         greeting={`Welcome, ${profile.name.split(" ")[0]}`}
+        badge={
+          plan.premium && (
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-1 rounded-full bg-metallic-gold px-3 py-1 text-xs font-bold text-[oklch(0.2_0.006_70)] uppercase shadow-soft"
+            >
+              <Crown className="size-3.5" aria-hidden />
+              Premium
+            </Link>
+          )
+        }
         extra={
           (preferences.diet !== "None" || preferences.favoriteCuisines.length > 0) && (
             <div className="flex flex-wrap items-center gap-2 pt-1">

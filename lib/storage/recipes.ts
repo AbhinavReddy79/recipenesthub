@@ -1,3 +1,5 @@
+import { FREE_RECIPES_PER_MONTH } from "@/lib/plans";
+import { refreshPlan } from "./plan";
 import { FALLBACK_RECIPE_IMAGE } from "@/lib/images";
 import type { Database } from "@/lib/supabase/database.types";
 import type { RecipeNestClient } from "@/lib/supabase/client";
@@ -91,7 +93,9 @@ async function load(client?: RecipeNestClient): Promise<void> {
   userRecipesStore.set(data.flatMap((row) => fromRow(row) ?? []));
 }
 
-export type SaveRecipeResult = { ok: true; recipe: Recipe } | { ok: false; error: string };
+export type SaveRecipeResult =
+  | { ok: true; recipe: Recipe }
+  | { ok: false; error: string; /** Free plan: this month's 5 recipes are already published. */ limitReached?: boolean };
 
 export const recipesStorage = {
   load,
@@ -136,6 +140,14 @@ export const recipesStorage = {
       { onConflict: "id" },
     );
     if (recipeError) {
+      if (recipeError.message?.includes("monthly_recipe_limit")) {
+        void refreshPlan().catch(() => {});
+        return {
+          ok: false,
+          limitReached: true,
+          error: `Free members can publish ${FREE_RECIPES_PER_MONTH} recipes a month. Save this one as a draft, or go Premium for unlimited recipes.`,
+        };
+      }
       console.error(recipeError);
       return { ok: false, error: "We couldn't save your recipe. Please try again." };
     }
@@ -177,6 +189,8 @@ export const recipesStorage = {
     }
 
     await load(supabase).catch((error: unknown) => reportError("refresh recipes", error));
+    // Publishing uses up the Free plan's monthly allowance.
+    if (recipe.status === "published") void refreshPlan().catch(() => {});
     const saved = recipesStorage.find(recipe.id) ?? { ...recipe, image: imageUrl };
     return { ok: true, recipe: saved };
   },

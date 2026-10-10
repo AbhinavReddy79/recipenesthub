@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   BookOpen,
   CircleUser,
+  Crown,
   FolderHeart,
   Heart,
   LayoutDashboard,
@@ -33,6 +34,7 @@ import {
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { authClient } from "@/lib/auth";
+import { usePlan } from "@/lib/storage/plan";
 import { THEME_OPTIONS } from "./theme-toggle";
 
 export const accountLinks = [
@@ -47,6 +49,7 @@ export const accountLinks = [
 export function UserMenu() {
   const hydrated = useHydrated();
   const { user, isAdmin } = useCurrentUser();
+  const plan = usePlan();
   const { openAuth } = useAuthDialog();
   const signedIn = hydrated && user;
   const { theme, setTheme } = useTheme();
@@ -76,6 +79,18 @@ export function UserMenu() {
                 <span className="truncate text-xs text-muted-foreground">@{user.username}</span>
               </span>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/pricing" className="font-semibold">
+                <Crown className="text-gold-ink" />
+                {plan.premium ? "Premium" : "Go Premium"}
+                {plan.premium && (
+                  <span className="ml-auto rounded-full bg-metallic-gold px-2 py-0.5 text-[0.625rem] font-bold text-[oklch(0.2_0.006_70)] uppercase">
+                    Active
+                  </span>
+                )}
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               {accountLinks.map(({ href, label, icon: Icon }) => (

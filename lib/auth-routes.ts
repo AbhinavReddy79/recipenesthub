@@ -1,8 +1,18 @@
 /**
  * RecipeNest is members-only: every page needs an account except these.
- * (Email-link landing pages and the legal pages stay open to everyone.)
+ * (Email-link landing pages, the legal pages and the Razorpay webhook, which
+ * checks its own signature, stay open to everyone.)
  */
-export const PUBLIC_PATHS = ["/login", "/register", "/forgot-password", "/reset-password", "/auth", "/privacy", "/terms"] as const;
+export const PUBLIC_PATHS = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/auth",
+  "/privacy",
+  "/terms",
+  "/api/billing/webhook",
+] as const;
 
 /** Pages where a signed-in visitor has nothing to do (sent home instead). */
 export const GUEST_ONLY_PATHS = ["/login", "/register"] as const;

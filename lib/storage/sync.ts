@@ -6,6 +6,7 @@ import { collectionsStorage, collectionsStore } from "./collections";
 import { readJSON, removeKey, STORAGE_PREFIX } from "./core";
 import { favoritesStorage, favoritesStore } from "./favorites";
 import { mealPlanStorage, mealPlanStore } from "./mealPlanner";
+import { loadPlan, planStore } from "./plan";
 import { recipesStorage, userRecipesStore } from "./recipes";
 import { reportError } from "./remote";
 import { cookedStore, loadCooked, loadRatings, ratingsStore, reviewsBySlugStore } from "./reviews";
@@ -72,6 +73,7 @@ function clearPersonalData(): void {
     userRecipesStore,
     ratingsStore,
     reviewsBySlugStore,
+    planStore,
   ].forEach((store) => store.reset());
 }
 
@@ -106,6 +108,7 @@ async function loadPersonalData(supabase: RecipeNestClient, userId: string): Pro
     () => loadCooked(supabase, userId),
     () => loadRatings(supabase),
     () => recipesStorage.load(supabase),
+    () => loadPlan(supabase),
   ];
   const attempt = (load: () => Promise<unknown>) => withTimeout(load()).catch(() => withTimeout(load()));
   const results = await Promise.allSettled(loaders.map(attempt));

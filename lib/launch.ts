@@ -13,10 +13,19 @@ export const isLaunched = (now = Date.now()) => now >= LAUNCH_AT.getTime();
 
 /**
  * Pages anyone can still open before launch: the countdown, signing in (so
- * the owner can get in), password help, email-link landing pages and the legal
- * pages. Creating an account opens at launch.
+ * the owner can get in), password help, email-link landing pages, the legal
+ * pages and the Razorpay webhook. Creating an account opens at launch.
  */
-const PRE_LAUNCH_PATHS = [COMING_SOON_PATH, "/login", "/forgot-password", "/reset-password", "/auth", "/privacy", "/terms"];
+const PRE_LAUNCH_PATHS = [
+  COMING_SOON_PATH,
+  "/login",
+  "/forgot-password",
+  "/reset-password",
+  "/auth",
+  "/privacy",
+  "/terms",
+  "/api/billing/webhook",
+];
 
 export const isPreLaunchPath = (pathname: string) =>
   PRE_LAUNCH_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));

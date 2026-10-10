@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Check, CircleAlert, FileText, PartyPopper, Rocket, Save } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ArrowRight, Check, CircleAlert, Crown, FileText, PartyPopper, Rocket, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -17,6 +18,7 @@ import {
   type StepErrors,
 } from "@/lib/recipes/draft";
 import { recipeFormAutosave } from "@/lib/storage/recipes";
+import { usePlan } from "@/lib/storage/plan";
 import { cn } from "@/lib/utils";
 import type { Recipe, RecipeStatus } from "@/types/recipe";
 import type { UserProfile } from "@/types/user";
@@ -50,6 +52,12 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
   const [done, setDone] = useState<Recipe | null>(null);
   const [saving, setSaving] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
+  const plan = usePlan();
+  const router = useRouter();
+  // Re-publishing an already published recipe doesn't use up the Free allowance.
+  const usesAllowance = existing?.status !== "published";
+  const limitReached =
+    plan.loaded && usesAllowance && plan.monthlyLimit !== null && plan.recipesThisMonth >= plan.monthlyLimit;
 
   // Autosave in-progress new recipes so a refresh doesn't lose work.
   useEffect(() => {
@@ -117,7 +125,11 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
     setSaving(true);
     const result = await userRecipeActions.save(recipe).finally(() => setSaving(false));
     if (!result.ok) {
-      toast.error(result.error);
+      if (result.limitReached) {
+        toast.error(result.error, { action: { label: "Go Premium", onClick: () => router.push("/pricing") } });
+      } else {
+        toast.error(result.error);
+      }
       return;
     }
     if (!existing) recipeFormAutosave.clear();
@@ -234,6 +246,26 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
           {step === 4 && <PreviewStep recipe={preview} />}
           {step === 5 && (
             <div className="grid gap-6">
+              {plan.loaded && plan.monthlyLimit !== null && usesAllowance && (
+                <div
+                  className={cn(
+                    "flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4 text-sm",
+                    limitReached ? "bg-amber/15 text-foreground ring-1 ring-amber/40" : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  <span>
+                    {limitReached
+                      ? `You've published ${plan.monthlyLimit} recipes this month, the Free plan's limit. Save this one as a draft and publish it next month, or go Premium for unlimited recipes.`
+                      : `Free plan: ${plan.recipesThisMonth} of ${plan.monthlyLimit} recipes published this month.`}
+                  </span>
+                  <Button asChild size="sm" className="bg-metallic-gold text-[oklch(0.2_0.006_70)] hover:opacity-95">
+                    <Link href="/pricing">
+                      <Crown data-icon="inline-start" />
+                      {limitReached ? "Go Premium" : "Unlimited with Premium"}
+                    </Link>
+                  </Button>
+                </div>
+              )}
               <ul className="grid gap-2 text-sm">
                 {[
                   `Title: ${preview.title}`,
@@ -250,7 +282,7 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
                 <button
                   type="button"
                   onClick={() => save("published")}
-                  disabled={saving}
+                  disabled={saving || limitReached}
                   aria-busy={saving}
                   className="grid gap-2 rounded-2xl border-2 border-primary disabled:pointer-events-none disabled:opacity-60 bg-accent p-5 text-left transition duration-300 hover:-translate-y-1 hover:shadow-lift"
                 >

@@ -42,5 +42,5 @@ export const mainNav = [
   { label: "Cuisines", href: "/cuisines" },
   { label: "Meal Planner", href: "/meal-planner" },
   { label: "Shopping List", href: "/shopping-list" },
-  { label: "Collections", href: "/collections" },
+  { label: "Weekly Contest", href: "/contests" },
 ] as const;
