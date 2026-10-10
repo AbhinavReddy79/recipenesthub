@@ -267,6 +267,7 @@ export type Database = {
     };
     Functions: {
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      is_owner: { Args: { target?: string }; Returns: boolean };
       is_active_user: { Args: Record<PropertyKey, never>; Returns: boolean };
       delete_my_account: { Args: Record<PropertyKey, never>; Returns: undefined };
       admin_delete_user: { Args: { target: string }; Returns: undefined };

@@ -9,7 +9,7 @@ import { isSupabaseConfigured, supabaseKey, supabaseUrl } from "@/lib/supabase/e
  * Keeps the Supabase session fresh (refreshes an expiring access token and
  * writes the updated auth cookies onto the response) and makes the site
  * members-only: visitors without an account are sent to /login first.
- * Before launch, only admins get past the countdown page.
+ * Before launch, only the site owner gets past the countdown page.
  */
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured) return NextResponse.next({ request });
@@ -34,10 +34,10 @@ export async function proxy(request: NextRequest) {
   const signedIn = Boolean(data?.claims?.sub);
   const { pathname, search } = request.nextUrl;
 
-  // Before launch: the site is open only to admins; everyone else sees the
-  // countdown. After launch the countdown page just leads home.
+  // Before launch: the site is open only to the owner; everyone else (admins
+  // included) sees the countdown. After launch the countdown page just leads home.
   if (!isLaunched()) {
-    if (!isPreLaunchPath(pathname) && !(signedIn && (await isActiveAdmin(supabase, data?.claims?.sub)))) {
+    if (!isPreLaunchPath(pathname) && !(signedIn && (await isOwner(supabase)))) {
       return redirectKeepingCookies(new URL(COMING_SOON_PATH, request.url), response);
     }
   } else if (pathname === COMING_SOON_PATH) {
@@ -64,6 +64,12 @@ export async function proxy(request: NextRequest) {
   }
 
   return response;
+}
+
+/** The signed-in user is the site owner (checked in the database; the owner list itself isn't readable). */
+async function isOwner(supabase: ReturnType<typeof createServerClient<Database>>): Promise<boolean> {
+  const { data } = await supabase.rpc("is_owner");
+  return data === true;
 }
 
 async function isActiveAdmin(supabase: ReturnType<typeof createServerClient<Database>>, userId: unknown): Promise<boolean> {

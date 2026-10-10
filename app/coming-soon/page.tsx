@@ -51,7 +51,7 @@ export default function ComingSoonPage() {
         </div>
 
         <p className="text-xs text-white/55">
-          Part of the team?{" "}
+          Site owner?{" "}
           <Link href="/login" className="font-semibold text-white/80 underline-offset-4 hover:text-white hover:underline">
             Sign in
           </Link>
