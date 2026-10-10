@@ -375,6 +375,9 @@ export type Database = {
           created_at: string;
         }[];
       };
+      site_is_launched: { Args: Record<PropertyKey, never>; Returns: boolean };
+      owner_site_status: { Args: Record<PropertyKey, never>; Returns: string | null };
+      owner_set_launched: { Args: { launched: boolean }; Returns: string | null };
       has_admin_power: { Args: { power_name: string }; Returns: boolean };
       my_admin_powers: {
         Args: Record<PropertyKey, never>;

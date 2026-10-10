@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isGuestOnlyPath, isPublicPath, safeNext } from "@/lib/auth-routes";
-import { COMING_SOON_PATH, isLaunched, isPreLaunchPath } from "@/lib/launch";
+import { COMING_SOON_PATH, isPreLaunchPath } from "@/lib/launch";
 
 /** What signed-out visitors see at the site's address after launch. */
 const WELCOME_PATH = "/welcome";
@@ -42,7 +42,7 @@ export async function proxy(request: NextRequest) {
   // The site's address itself always shows a page (the countdown, or the welcome
   // page for signed-out visitors after launch) rather than redirecting, so it
   // can be shared and verified (e.g. by Razorpay) as a working website.
-  if (!isLaunched()) {
+  if (!(await siteLaunched(supabase))) {
     if (!isPreLaunchPath(pathname) && !(signedIn && (await hasSiteAccess(supabase)))) {
       if (pathname === "/") return rewriteKeepingCookies(new URL(COMING_SOON_PATH, request.url), request, response);
       return redirectKeepingCookies(new URL(COMING_SOON_PATH, request.url), response);
@@ -75,6 +75,21 @@ export async function proxy(request: NextRequest) {
   }
 
   return response;
+}
+
+// Whether the owner has launched the site, remembered for 15 seconds per
+// server instance so pages don't wait on the database every time.
+const LAUNCH_CACHE_MS = 15_000;
+let launchCache: { value: boolean; at: number } | null = null;
+
+async function siteLaunched(supabase: ReturnType<typeof createServerClient<Database>>): Promise<boolean> {
+  const now = Date.now();
+  if (launchCache && now - launchCache.at < LAUNCH_CACHE_MS) return launchCache.value;
+  const { data, error } = await supabase.rpc("site_is_launched");
+  // If the database can't be reached, keep the last known answer.
+  if (error) return launchCache?.value ?? false;
+  launchCache = { value: data === true, at: now };
+  return launchCache.value;
 }
 
 /** The signed-in user may use the site before launch: the owner, or someone they gave early access (checked in the database). */

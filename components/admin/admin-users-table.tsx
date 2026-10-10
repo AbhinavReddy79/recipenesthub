@@ -31,7 +31,6 @@ import { useUserRecipes } from "@/hooks/use-user-recipes";
 import { formatDate } from "@/lib/format";
 import { adminListPlans, adminSetPremium, type MemberPlan } from "@/lib/storage/plan";
 import { adminListEarlyAccess, adminListPresence, isOnline, setEarlyAccess } from "@/lib/storage/presence";
-import { isLaunched } from "@/lib/launch";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/types/user";
 import { ownerListAdminPowers, type MemberPowers } from "@/lib/storage/admin-powers";
@@ -207,7 +206,7 @@ export function AdminUsersTable() {
                             </span>
                           ) : null}
                           {user.id === me?.id && <span className="text-xs font-normal text-muted-foreground">(you)</span>}
-                          {!isLaunched() && earlyAccess.has(user.id) && (
+                          {earlyAccess.has(user.id) && (
                             <span className="rounded-full bg-herb-soft px-2 py-px text-[0.6875rem] font-semibold text-herb">Early access</span>
                           )}
                         </span>
@@ -293,7 +292,7 @@ export function AdminUsersTable() {
                             Admin permissions…
                           </DropdownMenuItem>
                         )}
-                        {isOwner && !user.isOwner && !isLaunched() && (
+                        {isOwner && !user.isOwner && (
                           <DropdownMenuItem onSelect={() => toggleEarlyAccess(user, !earlyAccess.has(user.id))}>
                             <ShieldCheck />
                             {earlyAccess.has(user.id) ? "Remove early access" : "Give early access (before launch)"}

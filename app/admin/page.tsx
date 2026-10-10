@@ -1,4 +1,5 @@
 import { AdminDashboard } from "@/components/admin/admin-dashboard";
+import { LaunchCard } from "@/components/admin/launch-card";
 import { getCatalogStats } from "@/lib/services/admin";
 
 export const metadata = { title: "Dashboard" };
@@ -11,6 +12,7 @@ export default async function AdminDashboardPage() {
         <h1 className="text-3xl font-semibold sm:text-4xl">Dashboard</h1>
         <p className="mt-1 text-muted-foreground">Live numbers for RecipeNest — calculated from real data, never estimated.</p>
       </header>
+      <LaunchCard />
       <AdminDashboard platformRecipes={stats.platformRecipes} />
     </div>
   );

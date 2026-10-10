@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PartyPopper } from "lucide-react";
+import { PartyPopper, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getSupabase } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 // One shared once-a-second clock. The server renders placeholders ("--"),
@@ -45,15 +46,46 @@ function Digit({ value, previous }: { value: string; previous: string }) {
 export function Countdown({ launchAt }: { launchAt: number }) {
   const now = useSyncExternalStore(subscribe, nowInSeconds, noTimeOnServer);
   const left = now === null ? null : Math.max(0, Math.floor(launchAt / 1000) - now);
-  const live = left === 0;
+  const reachedZero = left === 0;
   const router = useRouter();
+  const [live, setLive] = useState(false);
 
-  // At launch the site opens by itself: head to the home page.
+  // The owner opens the site with a button. Check every 30 seconds (every 10
+  // once the countdown has reached zero) and take visitors in when it's live.
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    let cancelled = false;
+    const check = () =>
+      supabase.rpc("site_is_launched").then(({ data }) => {
+        if (!cancelled && data === true) setLive(true);
+      });
+    void check();
+    const id = window.setInterval(check, reachedZero ? 10_000 : 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [reachedZero]);
+
   useEffect(() => {
     if (!live) return;
-    const id = window.setTimeout(() => router.replace("/"), 2500);
+    const id = window.setTimeout(() => {
+      router.replace("/");
+      router.refresh();
+    }, 2500);
     return () => window.clearTimeout(id);
   }, [live, router]);
+
+  if (reachedZero && !live) {
+    return (
+      <div className="grid justify-items-center gap-3" role="status">
+        <Rocket className="size-12 animate-bounce-soft text-saffron" aria-hidden />
+        <p className="font-display text-3xl font-semibold sm:text-4xl">Launching today!</p>
+        <p className="text-white/75">We&apos;re putting the final touches on. This page opens by itself the moment we go live.</p>
+      </div>
+    );
+  }
 
   if (live) {
     return (
