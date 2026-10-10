@@ -7,6 +7,7 @@ import { readJSON, removeKey, STORAGE_PREFIX } from "./core";
 import { favoritesStorage, favoritesStore } from "./favorites";
 import { mealPlanStorage, mealPlanStore } from "./mealPlanner";
 import { loadPlan, planStore } from "./plan";
+import { startHeartbeat } from "./presence";
 import { recipesStorage, userRecipesStore } from "./recipes";
 import { reportError } from "./remote";
 import { cookedStore, loadCooked, loadRatings, ratingsStore, reviewsBySlugStore } from "./reviews";
@@ -140,6 +141,8 @@ export function startSync(): () => void {
 
   let currentUserId: string | null | undefined;
   let run = 0;
+  // Tells the database this member is active while the tab is visible (admin "online" dots).
+  let stopHeartbeat: (() => void) | null = null;
 
   const apply = async (user: User | null) => {
     const userId = user?.id ?? null;
@@ -150,6 +153,8 @@ export function startSync(): () => void {
     }
     currentUserId = userId;
     const thisRun = ++run;
+    stopHeartbeat?.();
+    stopHeartbeat = null;
 
     // Members-only: signed-out visitors load nothing from the database.
     if (!user || !userId) {
@@ -178,6 +183,7 @@ export function startSync(): () => void {
       await dataRequest;
       if (thisRun !== run) return;
       authStore.set((s) => ({ ...s, ready: true }));
+      stopHeartbeat = startHeartbeat(supabase);
       // A photo picked at sign-up is uploaded in the background.
       void uploadPendingAvatar(userId, profile.email, profile.avatar).catch((error: unknown) => console.error(error));
     } catch (error) {
@@ -194,5 +200,8 @@ export function startSync(): () => void {
   const { data } = supabase.auth.onAuthStateChange((_event, session) => {
     setTimeout(() => void apply(session?.user ?? null), 0);
   });
-  return () => data.subscription.unsubscribe();
+  return () => {
+    stopHeartbeat?.();
+    data.subscription.unsubscribe();
+  };
 }

@@ -30,6 +30,7 @@ import { useHydrated } from "@/hooks/use-hydrated";
 import { useUserRecipes } from "@/hooks/use-user-recipes";
 import { formatDate } from "@/lib/format";
 import { adminListPlans, adminSetPremium, type MemberPlan } from "@/lib/storage/plan";
+import { adminListPresence, isOnline } from "@/lib/storage/presence";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/types/user";
 import { AdminToolbar } from "./admin-toolbar";
@@ -50,6 +51,22 @@ export function AdminUsersTable() {
   const [deleting, setDeleting] = useState<UserProfile | null>(null);
   const [disabling, setDisabling] = useState<UserProfile | null>(null);
   const [plans, setPlans] = useState<Record<string, MemberPlan>>({});
+  // Last activity per member, refreshed every 30 seconds (green dot = active in the last 2 minutes).
+  const [presence, setPresence] = useState<{ lastSeen: Record<string, string>; at: number }>({ lastSeen: {}, at: 0 });
+  useEffect(() => {
+    let cancelled = false;
+    const load = () =>
+      adminListPresence()
+        .then((lastSeen) => !cancelled && setPresence({ lastSeen, at: Date.now() }))
+        .catch(() => {});
+    load();
+    const id = window.setInterval(load, 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, []);
+  const onlineCount = Object.values(presence.lastSeen).filter((seen) => isOnline(seen, presence.at)).length;
 
   const loadPlans = useCallback(() => {
     adminListPlans()
@@ -109,6 +126,10 @@ export function AdminUsersTable() {
           },
         ]}
       />
+      <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">
+        <span className="size-2.5 rounded-full bg-herb shadow-[0_0_0_3px_color-mix(in_oklch,var(--herb)_25%,transparent)]" aria-hidden />
+        {onlineCount} {onlineCount === 1 ? "person" : "people"} using RecipeNest right now
+      </p>
       <div className="overflow-hidden rounded-2xl border bg-card">
         <Table>
           <TableHeader className="bg-surface">
@@ -143,7 +164,7 @@ export function AdminUsersTable() {
                 <TableRow key={user.id}>
                   <TableCell className="pl-4">
                     <div className="flex items-center gap-3">
-                      <UserAvatar name={user.name} src={user.avatar} className="size-9" />
+                      <PresenceAvatar user={user} lastSeen={presence.lastSeen[user.id]} now={presence.at} />
                       <div className="grid">
                         <span className="flex items-center gap-1.5 font-medium">
                           {user.name}
@@ -160,7 +181,12 @@ export function AdminUsersTable() {
                           ) : null}
                           {user.id === me?.id && <span className="text-xs font-normal text-muted-foreground">(you)</span>}
                         </span>
-                        <span className="text-xs text-muted-foreground">@{user.username}</span>
+                        <span className="text-xs text-muted-foreground">
+                          @{user.username} ·{" "}
+                          <span className={isOnline(presence.lastSeen[user.id], presence.at) ? "font-medium text-herb" : undefined}>
+                            {lastSeenLabel(presence.lastSeen[user.id], presence.at)}
+                          </span>
+                        </span>
                       </div>
                     </div>
                   </TableCell>
@@ -335,5 +361,36 @@ export function AdminUsersTable() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+const relative = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+function lastSeenLabel(lastSeen: string | undefined, now: number): string {
+  if (!lastSeen || !now) return "Not seen yet";
+  if (isOnline(lastSeen, now)) return "Using RecipeNest now";
+  const minutes = Math.round((Date.parse(lastSeen) - now) / 60_000);
+  if (minutes > -60) return `Last seen ${relative.format(minutes, "minute")}`;
+  const hours = Math.round(minutes / 60);
+  if (hours > -24) return `Last seen ${relative.format(hours, "hour")}`;
+  return `Last seen ${relative.format(Math.round(hours / 24), "day")}`;
+}
+
+/** Avatar with a green (using the site now) or red (not using it) status dot. */
+function PresenceAvatar({ user, lastSeen, now }: { user: UserProfile; lastSeen: string | undefined; now: number }) {
+  const online = isOnline(lastSeen, now);
+  const label = lastSeenLabel(lastSeen, now);
+  return (
+    <span className="relative shrink-0" title={label}>
+      <UserAvatar name={user.name} src={user.avatar} className="size-9" />
+      <span
+        aria-hidden
+        className={cn(
+          "absolute -right-0.5 -bottom-0.5 size-3 rounded-full ring-2 ring-card",
+          online ? "bg-herb" : "bg-destructive",
+          online && "animate-pulse",
+        )}
+      />
+      <span className="sr-only">{label}</span>
+    </span>
   );
 }

@@ -375,6 +375,8 @@ export type Database = {
           created_at: string;
         }[];
       };
+      touch_last_seen: { Args: Record<PropertyKey, never>; Returns: undefined };
+      admin_list_presence: { Args: Record<PropertyKey, never>; Returns: { user_id: string; last_seen_at: string | null }[] };
       admin_announce_winner: { Args: { p_contest: string }; Returns: string | null };
       admin_list_users: {
         Args: Record<PropertyKey, never>;
