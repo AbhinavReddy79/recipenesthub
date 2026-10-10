@@ -6,7 +6,7 @@ import { siteConfig } from "@/lib/site";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [recipes, cuisines] = await Promise.all([listRecipes(), listCuisines()]);
   const base = siteConfig.url;
-  const staticRoutes = ["", "/recipes", "/search", "/ingredients", "/cuisines", "/community", "/privacy", "/terms", "/meal-planner"].map((path) => ({
+  const staticRoutes = ["", "/recipes", "/search", "/ingredients", "/cuisines", "/community", "/privacy", "/terms", "/refund-policy", "/contact", "/pricing", "/contests", "/meal-planner"].map((path) => ({
     url: `${base}${path}`,
     changeFrequency: "daily" as const,
     priority: path === "" ? 1 : 0.8,

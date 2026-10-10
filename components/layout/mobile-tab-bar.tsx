@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CalendarDays, Heart, Home, Search, ShoppingBasket } from "lucide-react";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { isPublicPath } from "@/lib/auth-routes";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +18,9 @@ const TABS = [
 /** App-style tab bar for phones; hidden from tablet width up, where the top navigation has room. */
 export function MobileTabBar() {
   const pathname = usePathname();
-  // Public pages (sign-in, legal) are what signed-out visitors see; the tabs lead behind the login.
-  if (isPublicPath(pathname)) return null;
+  const { user } = useCurrentUser();
+  // Public pages (sign-in, legal, pricing) are what signed-out visitors see; the tabs lead behind the login.
+  if (isPublicPath(pathname) && !user) return null;
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`));
 
   return (

@@ -2,6 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isGuestOnlyPath, isPublicPath, safeNext } from "@/lib/auth-routes";
 import { COMING_SOON_PATH, isLaunched, isPreLaunchPath } from "@/lib/launch";
+
+/** What signed-out visitors see at the site's address after launch. */
+const WELCOME_PATH = "/welcome";
 import type { Database } from "@/lib/supabase/database.types";
 import { isSupabaseConfigured, supabaseKey, supabaseUrl } from "@/lib/supabase/env";
 
@@ -36,12 +39,20 @@ export async function proxy(request: NextRequest) {
 
   // Before launch: the site is open only to the owner; everyone else (admins
   // included) sees the countdown. After launch the countdown page just leads home.
+  // The site's address itself always shows a page (the countdown, or the welcome
+  // page for signed-out visitors after launch) rather than redirecting, so it
+  // can be shared and verified (e.g. by Razorpay) as a working website.
   if (!isLaunched()) {
     if (!isPreLaunchPath(pathname) && !(signedIn && (await isOwner(supabase)))) {
+      if (pathname === "/") return rewriteKeepingCookies(new URL(COMING_SOON_PATH, request.url), request, response);
       return redirectKeepingCookies(new URL(COMING_SOON_PATH, request.url), response);
     }
   } else if (pathname === COMING_SOON_PATH) {
     return redirectKeepingCookies(new URL("/", request.url), response);
+  }
+
+  if (!signedIn && pathname === "/") {
+    return rewriteKeepingCookies(new URL(WELCOME_PATH, request.url), request, response);
   }
 
   if (!signedIn && !isPublicPath(pathname) && pathname !== COMING_SOON_PATH) {
@@ -76,6 +87,13 @@ async function isActiveAdmin(supabase: ReturnType<typeof createServerClient<Data
   if (typeof userId !== "string" || !userId) return false;
   const { data: profile } = await supabase.from("profiles").select("role, status").eq("id", userId).maybeSingle();
   return profile?.role === "admin" && profile.status === "active";
+}
+
+/** Shows another page at the same address while carrying over any refreshed auth cookies. */
+function rewriteKeepingCookies(url: URL, request: NextRequest, from: NextResponse): NextResponse {
+  const rewrite = NextResponse.rewrite(url, { request });
+  from.cookies.getAll().forEach((cookie) => rewrite.cookies.set(cookie));
+  return rewrite;
 }
 
 /** Redirects while carrying over any refreshed auth cookies. */

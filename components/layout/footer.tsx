@@ -83,6 +83,15 @@ export function Footer() {
             <Link href="/privacy" className="underline-offset-4 hover:text-foreground hover:underline">
               Privacy
             </Link>
+            <Link href="/refund-policy" className="underline-offset-4 hover:text-foreground hover:underline">
+              Refunds
+            </Link>
+            <Link href="/contact" className="underline-offset-4 hover:text-foreground hover:underline">
+              Contact
+            </Link>
+            <Link href="/pricing" className="underline-offset-4 hover:text-foreground hover:underline">
+              Pricing
+            </Link>
             <Link href="/terms" className="underline-offset-4 hover:text-foreground hover:underline">
               Terms
             </Link>

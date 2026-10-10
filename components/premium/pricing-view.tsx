@@ -112,9 +112,15 @@ export function PricingView() {
             <span className="text-muted-foreground">forever</span>
           </p>
           <FeatureList items={FREE_FEATURES} />
-          <Button variant="outline" size="lg" className="mt-auto" disabled>
-            {ready && !plan.premium ? "Your current plan" : "Included"}
-          </Button>
+          {hydrated && !user ? (
+            <Button asChild variant="outline" size="lg" className="mt-auto">
+              <Link href="/register">Join free</Link>
+            </Button>
+          ) : (
+            <Button variant="outline" size="lg" className="mt-auto" disabled>
+              {ready && !plan.premium ? "Your current plan" : "Included"}
+            </Button>
+          )}
         </section>
 
         {/* Premium */}
@@ -143,7 +149,14 @@ export function PricingView() {
             </p>
           )}
           <FeatureList items={PREMIUM_FEATURES} onDark />
-          {ready && plan.premium ? (
+          {hydrated && !user ? (
+            <Button asChild size="lg" className="mt-auto bg-metallic-gold text-[oklch(0.2_0.006_70)] hover:opacity-95">
+              <Link href="/login?next=/pricing">
+                <Crown data-icon="inline-start" />
+                Log in to get Premium
+              </Link>
+            </Button>
+          ) : ready && plan.premium ? (
             <Button size="lg" className="mt-auto bg-metallic-gold text-[oklch(0.2_0.006_70)] hover:opacity-95" disabled>
               <Crown data-icon="inline-start" />
               You have Premium

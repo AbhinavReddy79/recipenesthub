@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FileText } from "lucide-react";
 import { LegalPage } from "@/components/shared/legal-page";
+import { formatRupees, FREE_RECIPES_PER_MONTH, PREMIUM_PRICES } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Terms of Use",
@@ -16,15 +17,15 @@ export default function TermsPage() {
       eyebrow="Legal"
       title="Terms of Use"
       description="By using RecipeNest you agree to these terms. They're written to be read, not skimmed past."
-      updated="October 7, 2026"
+      updated="October 10, 2026"
       sections={[
         {
           title: "Using RecipeNest",
           body: (
             <p>
-              RecipeNest is a free site for discovering recipes, planning meals and making shopping lists. You can
-              browse without an account. If you create one, keep your password private and your details accurate;
-              you&apos;re responsible for activity on your account. How we handle your data is explained in the{" "}
+              RecipeNest is a members&apos; site for discovering recipes, planning meals and making shopping lists.
+              Creating an account is free. Keep your password private and your details accurate; you&apos;re
+              responsible for activity on your account. How we handle your data is explained in the{" "}
               <Link href="/privacy">Privacy Policy</Link>.
             </p>
           ),
@@ -46,10 +47,50 @@ export default function TermsPage() {
           title: "Prices and stores",
           body: (
             <p>
-              Product prices are typical estimates for your region, not live prices, and nothing is charged on
-              RecipeNest. Store buttons open the store&apos;s own website; RecipeNest isn&apos;t affiliated with those
+              Product prices shown with recipes are typical estimates for your region, not live prices, and you
+              can&apos;t buy groceries on RecipeNest. Store buttons open the store&apos;s own website; RecipeNest isn&apos;t affiliated with those
               stores and isn&apos;t responsible for their products, prices or service.
             </p>
+          ),
+        },
+        {
+          title: "Free and Premium plans",
+          body: (
+            <>
+              <p>
+                The Free plan costs nothing and lets you publish up to {FREE_RECIPES_PER_MONTH} recipes a month.
+                Premium ({formatRupees(PREMIUM_PRICES.monthly.amount)} a month or{" "}
+                {formatRupees(PREMIUM_PRICES.yearly.amount)} a year) adds unlimited recipes and entry to the weekly
+                contest. See the <Link href="/pricing">Pricing</Link> page.
+              </p>
+              <ul>
+                <li>Premium renews automatically until you turn off auto-renew; you keep it until the end of the paid period.</li>
+                <li>Payments are processed by Razorpay under its own terms. RecipeNest never stores your card or UPI details.</li>
+                <li>
+                  Cancellations and refunds follow our <Link href="/refund-policy">Refund &amp; Cancellation Policy</Link>.
+                </li>
+              </ul>
+            </>
+          ),
+        },
+        {
+          title: "Weekly contest",
+          body: (
+            <>
+              <p>Each week RecipeNest may run a cooking contest with a theme and prize announced on the contest page.</p>
+              <ul>
+                <li>Only Premium members can enter, with one of their own published recipes that fits the theme. There is no separate entry fee.</li>
+                <li>All members can vote, once per entry. The entry with the most votes when voting closes wins; ties go to the earlier entry.</li>
+                <li>
+                  Entries must be your own work. We may remove entries or votes that break these terms, are off-theme, or
+                  involve fake accounts or vote trading, and may disqualify those involved.
+                </li>
+                <li>
+                  Prizes are paid as described in the <Link href="/refund-policy">Refund &amp; Cancellation Policy</Link>{" "}
+                  and may be subject to tax. RecipeNest&apos;s decision on results is final.
+                </li>
+              </ul>
+            </>
           ),
         },
         {
@@ -84,6 +125,14 @@ export default function TermsPage() {
         {
           title: "Changes",
           body: <p>These terms may be updated as RecipeNest grows. Continuing to use the site means you accept the current version.</p>,
+        },
+        {
+          title: "Governing law and contact",
+          body: (
+            <p>
+              These terms are governed by the laws of India. Questions? <Link href="/contact">Contact us</Link>.
+            </p>
+          ),
         },
       ]}
     />

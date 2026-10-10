@@ -7,6 +7,8 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 type Timestamps = { created_at: string; updated_at: string };
 
+export type ContactTopic = "general" | "billing" | "refund" | "contest" | "account" | "other";
+
 export type SubscriptionStatus = "none" | "pending" | "active" | "cancelled" | "halted" | "paused" | "completed" | "granted";
 
 export type Database = {
@@ -301,6 +303,22 @@ export type Database = {
         Row: { entry_id: string; user_id: string; created_at: string };
         Insert: { entry_id: string; user_id: string };
         Update: never;
+        Relationships: [];
+      };
+      /** Contact page messages: anyone may insert; only admins read them. */
+      contact_messages: {
+        Row: {
+          id: string;
+          name: string;
+          email: string;
+          topic: ContactTopic;
+          message: string;
+          user_id: string | null;
+          handled: boolean;
+          created_at: string;
+        };
+        Insert: { name: string; email: string; topic?: ContactTopic; message: string; user_id?: string | null };
+        Update: { handled?: boolean };
         Relationships: [];
       };
     };

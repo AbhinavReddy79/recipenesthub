@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, LayoutDashboard, MessageSquareText, Trophy, Users } from "lucide-react";
+import { BookOpen, Inbox, LayoutDashboard, MessageSquareText, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/admin/reviews", label: "Reviews", icon: MessageSquareText },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/contests", label: "Contests", icon: Trophy },
+  { href: "/admin/messages", label: "Messages", icon: Inbox },
 ];
 
 export function AdminNav() {
