@@ -391,6 +391,9 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: { user_id: string; moderate: boolean; members: boolean; contests: boolean; messages: boolean }[];
       };
+      has_site_access: { Args: Record<PropertyKey, never>; Returns: boolean };
+      set_early_access: { Args: { target: string; allowed: boolean }; Returns: undefined };
+      admin_list_early_access: { Args: Record<PropertyKey, never>; Returns: string[] };
       touch_last_seen: { Args: Record<PropertyKey, never>; Returns: undefined };
       admin_list_presence: { Args: Record<PropertyKey, never>; Returns: { user_id: string; last_seen_at: string | null }[] };
       admin_announce_winner: { Args: { p_contest: string }; Returns: string | null };
