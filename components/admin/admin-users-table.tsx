@@ -34,6 +34,8 @@ import { adminListEarlyAccess, adminListPresence, isOnline, setEarlyAccess } fro
 import { isLaunched } from "@/lib/launch";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/types/user";
+import { ownerListAdminPowers, type MemberPowers } from "@/lib/storage/admin-powers";
+import { AdminPowersDialog } from "./admin-powers-dialog";
 import { AdminToolbar } from "./admin-toolbar";
 
 /**
@@ -67,6 +69,17 @@ export function AdminUsersTable() {
       window.clearInterval(id);
     };
   }, []);
+  // Owner only: what each admin may do.
+  const [adminPowers, setAdminPowers] = useState<Record<string, MemberPowers>>({});
+  const [editingPowers, setEditingPowers] = useState<UserProfile | null>(null);
+  const loadAdminPowers = useCallback(() => {
+    if (!isOwner) return;
+    ownerListAdminPowers()
+      .then(setAdminPowers)
+      .catch(() => {});
+  }, [isOwner]);
+  useEffect(loadAdminPowers, [loadAdminPowers, accounts]);
+
   // Before launch: who may use the site besides the owner.
   const [earlyAccess, setEarlyAccessIds] = useState<Set<string>>(new Set());
   const loadEarlyAccess = useCallback(() => {
@@ -274,6 +287,12 @@ export function AdminUsersTable() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        {isOwner && !user.isOwner && user.role === "admin" && (
+                          <DropdownMenuItem onSelect={() => setEditingPowers(user)}>
+                            <ShieldCheck />
+                            Admin permissions…
+                          </DropdownMenuItem>
+                        )}
                         {isOwner && !user.isOwner && !isLaunched() && (
                           <DropdownMenuItem onSelect={() => toggleEarlyAccess(user, !earlyAccess.has(user.id))}>
                             <ShieldCheck />
@@ -311,6 +330,13 @@ export function AdminUsersTable() {
         </Table>
       </div>
 
+      <AdminPowersDialog
+        admin={editingPowers}
+        powers={editingPowers ? adminPowers[editingPowers.id] : undefined}
+        onClose={() => setEditingPowers(null)}
+        onSaved={loadAdminPowers}
+      />
+
       <AlertDialog open={disabling !== null} onOpenChange={(open) => !open && setDisabling(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -341,8 +367,9 @@ export function AdminUsersTable() {
           <AlertDialogHeader>
             <AlertDialogTitle>Make {granting?.name} an admin?</AlertDialogTitle>
             <AlertDialogDescription>
-              They&apos;ll be able to open the admin console, moderate recipes, and suspend or delete regular users.
-              Only you, as the owner, can give or remove admin access, and admins can never change your account.
+              They&apos;ll be able to open the admin console and moderate recipes and reviews. Managing members, contests
+              and Contact messages stay off until you switch them on in their admin permissions. Only you can give or
+              remove admin access, and admins can never change your account.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -352,6 +379,8 @@ export function AdminUsersTable() {
                 if (!granting) return;
                 setRole(granting.id, "admin");
                 toast.success(`${granting.name} is now an admin`);
+                // Straight on to choosing what they may do.
+                setEditingPowers(granting);
               }}
             >
               Make admin

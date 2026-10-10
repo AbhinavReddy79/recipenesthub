@@ -6,6 +6,7 @@ import { ArrowRight, BookOpen, ChefHat, Star, UserPlus, Users } from "lucide-rea
 import { ListSkeleton } from "@/components/shared/skeletons";
 import { UserAvatar } from "@/components/shared/user-avatar";
 import { useAccounts } from "@/hooks/use-current-user";
+import { useAdminPowers } from "@/lib/storage/admin-powers";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useReviewCount } from "@/hooks/use-reviews";
 import { useUserRecipes } from "@/hooks/use-user-recipes";
@@ -17,16 +18,19 @@ import { StatusBadge } from "./status-badge";
 export function AdminDashboard({ platformRecipes }: { platformRecipes: number }) {
   const hydrated = useHydrated();
   const { accounts } = useAccounts();
+  const powers = useAdminPowers();
   const { all, published } = useUserRecipes();
   const reviews = useReviewCount();
   if (!hydrated) return <ListSkeleton rows={6} />;
 
-  const cards = [
+  const allCards = [
     { label: "Platform recipes", value: platformRecipes, note: "Official RecipeNest catalog", icon: BookOpen, href: "/admin/recipes", tone: "brand" },
     { label: "Users", value: accounts.length, note: accounts.length ? "Registered accounts" : "No profiles yet", icon: Users, href: "/admin/users", tone: "ocean" },
     { label: "User recipes", value: all.length, note: `${published.length} published · ${all.length - published.length} drafts`, icon: ChefHat, href: "/admin/recipes?source=user", tone: "herb" },
     { label: "Reviews", value: reviews, note: reviews ? "Left by the community" : "No reviews yet", icon: Star, href: "/admin/reviews", tone: "amber" },
   ];
+  // Admins without the members power don't see account numbers.
+  const cards = allCards.filter((card) => card.href !== "/admin/users" || powers.members);
   const newestRecipes = [...all].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
   const newestUsers = [...accounts].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
 
@@ -86,6 +90,7 @@ export function AdminDashboard({ platformRecipes }: { platformRecipes: number })
           )}
         </section>
 
+        {powers.members && (
         <section aria-labelledby="members-heading" className="overflow-hidden rounded-2xl border bg-card shadow-card">
           <header className="flex items-center justify-between border-b bg-herb-soft/60 p-5">
             <h2 id="members-heading" className="flex items-center gap-2 font-sans text-base font-semibold tracking-normal">
@@ -113,6 +118,7 @@ export function AdminDashboard({ platformRecipes }: { platformRecipes: number })
             </ul>
           )}
         </section>
+        )}
       </div>
     </div>
   );

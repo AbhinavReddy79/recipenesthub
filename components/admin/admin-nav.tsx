@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookOpen, Inbox, LayoutDashboard, MessageSquareText, Trophy, Users } from "lucide-react";
+import { useAdminPowers } from "@/lib/storage/admin-powers";
 import { cn } from "@/lib/utils";
+import { SECTION_POWER } from "./admin-gate";
 
 const LINKS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -16,10 +18,12 @@ const LINKS = [
 
 export function AdminNav() {
   const pathname = usePathname();
+  const powers = useAdminPowers();
+  const links = LINKS.filter(({ href }) => !SECTION_POWER[href] || powers[SECTION_POWER[href]]);
   return (
     <nav aria-label="Admin" className="-mx-4 overflow-x-auto px-4 scrollbar-none lg:mx-0 lg:px-0">
       <ul className="flex gap-1 lg:grid">
-        {LINKS.map(({ href, label, icon: Icon }) => {
+        {links.map(({ href, label, icon: Icon }) => {
           const active = href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
           return (
             <li key={href}>

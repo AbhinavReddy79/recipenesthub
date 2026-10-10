@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { accountsStorage, accountsStore } from "@/lib/storage/accounts";
+import { useAdminPowers } from "@/lib/storage/admin-powers";
 import { useStore } from "@/lib/storage/core";
 import { authStore } from "@/lib/storage/session";
 import type { UserProfile } from "@/types/user";
@@ -21,9 +22,12 @@ export function useCurrentUser(): {
 export function useAccounts() {
   const accounts = useStore(accountsStore);
   const { user, isAdmin } = useCurrentUser();
+  const powers = useAdminPowers();
+  // Only admins who manage members may list accounts (the database enforces it too).
+  const canList = isAdmin && powers.members;
   useEffect(() => {
-    if (isAdmin) void accountsStorage.loadAll();
-  }, [isAdmin]);
+    if (canList) void accountsStorage.loadAll();
+  }, [canList]);
   // Only the console list knows who the owner is; it controls admin access.
   const isOwner = Boolean(user && accounts.some((a) => a.id === user.id && a.isOwner));
   return { accounts, isOwner, setStatus: accountsStorage.setStatus, setRole: accountsStorage.setRole, remove: accountsStorage.remove };

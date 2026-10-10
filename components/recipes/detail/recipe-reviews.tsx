@@ -23,6 +23,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useAdminPowers } from "@/lib/storage/admin-powers";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useRequireUser } from "@/hooks/use-require-user";
 import { useRecipeReviews, type RatingSummary, type ReviewWithAuthor } from "@/hooks/use-reviews";
@@ -225,7 +226,9 @@ function Composer({ editing, onDone }: { editing: boolean; onDone: () => void })
 }
 
 function ReviewItem({ review, onEdit }: { review: ReviewWithAuthor; onEdit: () => void }) {
-  const { user, isAdmin } = useCurrentUser();
+  const { user } = useCurrentUser();
+  // Editing other people's reviews needs the "Moderate recipes & reviews" admin power.
+  const canModerate = useAdminPowers().moderate;
   const { remove } = useRecipeReviews(review.recipeSlug);
   const own = user?.id === review.authorId;
   const [moderating, setModerating] = useState(false);
@@ -254,7 +257,7 @@ function ReviewItem({ review, onEdit }: { review: ReviewWithAuthor; onEdit: () =
             )}
           </div>
         </div>
-        {isAdmin && !own && (
+        {canModerate && !own && (
           <div className="flex shrink-0 gap-0.5">
             <Button variant="ghost" size="icon-sm" onClick={() => setModerating(true)} aria-label={`Edit ${review.author.name}'s review (admin)`}>
               <Pencil />

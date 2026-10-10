@@ -1,11 +1,13 @@
-// Supabase Edge Function: lets an active RecipeNest admin invite someone by email.
+// Supabase Edge Function: lets the owner, or an admin with the "Manage members"
+// power, invite someone by email.
 //
 // Inviting needs Supabase's service-role key, which must never be in the
 // website. Edge Functions already have it, so the site calls this function
-// with the admin's own sign-in token; we check they really are an active admin
-// (in the database) before sending the invite.
+// with the admin's own sign-in token; we check in the database that they may
+// manage members before sending the invite.
 //
-// Deploy with "Verify JWT" on. The invite email's link opens
+// Deploy with "Verify JWT with legacy secret" OFF: the project signs sign-ins
+// with its newer keys, and this function checks access itself. The invite email's link opens
 // <site>/reset-password?invite=1, where the person chooses their password.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -39,8 +41,8 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authorization } },
     auth: { persistSession: false },
   });
-  const { data: isAdmin, error: adminError } = await asCaller.rpc("is_admin");
-  if (adminError || isAdmin !== true) return reply(403, { error: "not_admin" });
+  const { data: allowed, error: powerError } = await asCaller.rpc("has_admin_power", { power_name: "members" });
+  if (powerError || allowed !== true) return reply(403, { error: "not_admin" });
 
   // 2. Validate the request.
   const body = (await req.json().catch(() => null)) as { email?: unknown; name?: unknown } | null;

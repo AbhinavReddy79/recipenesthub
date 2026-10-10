@@ -25,6 +25,7 @@ import {
   type ContestEntry,
 } from "@/lib/storage/contests";
 import { useStore } from "@/lib/storage/core";
+import { useAdminPowers } from "@/lib/storage/admin-powers";
 import { usePlan } from "@/lib/storage/plan";
 import { authStore } from "@/lib/storage/session";
 import { cn } from "@/lib/utils";
@@ -135,7 +136,9 @@ export function ContestView() {
 }
 
 function ContestDetail({ contest }: { contest: Contest }) {
-  const { user, isAdmin } = useCurrentUser();
+  const { user } = useCurrentUser();
+  // Removing entries needs the "Manage contests" admin power.
+  const canManage = useAdminPowers().contests;
   const plan = usePlan();
   const { myPublished } = useUserRecipes();
   const now = useSyncExternalStore(subscribeMinute, nowMinute, noClockOnServer);
@@ -339,7 +342,7 @@ function ContestDetail({ contest }: { contest: Contest }) {
                         {entry.votes} {entry.votes === 1 ? "vote" : "votes"}
                       </span>
                       <div className="flex items-center gap-1">
-                        {isAdmin && phase !== "announced" && (
+                        {canManage && phase !== "announced" && (
                           <Button size="icon-sm" variant="ghost" aria-label={`Remove ${entry.recipeTitle}`} onClick={() => withdraw(entry, true)}>
                             <X />
                           </Button>

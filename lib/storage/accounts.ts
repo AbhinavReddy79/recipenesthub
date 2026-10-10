@@ -116,7 +116,7 @@ export const accountsStorage = {
       rate_limited: "Too many emails were sent recently. Please try again in an hour.",
       invalid_email: "Please enter a valid email address.",
       invalid_name: "Please enter their name.",
-      not_admin: "Only active admins can invite people.",
+      not_admin: "Only the owner, or admins who manage members, can invite people.",
       signed_out: "Please log in again.",
     };
     if (!code) console.error("invite failed", error);

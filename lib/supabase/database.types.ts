@@ -375,6 +375,19 @@ export type Database = {
           created_at: string;
         }[];
       };
+      has_admin_power: { Args: { power_name: string }; Returns: boolean };
+      my_admin_powers: {
+        Args: Record<PropertyKey, never>;
+        Returns: { moderate: boolean; members: boolean; contests: boolean; messages: boolean; owner: boolean }[];
+      };
+      set_admin_powers: {
+        Args: { target: string; p_moderate: boolean; p_members: boolean; p_contests: boolean; p_messages: boolean };
+        Returns: undefined;
+      };
+      owner_list_admin_powers: {
+        Args: Record<PropertyKey, never>;
+        Returns: { user_id: string; moderate: boolean; members: boolean; contests: boolean; messages: boolean }[];
+      };
       has_site_access: { Args: Record<PropertyKey, never>; Returns: boolean };
       set_early_access: { Args: { target: string; allowed: boolean }; Returns: undefined };
       admin_list_early_access: { Args: Record<PropertyKey, never>; Returns: string[] };
