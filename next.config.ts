@@ -14,22 +14,23 @@ const supabaseOrigins = ["https://*.supabase.co", ...(supabaseHost && !supabaseH
 
 /**
  * Content Security Policy. Scripts may only come from this site (Next.js needs
- * inline scripts for hydration), data may only be sent to this site and
- * Supabase, and images only from the sources the app uses. Development keeps
+ * inline scripts for hydration) and Razorpay Checkout, data may only be sent
+ * to this site, Supabase and Razorpay, and images only from the sources the
+ * app uses. Development keeps
  * a relaxed policy because hot reload needs eval and websockets.
  */
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com${isProduction ? "" : " 'unsafe-eval'"}`,
+  `script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.razorpay.com${isProduction ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https://images.unsplash.com https://www.themealdb.com https://upload.wikimedia.org https://thumb.wikimedia.org ${supabaseOrigins.join(" ")}`,
+  `img-src 'self' data: blob: https://images.unsplash.com https://www.themealdb.com https://upload.wikimedia.org https://thumb.wikimedia.org https://*.razorpay.com ${supabaseOrigins.join(" ")}`,
   "font-src 'self' data:",
-  `connect-src 'self' data: blob: https://api.razorpay.com https://lumberjack.razorpay.com ${supabaseOrigins.join(" ")} ${supabaseOrigins.map((o) => o.replace("https://", "wss://")).join(" ")}${isProduction ? "" : " ws: http://localhost:*"}`,
+  `connect-src 'self' data: blob: https://*.razorpay.com ${supabaseOrigins.join(" ")} ${supabaseOrigins.map((o) => o.replace("https://", "wss://")).join(" ")}${isProduction ? "" : " ws: http://localhost:*"}`,
   "media-src 'self'",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
-  // Razorpay Checkout runs in its own frame.
-  "frame-src https://api.razorpay.com https://checkout.razorpay.com",
+  // Razorpay Checkout (and its fraud checks) load from razorpay.com subdomains and run in their own frame.
+  "frame-src https://*.razorpay.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
