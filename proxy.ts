@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isGuestOnlyPath, isPublicPath, safeNext } from "@/lib/auth-routes";
+import { COMING_SOON_PATH, isLaunched, isPreLaunchPath } from "@/lib/launch";
 import type { Database } from "@/lib/supabase/database.types";
 import { isSupabaseConfigured, supabaseKey, supabaseUrl } from "@/lib/supabase/env";
 
@@ -8,6 +9,7 @@ import { isSupabaseConfigured, supabaseKey, supabaseUrl } from "@/lib/supabase/e
  * Keeps the Supabase session fresh (refreshes an expiring access token and
  * writes the updated auth cookies onto the response) and makes the site
  * members-only: visitors without an account are sent to /login first.
+ * Before launch, only admins get past the countdown page.
  */
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured) return NextResponse.next({ request });
@@ -32,7 +34,17 @@ export async function proxy(request: NextRequest) {
   const signedIn = Boolean(data?.claims?.sub);
   const { pathname, search } = request.nextUrl;
 
-  if (!signedIn && !isPublicPath(pathname)) {
+  // Before launch: the site is open only to admins; everyone else sees the
+  // countdown. After launch the countdown page just leads home.
+  if (!isLaunched()) {
+    if (!isPreLaunchPath(pathname) && !(signedIn && (await isActiveAdmin(supabase, data?.claims?.sub)))) {
+      return redirectKeepingCookies(new URL(COMING_SOON_PATH, request.url), response);
+    }
+  } else if (pathname === COMING_SOON_PATH) {
+    return redirectKeepingCookies(new URL("/", request.url), response);
+  }
+
+  if (!signedIn && !isPublicPath(pathname) && pathname !== COMING_SOON_PATH) {
     const url = new URL("/login", request.url);
     if (pathname !== "/") url.searchParams.set("next", `${pathname}${search}`);
     return redirectKeepingCookies(url, response);
@@ -41,12 +53,7 @@ export async function proxy(request: NextRequest) {
   // The admin console is for active admins only. (The database enforces this
   // for every admin action too; this keeps the pages themselves private.)
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, status")
-      .eq("id", data?.claims?.sub ?? "")
-      .maybeSingle();
-    if (profile?.role !== "admin" || profile.status !== "active") {
+    if (!(await isActiveAdmin(supabase, data?.claims?.sub))) {
       return redirectKeepingCookies(new URL("/", request.url), response);
     }
   }
@@ -57,6 +64,12 @@ export async function proxy(request: NextRequest) {
   }
 
   return response;
+}
+
+async function isActiveAdmin(supabase: ReturnType<typeof createServerClient<Database>>, userId: unknown): Promise<boolean> {
+  if (typeof userId !== "string" || !userId) return false;
+  const { data: profile } = await supabase.from("profiles").select("role, status").eq("id", userId).maybeSingle();
+  return profile?.role === "admin" && profile.status === "active";
 }
 
 /** Redirects while carrying over any refreshed auth cookies. */
