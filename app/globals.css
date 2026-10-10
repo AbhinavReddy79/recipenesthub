@@ -509,20 +509,42 @@
 [data-reveal-grid] > :nth-child(7) { --reveal-i: 6; }
 [data-reveal-grid] > :nth-child(n + 8) { --reveal-i: 7; }
 
-/* Logo intro (homepage and admin dashboard): plays once, then rests. */
+/*
+ * Logo: always alive. The sprig's leaves sway gently and a shine sweeps across
+ * the gold bowl every few seconds (transforms only, so it's cheap everywhere).
+ * On the homepage and admin dashboard it also plays a short intro first.
+ */
+.logo-leaf {
+  transform-box: fill-box;
+  animation: logo-leaf-sway 4.5s ease-in-out infinite;
+}
+.logo-leaf-big {
+  transform-origin: 0% 100%;
+}
+.logo-leaf-small {
+  transform-origin: 100% 100%;
+  animation-name: logo-leaf-sway-back;
+  animation-delay: -2.2s;
+}
+.logo-mark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, oklch(1 0 0 / 0.55) 50%, transparent 65%);
+  transform: translateX(-130%);
+  animation: logo-shine 5s ease-in-out 1s infinite;
+}
+
 .logo-animated .logo-mark {
   animation: logo-in 0.5s ease-out both;
 }
-.logo-animated .logo-leaf {
-  transform-box: fill-box;
-  animation: logo-leaf-in 0.5s ease-out 0.2s both;
-}
 .logo-animated .logo-leaf-big {
-  transform-origin: 0% 100%;
+  animation: logo-leaf-in 0.5s ease-out 0.2s both, logo-leaf-sway 4.5s ease-in-out 0.8s infinite;
 }
 .logo-animated .logo-leaf-small {
-  transform-origin: 100% 100%;
-  animation-delay: 0.3s;
+  animation: logo-leaf-in 0.5s ease-out 0.3s both, logo-leaf-sway-back 4.5s ease-in-out 0.9s infinite;
 }
 
 @keyframes logo-in {
@@ -532,6 +554,18 @@
 @keyframes logo-leaf-in {
   from { opacity: 0; transform: scale(0.4); }
   to { opacity: 1; transform: scale(1); }
+}
+@keyframes logo-leaf-sway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-8deg); }
+}
+@keyframes logo-leaf-sway-back {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(9deg); }
+}
+@keyframes logo-shine {
+  0%, 60% { transform: translateX(-130%); }
+  85%, 100% { transform: translateX(130%); }
 }
 
 @media (prefers-reduced-motion: reduce) {
