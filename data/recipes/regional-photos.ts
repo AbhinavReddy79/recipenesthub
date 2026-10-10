@@ -206,4 +206,8 @@ export const regionalPhotos: Record<string, { image: string; imageCredit: ImageC
     image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/74/Deviled_Eggs_on_Plate.jpg/1280px-Deviled_Eggs_on_Plate.jpg",
     imageCredit: { author: "HeatherMarieKosur", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Deviled_Eggs_on_Plate.jpg" },
   },
+  "classic-hot-chocolate": {
+    image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cb/Hot_chocolate_%28Unsplash%29.jpg/1280px-Hot_chocolate_%28Unsplash%29.jpg",
+    imageCredit: { author: "Alisa Anton", license: "CC0", source: "https://commons.wikimedia.org/wiki/File:Hot_chocolate_(Unsplash).jpg" },
+  },
 };
