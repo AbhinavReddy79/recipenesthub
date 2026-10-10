@@ -7,7 +7,7 @@
 --   members   - disable/delete members, see the users list, Premium, activity, invites
 --   contests  - create/edit/delete contests, remove entries, announce winners
 --   messages  - read, handle and delete Contact page messages
--- Always owner-only: making admins, early access, these permissions, and
+-- Always owner-only: making admins, these permissions, and
 -- marking contest prizes as paid.
 
 create table if not exists public.admin_permissions (
@@ -340,21 +340,6 @@ begin
     raise exception 'Only admins who manage members can see activity' using errcode = '42501';
   end if;
   return query select a.user_id, a.last_seen_at from public.user_activity a;
-end;
-$$;
-
-create or replace function public.admin_list_early_access()
-returns setof uuid
-language plpgsql
-stable
-security definer
-set search_path = ''
-as $$
-begin
-  if not public.has_admin_power('members') then
-    raise exception 'Only admins who manage members can see this' using errcode = '42501';
-  end if;
-  return query select e.user_id from public.early_access e;
 end;
 $$;
 

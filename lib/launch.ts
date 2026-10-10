@@ -3,8 +3,8 @@
  *
  * The site opens only when the owner presses "Launch RecipeNest" in the admin
  * dashboard (stored in the database, see site_is_launched). Until then
- * everyone except the owner and people they give early access sees the
- * countdown at /coming-soon. This date is only what the countdown shows.
+ * everyone except the owner sees the countdown at /coming-soon. This date is
+ * only what the countdown shows.
  */
 export const LAUNCH_AT = new Date("2026-10-20T00:00:00+05:30");
 

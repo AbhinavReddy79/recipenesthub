@@ -42,22 +42,3 @@ export async function adminListPresence(): Promise<Record<string, string>> {
 
 export const isOnline = (lastSeen: string | undefined, now: number) =>
   Boolean(lastSeen) && now - Date.parse(lastSeen as string) < ONLINE_WINDOW_MS;
-
-/* ---------- Early access (before launch) ---------- */
-
-/** Admins: ids of members who may use the site before launch. */
-export async function adminListEarlyAccess(): Promise<Set<string>> {
-  const ctx = userContext();
-  if (!ctx) return new Set();
-  const { data, error } = await ctx.supabase.rpc("admin_list_early_access");
-  if (error) throw error;
-  return new Set(data ?? []);
-}
-
-/** Owner only (the database enforces it): let someone use the site before launch, or take it away. */
-export async function setEarlyAccess(userId: string, allowed: boolean): Promise<boolean> {
-  const ctx = userContext();
-  if (!ctx) return false;
-  const { error } = await ctx.supabase.rpc("set_early_access", { target: userId, allowed });
-  return !error;
-}

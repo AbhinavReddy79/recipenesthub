@@ -2,7 +2,7 @@
 -- migrations. Every statement is idempotent.
 --
 -- Until the owner presses "Launch" in the admin dashboard, everyone except the
--- owner and early-access members sees the countdown. The countdown date is only
+-- owner sees the countdown. The countdown date is only
 -- shown to visitors; it doesn't open the site by itself.
 
 create table if not exists public.site_status (

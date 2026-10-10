@@ -56,7 +56,7 @@ export function LaunchCard() {
     setConfirm(null);
     if (error) return toast.error("That didn't work. Please try again.");
     setLaunchedAt(data ?? null);
-    toast.success(launched ? "🚀 RecipeNest is live! Everyone can now join." : "Back to the countdown. Only you and early-access members can get in.");
+    toast.success(launched ? "🚀 RecipeNest is live! Everyone can now join." : "Back to the countdown. Only you can get in.");
   };
 
   const live = Boolean(launchedAt);
@@ -79,7 +79,7 @@ export function LaunchCard() {
               <CalendarDays className="size-4 text-gold-light" aria-hidden />
               {live
                 ? `Opened to everyone on ${formatMoment(launchedAt as string)}`
-                : `Countdown shows ${formatDay(LAUNCH_AT)}. Only you and early-access members can get in until you launch.`}
+                : `Countdown shows ${formatDay(LAUNCH_AT)}. Only you can get in until you launch.`}
             </p>
           </div>
         </div>
@@ -108,7 +108,7 @@ export function LaunchCard() {
                 ? `The countdown disappears and anyone can create an account and use the site within about 15 seconds. People waiting on the countdown page are taken in automatically.${
                     beforePlannedDate ? " This is before the date on the countdown." : ""
                   }`
-                : "Everyone except you and early-access members will see the countdown again within about 15 seconds. Accounts and data are kept."}
+                : "Everyone except you will see the countdown again within about 15 seconds. Accounts and data are kept."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
