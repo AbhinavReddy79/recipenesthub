@@ -58,7 +58,7 @@ export default async function HomePage() {
   return (
     <>
       <WelcomeBar />
-      <Hero featured={(heroRecipe ?? featuredList[0]) as Recipe} stats={heroStats} />
+      <Hero featured={(heroRecipe ?? featuredList[0]) as Recipe} stats={heroStats} todaysPick={ofTheDay?.recipe} />
 
       <div className="grid grid-cols-1 gap-20 py-14 sm:gap-24 sm:py-20">
         {ofTheDay && <RecipeOfTheDay recipe={ofTheDay.recipe} date={ofTheDay.date} />}

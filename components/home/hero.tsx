@@ -18,10 +18,12 @@ interface HeroProps {
   featured: Recipe;
   /** Real catalog counts, shown under the search. */
   stats: { label: string; value: number }[];
+  /** Today's recipe of the day, promoted with a button that jumps to it. */
+  todaysPick?: Recipe;
 }
 
 /** Front page: a full-bleed food photo, a clear headline, search, and one featured recipe. */
-export function Hero({ featured, stats }: HeroProps) {
+export function Hero({ featured, stats, todaysPick }: HeroProps) {
   return (
     <section aria-labelledby="hero-title" className="relative isolate overflow-hidden bg-ink text-white">
       <Image
@@ -66,6 +68,8 @@ export function Hero({ featured, stats }: HeroProps) {
             ))}
           </div>
 
+          {todaysPick && <TodaysPickLink recipe={todaysPick} />}
+
           <dl className="mt-10 flex flex-wrap gap-x-10 gap-y-4 border-t border-white/15 pt-6">
             {stats.map((stat, i) => (
               <div
@@ -85,6 +89,28 @@ export function Hero({ featured, stats }: HeroProps) {
         </div>
       </div>
     </section>
+  );
+}
+
+/** Gold button under the search that takes visitors to today's pick further down the page. */
+function TodaysPickLink({ recipe }: { recipe: Recipe }) {
+  return (
+    <Link
+      href="#todays-special"
+      className="group mt-6 flex max-w-xl items-center gap-3 rounded-2xl bg-metallic-gold p-2 pr-4 text-[oklch(0.2_0.006_70)] shadow-lift ring-1 ring-white/30 transition-transform hover:-translate-y-0.5"
+    >
+      <span className="relative size-12 shrink-0 overflow-hidden rounded-xl ring-2 ring-white/50">
+        <Image src={recipe.image} alt="" fill sizes="48px" className="object-cover" />
+      </span>
+      <span className="grid min-w-0 flex-1">
+        <span className="inline-flex items-center gap-1.5 text-[0.6875rem] font-bold tracking-[0.14em] uppercase">
+          <Flame className="size-3.5" aria-hidden />
+          Today&apos;s special
+        </span>
+        <span className="truncate font-display text-lg leading-tight font-semibold">{recipe.title}</span>
+      </span>
+      <ArrowRight className="size-5 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden />
+    </Link>
   );
 }
 
