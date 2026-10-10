@@ -573,3 +573,44 @@
     break-inside: avoid;
   }
 }
+
+/* Launch countdown: digits roll in from above as the old ones drop away. */
+.countdown-digit-in {
+  animation: countdown-digit-in 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.countdown-digit-out {
+  animation: countdown-digit-out 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes countdown-digit-in {
+  from { opacity: 0; transform: translateY(-75%) rotateX(80deg) scale(0.85); filter: blur(3px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes countdown-digit-out {
+  from { opacity: 1; transform: none; filter: none; }
+  to { opacity: 0; transform: translateY(75%) rotateX(-80deg) scale(0.85); filter: blur(3px); }
+}
+
+/* A soft gold glow each time a tile's number changes. */
+.countdown-tick {
+  animation: countdown-tick 0.9s ease-out both;
+}
+@keyframes countdown-tick {
+  from { opacity: 1; box-shadow: 0 0 0 1px var(--saffron), 0 0 28px -4px var(--saffron); }
+  to { opacity: 0; box-shadow: 0 0 0 1px transparent, 0 0 28px -4px transparent; }
+}
+
+/* A light sweep across each tile every few seconds, one after another. */
+.countdown-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, oklch(1 0 0 / 0.14) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: countdown-sweep 5s ease-in-out infinite;
+  animation-delay: var(--sweep-delay, 0s);
+}
+@keyframes countdown-sweep {
+  0%, 60% { transform: translateX(-120%); }
+  85%, 100% { transform: translateX(120%); }
+}
