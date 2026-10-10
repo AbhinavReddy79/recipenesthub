@@ -35,7 +35,7 @@ export function Logo({ showWordmark = true, className, animated = false }: LogoP
       {showWordmark && (
         <span className="font-display text-[1.5rem] font-bold leading-none tracking-tight">
           Recipe
-          <span className="text-metallic-gold">Nest</span>
+          <span className="text-metallic-gold logo-wordmark-gold">Nest</span>
         </span>
       )}
     </span>

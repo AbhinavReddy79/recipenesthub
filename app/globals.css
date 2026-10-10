@@ -408,14 +408,17 @@
     background-image: linear-gradient(135deg, var(--gold-light), var(--saffron) 45%, var(--gold-deep));
   }
 
-  /* Metallic surfaces and text */
-  .bg-metallic-gold {
+  /* Metallic surfaces and text. On a button they replace the finish above (in both themes). */
+  .bg-metallic-gold,
+  [data-slot="button"][data-variant].bg-metallic-gold {
     background-image: linear-gradient(135deg, var(--gold-light) 0%, var(--saffron) 38%, var(--gold-deep) 72%, var(--saffron) 100%);
   }
-  .bg-metallic-silver {
+  .bg-metallic-silver,
+  [data-slot="button"][data-variant].bg-metallic-silver {
     background-image: linear-gradient(135deg, var(--metallic-light) 0%, var(--metallic) 45%, var(--metallic-deep) 75%, var(--metallic) 100%);
   }
-  .bg-metallic-charcoal {
+  .bg-metallic-charcoal,
+  [data-slot="button"][data-variant].bg-metallic-charcoal {
     background-image: linear-gradient(160deg, oklch(0.3 0.006 70), oklch(0.17 0.005 70) 60%, oklch(0.24 0.006 70));
   }
   .text-metallic-gold {
@@ -423,6 +426,13 @@
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+  /* The logo's "Nest": the bright metallic sheen washes out on light backgrounds, so use deeper gold there. */
+  .logo-wordmark-gold {
+    background-image: linear-gradient(90deg, var(--gold-deep), var(--gold-ink) 50%, var(--gold-deep));
+  }
+  .dark .logo-wordmark-gold {
+    background-image: linear-gradient(90deg, var(--gold-deep), var(--saffron) 35%, var(--gold-light) 50%, var(--saffron) 65%, var(--gold-deep));
   }
 
   /* Loading placeholders sweep instead of blinking. */

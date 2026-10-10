@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export default function ComingSoonPage() {
   return (
     // Covers the whole screen (including the site's header and menus) until launch.
-    <div className="fixed inset-0 z-[100] isolate overflow-x-hidden overflow-y-auto bg-ink text-white">
+    <div className="dark fixed inset-0 z-[100] isolate overflow-x-hidden overflow-y-auto bg-ink text-white">
       <Image src={unsplash("1556910103-1c02745aae4d", 1800)} alt="" fill priority sizes="100vw" className="-z-20 animate-ken-burns object-cover" />
       <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-black/80 via-black/70 to-black/90" />
 
