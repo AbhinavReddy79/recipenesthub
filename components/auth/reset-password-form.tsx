@@ -16,10 +16,20 @@ import { AuthSuccess } from "./auth-success";
 
 type Field = "password" | "confirm";
 
+/** Read once, before the link details are cleared from the address bar. */
+function isInviteLink(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    new URLSearchParams(window.location.hash.slice(1)).get("type") === "invite" ||
+    new URLSearchParams(window.location.search).get("invite") === "1"
+  );
+}
+
 /**
- * Landing page for the password-reset email. The link carries a one-time
- * session in the URL fragment, which signs the user in here (older links go
- * through /auth/callback first and arrive already signed in).
+ * Landing page for the password-reset email, and for admin invites (the person
+ * chooses their first password here). The link carries a one-time session in
+ * the URL fragment, which signs the user in here (older links go through
+ * /auth/callback first and arrive already signed in).
  */
 export function ResetPasswordForm() {
   const hydrated = useHydrated();
@@ -30,6 +40,7 @@ export function ResetPasswordForm() {
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [recovery, setRecovery] = useState<"checking" | "none" | "ok" | "invalid">("checking");
+  const [invite] = useState(isInviteLink);
 
   useEffect(() => {
     let active = true;
@@ -63,7 +74,7 @@ export function ResetPasswordForm() {
     return (
       <div className="grid gap-4" aria-busy>
         <p role="status" className="text-sm font-medium text-muted-foreground">
-          Verifying your reset link…
+          Verifying your link…
         </p>
         <Skeleton className="h-8 w-2/3" />
         <Skeleton className="h-10 w-full" />
@@ -75,11 +86,11 @@ export function ResetPasswordForm() {
   if (done) {
     return (
       <AuthSuccess
-        title="Password updated"
-        description="Your new password is set. Use it next time you log in."
+        title={invite ? "You're all set!" : "Password updated"}
+        description={invite ? "Your account is ready. Use this password whenever you log in." : "Your new password is set. Use it next time you log in."}
         actions={
           <Button asChild size="lg">
-            <Link href="/profile">Go to my profile</Link>
+            <Link href={invite ? "/" : "/profile"}>{invite ? "Start exploring" : "Go to my profile"}</Link>
           </Button>
         }
       />
@@ -90,8 +101,12 @@ export function ResetPasswordForm() {
     return (
       <AuthSuccess
         icon={<KeyRound aria-hidden />}
-        title="This reset link has expired"
-        description="Reset links work once and only for a limited time. Go back to log in and choose “Forgot password?” to get a new one."
+        title={invite ? "This invite link has expired" : "This reset link has expired"}
+        description={
+          invite
+            ? "Invite links work once and only for a limited time. Ask the person who invited you to send a new invite, or use “Forgot password?” on the login page."
+            : "Reset links work once and only for a limited time. Go back to log in and choose “Forgot password?” to get a new one."
+        }
         actions={
           <Button asChild size="lg">
             <Link href="/login">Back to log in</Link>
@@ -106,14 +121,16 @@ export function ResetPasswordForm() {
       <div className="grid justify-items-start gap-4">
         <Logo />
         <div className="grid gap-1.5">
-          <h1 className="text-3xl font-semibold sm:text-4xl">Choose a new password</h1>
+          <h1 className="text-3xl font-semibold sm:text-4xl">{invite ? "Welcome to RecipeNest!" : "Choose a new password"}</h1>
           <p className="text-muted-foreground">For {user.email}</p>
         </div>
       </div>
       {recovery === "ok" && (
         <p role="status" className="flex gap-2.5 rounded-xl bg-herb-soft p-3 text-sm font-medium text-herb">
           <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden />
-          Your email is verified. Now set a new password for your account.
+          {invite
+            ? "Your invitation is confirmed. Choose a password to finish setting up your account."
+            : "Your email is verified. Now set a new password for your account."}
         </p>
       )}
       {formError && (
@@ -123,7 +140,7 @@ export function ResetPasswordForm() {
       )}
       <FormField
         id="reset-password"
-        label="New password"
+        label={invite ? "Password" : "New password"}
         error={errors.password}
         hint="At least 8 characters, with a letter and a number."
       >
@@ -136,7 +153,7 @@ export function ResetPasswordForm() {
           />
         )}
       </FormField>
-      <FormField id="reset-confirm" label="Confirm new password" error={errors.confirm}>
+      <FormField id="reset-confirm" label={invite ? "Confirm password" : "Confirm new password"} error={errors.confirm}>
         {(control) => (
           <PasswordInput
             {...control}
@@ -147,7 +164,7 @@ export function ResetPasswordForm() {
         )}
       </FormField>
       <Button type="submit" size="lg" className="w-full" disabled={submitting}>
-        {submitting ? "Saving…" : "Update password"}
+        {submitting ? "Saving…" : invite ? "Set password and continue" : "Update password"}
       </Button>
     </form>
   );

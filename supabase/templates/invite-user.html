@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>You're invited to RecipeNest</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#f6f3ea;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f3ea;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border-radius:20px;overflow:hidden;font-family:Helvetica,Arial,sans-serif;">
+            <tr>
+              <td style="background-color:#0b5d47;padding:28px 32px;">
+                <span style="display:inline-block;width:36px;height:36px;line-height:36px;text-align:center;border-radius:10px;background-color:#e8913a;font-size:20px;vertical-align:middle;">🍲</span>
+                <span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:bold;color:#ffffff;vertical-align:middle;padding-left:10px;">Recipe<span style="color:#f2c14e;">Nest</span></span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px;">
+                <h1 style="margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.25;color:#10231c;">You're invited to RecipeNest</h1>
+                <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#4a5550;">
+                  You've been invited to join RecipeNest with <strong style="color:#10231c;">{{ .Email }}</strong>. Accept the invitation and choose a password to start discovering recipes from every Indian state and around the world, planning your meals and building shopping lists.
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="border-radius:999px;background-color:#0b6b50;">
+                      <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=invite&next=%2Freset-password%3Finvite%3D1" style="display:inline-block;padding:14px 28px;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:999px;">Accept invitation</a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#7a837f;">
+                  This link works once and expires soon. If you weren't expecting this invitation, you can safely ignore this email.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px;border-top:1px solid #eee8da;font-size:12px;line-height:1.6;color:#9aa19d;">
+                RecipeNest · Discover recipes worth cooking<br />
+                <a href="{{ .SiteURL }}" style="color:#0b6b50;text-decoration:none;">{{ .SiteURL }}</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -91,6 +91,38 @@ export const accountsStorage = {
 
   /* ---------- Admin console ---------- */
 
+  /**
+   * Admins: emails someone an invitation to join. Runs in the admin-invite-user
+   * Edge Function, which checks the caller is an active admin; the new account
+   * appears in the list once the invite is sent.
+   */
+  async invite(name: string, email: string): Promise<{ ok: true } | { ok: false; error: string }> {
+    const ctx = userContext();
+    if (!ctx) return { ok: false, error: "Please log in again." };
+    const { data, error } = await ctx.supabase.functions.invoke<{ ok?: boolean; error?: string }>("admin-invite-user", {
+      body: { name, email },
+    });
+    // Errors from the function arrive with its JSON body in the response context.
+    let code = data?.error;
+    if (error && "context" in error && error.context instanceof Response) {
+      code = ((await error.context.json().catch(() => ({}))) as { error?: string }).error;
+    }
+    if (!error && data?.ok) {
+      void accountsStorage.loadAll();
+      return { ok: true };
+    }
+    const messages: Record<string, string> = {
+      already_registered: "Someone with that email already has an account.",
+      rate_limited: "Too many emails were sent recently. Please try again in an hour.",
+      invalid_email: "Please enter a valid email address.",
+      invalid_name: "Please enter their name.",
+      not_admin: "Only active admins can invite people.",
+      signed_out: "Please log in again.",
+    };
+    if (!code) console.error("invite failed", error);
+    return { ok: false, error: messages[code ?? ""] ?? "We couldn't send the invite. Please try again." };
+  },
+
   async loadAll(): Promise<void> {
     const ctx = userContext();
     if (!ctx) return;

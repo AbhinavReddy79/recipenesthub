@@ -20,8 +20,8 @@ export function EmailLinkHandler() {
     if (!hash || pathname === "/reset-password") return;
     const params = new URLSearchParams(hash);
 
-    // A password-reset link: finish it on the reset page (keeps the fragment).
-    if (params.get("type") === "recovery" && params.has("access_token")) {
+    // A password-reset or invite link: finish it on the password page (keeps the fragment).
+    if ((params.get("type") === "recovery" || params.get("type") === "invite") && params.has("access_token")) {
       router.replace(`/reset-password#${hash}`);
       return;
     }
