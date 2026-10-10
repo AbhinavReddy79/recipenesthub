@@ -28,7 +28,7 @@ export function CollectionCard({ collection, images, onEdit, onDelete }: Collect
       <div className="relative">
         <CollectionCover images={images} className="aspect-[16/10]" />
         <span aria-hidden className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/50 to-transparent" />
-        <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-md">
+        <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/65 px-2.5 py-1 text-xs font-semibold text-white">
           <BookOpen className="size-3.5" aria-hidden />
           {pluralize(count, "recipe")}
         </span>

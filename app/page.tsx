@@ -24,6 +24,7 @@ import {
   getSeasonalRecipes,
   listRecipes,
 } from "@/lib/services/recipes";
+import { toCardRecipe } from "@/lib/recipes/slim";
 import type { Recipe } from "@/types/recipe";
 
 // "Recipe of the day" and "Seasonal ideas" follow the calendar; refresh hourly so
@@ -86,7 +87,7 @@ export default async function HomePage() {
           <RecipeGrid recipes={featuredList} mobileCarousel />
         </section>
 
-        <PickedForYou recipes={all} />
+        <PickedForYou recipes={all.map(toCardRecipe)} />
 
         <section data-reveal suppressHydrationWarning aria-labelledby="quick" className="container-page">
           <SectionHeading

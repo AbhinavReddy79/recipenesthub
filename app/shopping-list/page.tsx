@@ -5,6 +5,7 @@ import { ModuleTone } from "@/components/shared/module-tone";
 import { PageHeader } from "@/components/shared/page-header";
 import { ShoppingList } from "@/components/shopping/shopping-list";
 import { listRecipes } from "@/lib/services/recipes";
+import { toPlannerRecipe } from "@/lib/recipes/slim";
 
 export const metadata: Metadata = {
   title: "Shopping List",
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ShoppingListPage() {
-  const recipes = await listRecipes();
+  const recipes = (await listRecipes()).map(toPlannerRecipe);
   return (
     <ModuleTone tone="ocean">
       <PageHeader

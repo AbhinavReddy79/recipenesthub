@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { SearchView } from "@/components/recipes/search-view";
 import { RecipeGridSkeleton } from "@/components/shared/skeletons";
 import { listRecipes } from "@/lib/services/recipes";
+import { toListRecipe } from "@/lib/recipes/slim";
 
 export async function generateMetadata({ searchParams }: PageProps<"/search">): Promise<Metadata> {
   const { q } = await searchParams;
@@ -23,7 +24,7 @@ export async function generateMetadata({ searchParams }: PageProps<"/search">): 
 }
 
 export default async function SearchPage() {
-  const recipes = await listRecipes();
+  const recipes = (await listRecipes()).map(toListRecipe);
   return (
     <Suspense
       fallback={

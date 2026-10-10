@@ -31,12 +31,21 @@ export function ScrollReveal() {
       document.querySelectorAll<HTMLElement>("[data-reveal]:not([data-revealed])").forEach((el) => observer.observe(el));
 
     // Sections that load later (e.g. signed-in "Picked for you") get observed too.
-    const mutations = new MutationObserver(observe);
+    // Batched to one scan per frame: typing or filtering changes the page often.
+    let frame = 0;
+    const mutations = new MutationObserver((records) => {
+      if (frame || !records.some((r) => r.addedNodes.length > 0)) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        observe();
+      });
+    });
     mutations.observe(document.body, { childList: true, subtree: true });
 
     observe();
     root.classList.add("js-reveal");
     return () => {
+      cancelAnimationFrame(frame);
       observer.disconnect();
       mutations.disconnect();
       root.classList.remove("js-reveal");

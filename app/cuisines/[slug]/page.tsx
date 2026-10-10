@@ -8,6 +8,7 @@ import { RegionExplorer } from "@/components/recipes/region-explorer";
 import { Button } from "@/components/ui/button";
 import { getCuisine, listCuisines } from "@/lib/services/catalog";
 import { countRecipesByCuisine, getRecipesByCuisine } from "@/lib/services/recipes";
+import { toCardRecipe } from "@/lib/recipes/slim";
 
 export async function generateStaticParams() {
   const cuisines = await listCuisines();
@@ -83,7 +84,7 @@ export default async function CuisinePage({ params }: PageProps<"/cuisines/[slug
               <Link href={`/recipes?cuisine=${cuisine.slug}`}>Filter {cuisine.name.toLowerCase()} recipes</Link>
             </Button>
           </div>
-          <RegionExplorer cuisine={cuisine.slug} recipes={recipes} />
+          <RegionExplorer cuisine={cuisine.slug} recipes={recipes.map(toCardRecipe)} />
         </section>
 
         <section aria-labelledby="more-cuisines">

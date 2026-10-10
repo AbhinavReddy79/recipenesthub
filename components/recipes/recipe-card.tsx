@@ -63,7 +63,7 @@ export function RecipeCard({
         {showFavorite && (
           <FavoriteButton slug={recipe.slug} title={recipe.title} className="absolute top-2 right-2 @3xs:top-3 @3xs:right-3" />
         )}
-        <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-[0.6875rem] font-semibold text-white backdrop-blur-md @3xs:bottom-3 @3xs:left-3 @3xs:gap-1.5 @3xs:px-2.5 @3xs:py-1 @3xs:text-xs">
+        <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/65 px-2 py-0.5 text-[0.6875rem] font-semibold text-white @3xs:bottom-3 @3xs:left-3 @3xs:gap-1.5 @3xs:px-2.5 @3xs:py-1 @3xs:text-xs">
           <Clock className="size-3 @3xs:size-3.5" aria-hidden />
           <span className="sr-only">Total time </span>
           {formatMinutes(totalMinutes(recipe))}

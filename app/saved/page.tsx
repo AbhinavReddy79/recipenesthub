@@ -7,6 +7,7 @@ import { ModuleTone } from "@/components/shared/module-tone";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { listRecipes } from "@/lib/services/recipes";
+import { toCardRecipe } from "@/lib/recipes/slim";
 
 export const metadata: Metadata = {
   title: "Saved Recipes",
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function SavedPage() {
-  const recipes = await listRecipes();
+  const recipes = (await listRecipes()).map(toCardRecipe);
   return (
     <ModuleTone tone="red">
       <PageHeader

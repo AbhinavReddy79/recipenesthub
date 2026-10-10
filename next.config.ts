@@ -53,6 +53,10 @@ const nextConfig: NextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   images: {
+    // Fewer, well-spread widths: shorter image tags on every page, and no 2K/4K
+    // downloads on large screens (photos never show wider than ~1900px).
+    deviceSizes: [640, 828, 1080, 1280, 1920],
+    imageSizes: [48, 96, 256, 384],
     remotePatterns: [
       {
         protocol: "https",

@@ -5,6 +5,7 @@ import { MealPlanner } from "@/components/planner/meal-planner";
 import { ModuleTone } from "@/components/shared/module-tone";
 import { PageHeader } from "@/components/shared/page-header";
 import { listRecipes } from "@/lib/services/recipes";
+import { toPlannerRecipe } from "@/lib/recipes/slim";
 
 export const metadata: Metadata = {
   title: "Meal Planner",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MealPlannerPage() {
-  const recipes = await listRecipes();
+  const recipes = (await listRecipes()).map(toPlannerRecipe);
   return (
     <ModuleTone tone="herb">
       <PageHeader

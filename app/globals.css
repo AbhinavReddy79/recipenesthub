@@ -624,3 +624,20 @@
   0%, 60% { transform: translateX(-120%); }
   85%, 100% { transform: translateX(120%); }
 }
+
+/*
+ * Phones and tablets: live background blur and never-ending paint effects are
+ * the main causes of scroll jank on touch devices, so turn them off there.
+ * (Translucent surfaces stay readable: they sit on dark photos or are near-opaque.)
+ */
+@media (pointer: coarse) {
+  [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .animate-ken-burns,
+  .text-gradient-gold,
+  .animate-gradient-x {
+    animation: none !important;
+  }
+}

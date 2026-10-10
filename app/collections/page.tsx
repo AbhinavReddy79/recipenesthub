@@ -5,6 +5,7 @@ import { CollectionsGrid, NewCollectionButton } from "@/components/collections/c
 import { ModuleTone } from "@/components/shared/module-tone";
 import { PageHeader } from "@/components/shared/page-header";
 import { listRecipes } from "@/lib/services/recipes";
+import { toCardRecipe } from "@/lib/recipes/slim";
 
 export const metadata: Metadata = {
   title: "Collections",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CollectionsPage() {
-  const recipes = await listRecipes();
+  const recipes = (await listRecipes()).map(toCardRecipe);
   return (
     <ModuleTone tone="berry">
       <PageHeader

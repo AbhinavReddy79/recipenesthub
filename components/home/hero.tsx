@@ -99,7 +99,7 @@ function FeaturedCard({ recipe }: { recipe: Recipe }) {
           sizes="420px"
           className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
-        <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
+        <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/65 px-3 py-1 text-xs font-semibold text-white">
           <Flame className="size-3.5 text-saffron" aria-hidden />
           Featured recipe
         </span>

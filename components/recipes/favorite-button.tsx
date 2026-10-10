@@ -60,7 +60,7 @@ export function FavoriteButton({ slug, title, variant = "overlay", className }: 
       aria-pressed={saved}
       aria-label={saved ? `Remove ${title} from saved` : `Save ${title}`}
       className={cn(
-        "relative z-10 flex size-9 items-center justify-center rounded-full bg-background/90 text-foreground shadow-soft backdrop-blur-md transition hover:scale-105 hover:bg-background",
+        "relative z-10 flex size-9 items-center justify-center rounded-full bg-background/95 text-foreground shadow-soft transition hover:scale-105 hover:bg-background",
         className,
       )}
     >

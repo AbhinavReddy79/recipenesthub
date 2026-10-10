@@ -3,14 +3,9 @@ import { DM_Sans, Fraunces } from "next/font/google";
 import { Footer } from "@/components/layout/footer";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { Navbar } from "@/components/layout/navbar";
-import type { SearchIndexItem } from "@/components/layout/search-command";
 import { Providers } from "@/components/providers";
 import { ScrollReveal } from "@/components/shared/scroll-reveal";
 import { ScrollToTop } from "@/components/shared/scroll-to-top";
-import { formatMinutes } from "@/lib/format";
-import { CUISINE_LABELS } from "@/lib/labels";
-import { totalMinutes } from "@/lib/recipes/query";
-import { listRecipes } from "@/lib/services/recipes";
 import { siteConfig } from "@/lib/site";
 import "./globals.css";
 
@@ -57,20 +52,7 @@ export const viewport: Viewport = {
   themeColor: "#fbfaf7",
 };
 
-async function buildSearchIndex(): Promise<SearchIndexItem[]> {
-  const recipes = await listRecipes();
-  return recipes.map((r) => ({
-    slug: r.slug,
-    title: r.title,
-    image: r.image,
-    meta: `${CUISINE_LABELS[r.cuisine]} · ${formatMinutes(totalMinutes(r))} · ${r.difficulty}`,
-    keywords: [r.cuisine, r.mealType, ...r.diets, ...(r.tags ?? [])].join(" "),
-  }));
-}
-
-export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const searchIndex = await buildSearchIndex();
-
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
@@ -87,7 +69,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           >
             Skip to content
           </a>
-          <Navbar searchIndex={searchIndex} />
+          <Navbar />
           <main id="main" className="flex flex-1 flex-col">
             {children}
           </main>

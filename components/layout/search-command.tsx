@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowRight, CalendarDays, Carrot, Search, TrendingUp } from "lucide-react";
@@ -25,10 +25,36 @@ export interface SearchIndexItem {
   keywords: string;
 }
 
+// Loaded once, the first time search is opened (or hovered), then reused.
+let indexRequest: Promise<SearchIndexItem[]> | null = null;
+function loadSearchIndex(): Promise<SearchIndexItem[]> {
+  indexRequest ??= fetch("/api/search-index")
+    .then((response) => {
+      if (!response.ok) throw new Error(`Search index: ${response.status}`);
+      return response.json() as Promise<SearchIndexItem[]>;
+    })
+    .catch((error) => {
+      indexRequest = null; // try again next time
+      throw error;
+    });
+  return indexRequest;
+}
+
 const POPULAR = ["Chicken", "Pasta", "Biryani", "Desserts", "Vegetarian"];
 
-export function SearchCommand({ index }: { index: SearchIndexItem[] }) {
+export function SearchCommand() {
   const [open, setOpen] = useState(false);
+  const [index, setIndex] = useState<SearchIndexItem[]>([]);
+  const prefetch = useCallback(() => {
+    loadSearchIndex().then(setIndex, () => {});
+  }, []);
+  const show = useCallback(
+    (next: boolean) => {
+      if (next) prefetch();
+      setOpen(next);
+    },
+    [prefetch],
+  );
   const [query, setQuery] = useState("");
   const router = useRouter();
 
@@ -38,12 +64,13 @@ export function SearchCommand({ index }: { index: SearchIndexItem[] }) {
       const typing = target?.closest("input, textarea, [contenteditable=true]");
       if ((event.key === "k" && (event.metaKey || event.ctrlKey)) || (event.key === "/" && !typing)) {
         event.preventDefault();
+        prefetch();
         setOpen((o) => !o);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [prefetch]);
 
   const go = (href: string) => {
     setOpen(false);
@@ -58,7 +85,8 @@ export function SearchCommand({ index }: { index: SearchIndexItem[] }) {
       <Button
         variant="ghost"
         className="hidden h-9 w-56 justify-start gap-2 rounded-full border border-border bg-card px-3 text-muted-foreground shadow-xs hover:bg-muted xl:inline-flex"
-        onClick={() => setOpen(true)}
+        onPointerEnter={prefetch}
+        onClick={() => show(true)}
       >
         <Search className="size-4" />
         <span className="flex-1 text-left text-sm font-normal">Search recipes…</span>
@@ -68,13 +96,14 @@ export function SearchCommand({ index }: { index: SearchIndexItem[] }) {
         variant="ghost"
         size="icon"
         className="xl:hidden"
-        onClick={() => setOpen(true)}
+        onPointerDown={prefetch}
+        onClick={() => show(true)}
         aria-label="Search recipes"
       >
         <Search className="size-[1.15rem]" />
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={show}>
         <DialogContent
           showCloseButton={false}
           className="top-[12%] translate-y-0 gap-0 overflow-hidden p-0 sm:max-w-xl"

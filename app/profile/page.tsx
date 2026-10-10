@@ -4,6 +4,7 @@ import { RequireProfile } from "@/components/auth/require-profile";
 import { ProfileView } from "@/components/profile/profile-view";
 import { ProfileSkeleton } from "@/components/shared/skeletons";
 import { listRecipes } from "@/lib/services/recipes";
+import { toCardRecipe } from "@/lib/recipes/slim";
 
 export const metadata: Metadata = {
   title: "Your Profile",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  const recipes = await listRecipes();
+  const recipes = (await listRecipes()).map(toCardRecipe);
   return (
     <RequireProfile
       icon={<CircleUser />}

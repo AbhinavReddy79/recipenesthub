@@ -4,6 +4,7 @@ import { DiscoverView } from "@/components/recipes/discover-view";
 import { Eyebrow } from "@/components/shared/section-heading";
 import { RecipeGridSkeleton } from "@/components/shared/skeletons";
 import { listRecipes } from "@/lib/services/recipes";
+import { toListRecipe } from "@/lib/recipes/slim";
 
 export const metadata: Metadata = {
   title: "Discover Recipes",
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DiscoverPage() {
-  const recipes = await listRecipes();
+  const recipes = (await listRecipes()).map(toListRecipe);
 
   return (
     <>

@@ -13,10 +13,10 @@ import { mainNav } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
 import { MobileNav } from "./mobile-nav";
-import { SearchCommand, type SearchIndexItem } from "./search-command";
+import { SearchCommand } from "./search-command";
 import { UserMenu } from "./user-menu";
 
-export function Navbar({ searchIndex }: { searchIndex: SearchIndexItem[] }) {
+export function Navbar() {
   const pathname = usePathname();
   const { user } = useCurrentUser();
   const { openAuth } = useAuthDialog();
@@ -35,7 +35,7 @@ export function Navbar({ searchIndex }: { searchIndex: SearchIndexItem[] }) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b bg-background/80 backdrop-blur-xl backdrop-saturate-150 transition-shadow duration-300 supports-[backdrop-filter]:bg-background/70",
+        "sticky top-0 z-40 border-b bg-background/95 transition-shadow duration-300 pointer-fine:bg-background/80 pointer-fine:backdrop-blur-xl pointer-fine:backdrop-saturate-150 pointer-fine:supports-[backdrop-filter]:bg-background/70",
         scrolled ? "border-border/70 shadow-card" : "border-transparent",
       )}
     >
@@ -76,7 +76,7 @@ export function Navbar({ searchIndex }: { searchIndex: SearchIndexItem[] }) {
           </div>
         ) : (
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
-          <SearchCommand index={searchIndex} />
+          <SearchCommand />
 
           {hydrated && user ? (
             <Button asChild className="hidden xl:inline-flex">
