@@ -1,8 +1,8 @@
 /**
  * Public launch: 28 October 2026, midnight India time.
  *
- * Until then everyone except the site owner (admins included) sees the
- * countdown at /coming-soon. The site opens by itself at this
+ * Until then everyone except the site owner and people they give early access
+ * (Admin > Users) sees the countdown at /coming-soon. The site opens by itself at this
  * moment; no redeploy is needed. To move the date, change it here and deploy.
  */
 export const LAUNCH_AT = new Date("2026-10-28T00:00:00+05:30");

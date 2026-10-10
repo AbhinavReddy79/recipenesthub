@@ -30,7 +30,8 @@ import { useHydrated } from "@/hooks/use-hydrated";
 import { useUserRecipes } from "@/hooks/use-user-recipes";
 import { formatDate } from "@/lib/format";
 import { adminListPlans, adminSetPremium, type MemberPlan } from "@/lib/storage/plan";
-import { adminListPresence, isOnline } from "@/lib/storage/presence";
+import { adminListEarlyAccess, adminListPresence, isOnline, setEarlyAccess } from "@/lib/storage/presence";
+import { isLaunched } from "@/lib/launch";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/types/user";
 import { AdminToolbar } from "./admin-toolbar";
@@ -66,6 +67,19 @@ export function AdminUsersTable() {
       window.clearInterval(id);
     };
   }, []);
+  // Before launch: who may use the site besides the owner.
+  const [earlyAccess, setEarlyAccessIds] = useState<Set<string>>(new Set());
+  const loadEarlyAccess = useCallback(() => {
+    adminListEarlyAccess()
+      .then(setEarlyAccessIds)
+      .catch(() => {});
+  }, []);
+  useEffect(loadEarlyAccess, [loadEarlyAccess]);
+  const toggleEarlyAccess = async (user: UserProfile, allowed: boolean) => {
+    if (!(await setEarlyAccess(user.id, allowed))) return toast.error("Only the site owner can change early access.");
+    toast.success(allowed ? `${user.name} can now use RecipeNest before launch` : `${user.name} will see the countdown until launch`);
+    loadEarlyAccess();
+  };
   const onlineCount = Object.values(presence.lastSeen).filter((seen) => isOnline(seen, presence.at)).length;
 
   const loadPlans = useCallback(() => {
@@ -180,6 +194,9 @@ export function AdminUsersTable() {
                             </span>
                           ) : null}
                           {user.id === me?.id && <span className="text-xs font-normal text-muted-foreground">(you)</span>}
+                          {!isLaunched() && earlyAccess.has(user.id) && (
+                            <span className="rounded-full bg-herb-soft px-2 py-px text-[0.6875rem] font-semibold text-herb">Early access</span>
+                          )}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           @{user.username} ·{" "}
@@ -257,6 +274,12 @@ export function AdminUsersTable() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        {isOwner && !user.isOwner && !isLaunched() && (
+                          <DropdownMenuItem onSelect={() => toggleEarlyAccess(user, !earlyAccess.has(user.id))}>
+                            <ShieldCheck />
+                            {earlyAccess.has(user.id) ? "Remove early access" : "Give early access (before launch)"}
+                          </DropdownMenuItem>
+                        )}
                         {/* For members who pay another way (e.g. UPI), prizes or testing. */}
                         <DropdownMenuItem onSelect={() => givePremium(user, 30)}>
                           <Crown />
