@@ -327,6 +327,27 @@ export type Database = {
         Relationships: [];
       };
       /** Contact page messages: anyone may insert; only admins read them. */
+      scheduled_emails: {
+        Row: {
+          id: string;
+          subject: string;
+          message: string;
+          audience: "waitlist" | "direct";
+          emails: string[];
+          send_at: string;
+          status: "scheduled" | "sending" | "sent" | "failed" | "cancelled";
+          sent_count: number;
+          failed_emails: string[];
+          error: string | null;
+          claimed_at: string | null;
+          finished_at: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: { subject: string; message: string; audience: "waitlist" | "direct"; emails?: string[]; send_at: string; created_by: string };
+        Update: never;
+        Relationships: [];
+      };
       launch_waitlist: {
         Row: { email: string; created_at: string; notified_at: string | null };
         Insert: never;
@@ -412,6 +433,7 @@ export type Database = {
       mark_contact_message_read: { Args: { p_message: string }; Returns: undefined };
       my_unread_support_replies: { Args: Record<PropertyKey, never>; Returns: number };
       join_launch_waitlist: { Args: { p_email: string }; Returns: undefined };
+      cancel_scheduled_email: { Args: { p_id: string }; Returns: boolean };
       lucky_draw_summary: {
         Args: { p_draw: string };
         Returns: { entries: number; joined: boolean; i_won: boolean; winners: Json }[];

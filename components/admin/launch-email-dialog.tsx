@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Mail, Send, UserPlus, Users } from "lucide-react";
+import { CalendarClock, Loader2, Mail, Send, UserPlus, Users, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { scheduleEmail } from "@/lib/storage/scheduled-emails";
 import { sendLaunchEmail } from "@/lib/storage/waitlist";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,21 @@ function parseEmails(text: string) {
 }
 
 type Audience = "waitlist" | "direct";
+type Timing = "now" | "later";
+
+/** "YYYY-MM-DDTHH:mm" in the browser's time zone, for <input type="datetime-local">. */
+function toLocalInput(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/** Tomorrow at 10:00, a sensible default for a scheduled email. */
+function defaultSendAt(): string {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  date.setHours(10, 0, 0, 0);
+  return toLocalInput(date);
+}
 
 /**
  * Admin: send the RecipeNest invitation from the dashboard, through the owner's Gmail,
@@ -48,6 +64,7 @@ export function LaunchEmailDialog({
   onOpenChange,
   waiting,
   onSent,
+  onScheduled,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,8 +72,12 @@ export function LaunchEmailDialog({
   waiting: number;
   /** Called after each batch so the list can refresh. */
   onSent: () => void;
+  /** Called after an email is scheduled. */
+  onScheduled: () => void;
 }) {
   const [audience, setAudience] = useState<Audience>(waiting > 0 ? "waitlist" : "direct");
+  const [timing, setTiming] = useState<Timing>("now");
+  const [sendAt, setSendAt] = useState(defaultSendAt);
   const [subject, setSubject] = useState(DEFAULT_SUBJECT);
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [addresses, setAddresses] = useState("");
@@ -122,6 +143,25 @@ export function LaunchEmailDialog({
     finish(result.sent ?? 0, result.failed?.length ?? 0);
   };
 
+  const schedule = async () => {
+    const when = new Date(sendAt);
+    if (Number.isNaN(when.getTime())) return toast.error("Pick a date and time.");
+    if (audience === "direct") {
+      if (parsed.invalid.length) return toast.error(`Check these addresses: ${parsed.invalid.slice(0, 3).join(", ")}`);
+      if (!parsed.valid.length) return toast.error("Enter at least one email address.");
+      if (parsed.valid.length > DIRECT_LIMIT) return toast.error(`You can schedule up to ${DIRECT_LIMIT} addresses at a time.`);
+    }
+    setBusy("send");
+    const result = await scheduleEmail({ subject, message, audience, emails: parsed.valid, sendAt: when });
+    setBusy(null);
+    if (!result.ok) return toast.error(result.error);
+    const label = when.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+    toast.success(`Scheduled for ${label}. It sends automatically, even if you're offline.`);
+    onScheduled();
+    if (audience === "direct") setAddresses("");
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={(next) => !busy && onOpenChange(next)}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
@@ -171,6 +211,35 @@ export function LaunchEmailDialog({
             </div>
           )}
 
+          <fieldset className="grid gap-2">
+            <legend className="mb-2 text-sm font-medium">When</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <AudienceOption active={timing === "now"} onClick={() => setTiming("now")} icon={<Zap />} title="Send now" detail="Goes out right away" />
+              <AudienceOption
+                active={timing === "later"}
+                onClick={() => setTiming("later")}
+                icon={<CalendarClock />}
+                title="Schedule"
+                detail="Pick a date and time"
+              />
+            </div>
+            {timing === "later" && (
+              <div className="grid gap-1.5 pt-1">
+                <Label htmlFor="launch-send-at">Send on</Label>
+                <Input
+                  id="launch-send-at"
+                  type="datetime-local"
+                  value={sendAt}
+                  onChange={(e) => setSendAt(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Your local time. It goes out within a minute of this time, even if nobody has the dashboard open.
+                  {audience === "waitlist" && " The waitlist is emailed as it is at that moment."}
+                </p>
+              </div>
+            )}
+          </fieldset>
+
           <div className="grid gap-2">
             <Label htmlFor="launch-subject">Subject</Label>
             <Input id="launch-subject" value={subject} maxLength={150} onChange={(e) => setSubject(e.target.value)} />
@@ -191,7 +260,12 @@ export function LaunchEmailDialog({
             {busy === "test" ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Mail data-icon="inline-start" />}
             Send a test to me
           </Button>
-          {audience === "waitlist" ? (
+          {timing === "later" ? (
+            <Button onClick={schedule} disabled={Boolean(busy) || (audience === "direct" && parsed.valid.length === 0)}>
+              {busy === "send" ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <CalendarClock data-icon="inline-start" />}
+              Schedule email
+            </Button>
+          ) : audience === "waitlist" ? (
             <Button onClick={sendWaitlist} disabled={Boolean(busy) || waiting === 0}>
               {busy === "send" ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Send data-icon="inline-start" />}
               Send to {waiting} {waiting === 1 ? "person" : "people"}

@@ -9,6 +9,7 @@ import { useAdminPowers } from "@/lib/storage/admin-powers";
 import { listWaitlist, markWaitlistNotified, removeFromWaitlist, type WaitlistEntry } from "@/lib/storage/waitlist";
 import { cn } from "@/lib/utils";
 import { LaunchEmailDialog } from "./launch-email-dialog";
+import { ScheduledEmailsList } from "./scheduled-emails-list";
 
 /** Dashboard: people who asked to be emailed at launch (owner and admins with the Members power). */
 export function WaitlistCard() {
@@ -16,6 +17,7 @@ export function WaitlistCard() {
   const [entries, setEntries] = useState<WaitlistEntry[] | null>(null);
   const [open, setOpen] = useState(false);
   const [emailing, setEmailing] = useState(false);
+  const [scheduleVersion, setScheduleVersion] = useState(0);
 
   const reload = useCallback(() => {
     listWaitlist()
@@ -145,7 +147,14 @@ export function WaitlistCard() {
           )}
         </>
       )}
-      <LaunchEmailDialog open={emailing} onOpenChange={setEmailing} waiting={waiting.length} onSent={reload} />
+      <ScheduledEmailsList version={scheduleVersion} />
+      <LaunchEmailDialog
+        open={emailing}
+        onOpenChange={setEmailing}
+        waiting={waiting.length}
+        onSent={reload}
+        onScheduled={() => setScheduleVersion((v) => v + 1)}
+      />
     </section>
   );
 }

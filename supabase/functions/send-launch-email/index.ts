@@ -1,9 +1,5 @@
-// Supabase Edge Function: emails the launch waitlist ("We're live, come join")
-// from the admin dashboard, through the owner's Gmail. People on the waitlist
-// don't need an account: the email links them to sign up.
-//
-// Who may send: the owner, or an admin with the "Members" power (checked in the
-// database with the caller's own sign-in token).
+// Supabase Edge Function: sends RecipeNest invitation emails through the
+// owner's Gmail. Nobody needs an account: the email links them to sign up.
 //
 // Secrets (Supabase -> Edge Functions -> Secrets), entered by the owner:
 //   GMAIL_USER          the Gmail address to send from
@@ -11,17 +7,23 @@
 //
 // Deploy with "Verify JWT with legacy secret" OFF: this function checks access itself.
 //
-// Request body: { mode: "test" | "send" | "direct", subject: string, message: string, emails?: string[] }
-//   test   -> sends one copy to the admin who asked
-//   send   -> sends to up to BATCH people not yet notified, marks them notified,
-//             and returns how many are left (the dashboard calls again until 0)
-//   direct -> sends to the addresses the admin typed in (up to BATCH, no
-//             account is created) and records them on the waitlist as notified
+// Request body:
+//   From the admin dashboard (owner, or an admin with the "Members" power,
+//   checked in the database with the caller's own sign-in token):
+//     { mode: "test" | "send" | "direct", subject, message, emails? }
+//     test   -> one copy to the admin who asked
+//     send   -> the next BATCH people on the waitlist not yet notified; returns
+//               how many are left (the dashboard calls again until 0)
+//     direct -> the addresses the admin typed in (up to BATCH); no account is
+//               created, they're recorded on the waitlist as notified
+//   From the minute timer (pg_cron, see the scheduled_emails migration):
+//     { mode: "scheduled", nonce } -> the nonce is a single-use code the
+//               database just created; sends the next due scheduled email
 //
 // To keep mail out of spam, the email reads like a short letter (no colour
 // blocks or promo footer), carries Reply-To and List-Unsubscribe headers, and
 // goes out one at a time with a short pause.
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import nodemailer from "npm:nodemailer@6.9.16";
 
 const SITES = ["https://recipe-nest-tan.vercel.app", "https://recipenesthub.com", "https://www.recipenesthub.com", "http://localhost:3000"];
@@ -61,50 +63,22 @@ Don't want emails from us? <a href="${unsubscribe}" style="color:#777777">Unsubs
 </div></body></html>`;
 }
 
-Deno.serve(async (req) => {
-  const origin = req.headers.get("origin");
-  const headers = { ...cors(origin), "Content-Type": "application/json" };
-  const reply = (status: number, body: Record<string, unknown>) => new Response(JSON.stringify(body), { status, headers });
-
-  if (req.method === "OPTIONS") return new Response("ok", { headers });
-  if (req.method !== "POST") return reply(405, { error: "method_not_allowed" });
-
-  const authorization = req.headers.get("Authorization") ?? "";
-  if (!authorization.startsWith("Bearer ")) return reply(401, { error: "signed_out" });
-
-  // 1. Who is asking? Their own token, so the database's rules decide.
-  const asCaller = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
-    global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false },
-  });
-  const { data: allowed, error: powerError } = await asCaller.rpc("has_admin_power", { power_name: "members" });
-  if (powerError || allowed !== true) return reply(403, { error: "not_admin" });
-
-  // 2. Validate the request.
-  const body = (await req.json().catch(() => null)) as { mode?: unknown; subject?: unknown; message?: unknown; emails?: unknown } | null;
-  const mode = body?.mode === "send" || body?.mode === "test" || body?.mode === "direct" ? body.mode : null;
-  const subject = typeof body?.subject === "string" ? body.subject.trim().slice(0, 150) : "";
-  const message = typeof body?.message === "string" ? body.message.trim().slice(0, 4000) : "";
-  if (!mode) return reply(400, { error: "invalid_mode" });
-  if (subject.length < 3 || message.length < 10) return reply(400, { error: "invalid_content" });
-
+/** A sender for one subject and message. Throws if Gmail isn't set up. */
+function makeSender(subject: string, message: string, site: string) {
   const gmailUser = Deno.env.get("GMAIL_USER");
   const gmailPassword = Deno.env.get("GMAIL_APP_PASSWORD");
-  if (!gmailUser || !gmailPassword) return reply(500, { error: "email_not_configured" });
-
+  if (!gmailUser || !gmailPassword) return null;
   const transport = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
     auth: { user: gmailUser, pass: gmailPassword.replace(/\s+/g, "") },
   });
-
-  const site = origin && SITES.includes(origin) ? origin : DEFAULT_SITE;
   const joinUrl = `${site}/register`;
   const unsubscribe = `mailto:${gmailUser}?subject=unsubscribe`;
   const html = emailHtml(message, joinUrl, site, unsubscribe);
   const text = `${message}\n\nJoin RecipeNest: ${joinUrl}\n\n--\nYou're getting this because you asked to be told when RecipeNest launches. Don't want emails from us? Reply "unsubscribe".`;
-  const send = (to: string) =>
+  return (to: string) =>
     transport.sendMail({
       from: { name: "RecipeNest", address: gmailUser },
       replyTo: gmailUser,
@@ -114,8 +88,154 @@ Deno.serve(async (req) => {
       html,
       headers: { "List-Unsubscribe": `<${unsubscribe}>` },
     });
+}
 
-  // 3a. Test: one copy to the admin.
+/** Sends to each address in turn; returns who got it and who didn't. */
+async function sendEach(emails: string[], send: (to: string) => Promise<unknown>, onSent: (email: string) => Promise<unknown>) {
+  let sent = 0;
+  const failed: string[] = [];
+  for (const email of emails) {
+    try {
+      if (sent || failed.length) await pause();
+      await send(email);
+      await onSent(email);
+      sent++;
+    } catch (error) {
+      console.error("send failed", email, error);
+      failed.push(email);
+      // Gmail's daily limit or a login problem: stop and report rather than failing everyone.
+      if (failed.length >= 3 && sent === 0) break;
+    }
+  }
+  return { sent, failed };
+}
+
+const markNotified = (admin: SupabaseClient) => (email: string) =>
+  admin.from("launch_waitlist").update({ notified_at: new Date().toISOString() }).eq("email", email);
+const recordInvited = (admin: SupabaseClient) => (email: string) =>
+  admin.from("launch_waitlist").upsert({ email, notified_at: new Date().toISOString() }, { onConflict: "email" });
+
+/** The next waitlist batch not yet notified. */
+async function nextWaitlistBatch(admin: SupabaseClient) {
+  const { data, error } = await admin
+    .from("launch_waitlist")
+    .select("email")
+    .is("notified_at", null)
+    .order("created_at", { ascending: true })
+    .limit(BATCH);
+  if (error) throw error;
+  return (data ?? []).map((row) => row.email as string);
+}
+
+async function waitlistRemaining(admin: SupabaseClient) {
+  const { count } = await admin.from("launch_waitlist").select("email", { count: "exact", head: true }).is("notified_at", null);
+  return count ?? 0;
+}
+
+const cleanEmails = (list: unknown) =>
+  [
+    ...new Set(
+      (Array.isArray(list) ? list : []).filter((e): e is string => typeof e === "string").map((e) => e.trim().toLowerCase()),
+    ),
+  ].filter((e) => e.length <= 254 && EMAIL.test(e));
+
+/** The minute timer: sends the next due scheduled email (the waitlist a batch per run). */
+async function runScheduled(admin: SupabaseClient) {
+  const { data: claimed, error } = await admin.rpc("claim_scheduled_email");
+  if (error) throw error;
+  const job = (claimed as Record<string, unknown>[] | null)?.[0];
+  if (!job) return { ok: true, idle: true };
+
+  const id = job.id as string;
+  const finish = (fields: Record<string, unknown>) => admin.from("scheduled_emails").update(fields).eq("id", id);
+  const send = makeSender(job.subject as string, job.message as string, DEFAULT_SITE);
+  if (!send) {
+    await finish({ status: "failed", error: "Email isn't set up (GMAIL_USER / GMAIL_APP_PASSWORD).", finished_at: new Date().toISOString() });
+    return { ok: false, error: "email_not_configured" };
+  }
+
+  const previousFailed = (job.failed_emails as string[] | null) ?? [];
+  const previousSent = (job.sent_count as number | null) ?? 0;
+
+  if (job.audience === "direct") {
+    const { sent, failed } = await sendEach(cleanEmails(job.emails), send, recordInvited(admin));
+    await finish({
+      status: sent ? "sent" : "failed",
+      sent_count: sent,
+      failed_emails: failed,
+      error: sent ? null : "Gmail refused every address. Check the app password.",
+      finished_at: new Date().toISOString(),
+    });
+    return { ok: true, sent, failed };
+  }
+
+  const batch = await nextWaitlistBatch(admin);
+  const { sent, failed } = await sendEach(batch, send, markNotified(admin));
+  const remaining = await waitlistRemaining(admin);
+  const total = previousSent + sent;
+  const allFailed = [...previousFailed, ...failed];
+  if (batch.length && !sent) {
+    await finish({ status: "failed", sent_count: total, failed_emails: allFailed, error: "Gmail stopped sending (daily limit or app password).", finished_at: new Date().toISOString() });
+  } else if (remaining > failed.length && sent) {
+    // More to go: hand it back so the next minute's run continues.
+    await finish({ status: "scheduled", sent_count: total, failed_emails: allFailed, claimed_at: null });
+  } else {
+    await finish({ status: "sent", sent_count: total, failed_emails: allFailed, finished_at: new Date().toISOString() });
+  }
+  return { ok: true, sent, failed, remaining };
+}
+
+Deno.serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const headers = { ...cors(origin), "Content-Type": "application/json" };
+  const reply = (status: number, body: Record<string, unknown>) => new Response(JSON.stringify(body), { status, headers });
+
+  if (req.method === "OPTIONS") return new Response("ok", { headers });
+  if (req.method !== "POST") return reply(405, { error: "method_not_allowed" });
+
+  const body = (await req.json().catch(() => null)) as
+    | { mode?: unknown; subject?: unknown; message?: unknown; emails?: unknown; nonce?: unknown }
+    | null;
+
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    auth: { persistSession: false },
+  });
+
+  // A. The minute timer. Its single-use code must exist in the database (and is burned here).
+  if (body?.mode === "scheduled") {
+    const nonce = typeof body.nonce === "string" ? body.nonce : "";
+    const { data: valid } = nonce ? await admin.rpc("use_email_runner_nonce", { p_nonce: nonce }) : { data: false };
+    if (valid !== true) return reply(403, { error: "invalid_nonce" });
+    try {
+      return reply(200, await runScheduled(admin));
+    } catch (error) {
+      console.error("scheduled run failed", error);
+      return reply(500, { error: "scheduled_failed" });
+    }
+  }
+
+  // B. The admin dashboard.
+  const authorization = req.headers.get("Authorization") ?? "";
+  if (!authorization.startsWith("Bearer ")) return reply(401, { error: "signed_out" });
+
+  // Who is asking? Their own token, so the database's rules decide.
+  const asCaller = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+    global: { headers: { Authorization: authorization } },
+    auth: { persistSession: false },
+  });
+  const { data: allowed, error: powerError } = await asCaller.rpc("has_admin_power", { power_name: "members" });
+  if (powerError || allowed !== true) return reply(403, { error: "not_admin" });
+
+  const mode = body?.mode === "send" || body?.mode === "test" || body?.mode === "direct" ? body.mode : null;
+  const subject = typeof body?.subject === "string" ? body.subject.trim().slice(0, 150) : "";
+  const message = typeof body?.message === "string" ? body.message.trim().slice(0, 4000) : "";
+  if (!mode) return reply(400, { error: "invalid_mode" });
+  if (subject.length < 3 || message.length < 10) return reply(400, { error: "invalid_content" });
+
+  const site = origin && SITES.includes(origin) ? origin : DEFAULT_SITE;
+  const send = makeSender(subject, message, site);
+  if (!send) return reply(500, { error: "email_not_configured" });
+
   if (mode === "test") {
     const { data: me } = await asCaller.auth.getUser();
     const to = me.user?.email;
@@ -129,64 +249,19 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Service role from here on, only after the checks above.
-  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
-    auth: { persistSession: false },
-  });
-
-  // 3b. Direct invitations to addresses the admin typed in. No account is created;
-  // each address is kept on the waitlist as notified so it isn't emailed twice.
   if (mode === "direct") {
-    const list = Array.isArray(body?.emails) ? body.emails : [];
-    const emails = [
-      ...new Set(list.filter((e): e is string => typeof e === "string").map((e) => e.trim().toLowerCase())),
-    ].filter((e) => e.length <= 254 && EMAIL.test(e));
+    const emails = cleanEmails(body?.emails);
     if (emails.length === 0) return reply(400, { error: "invalid_emails" });
     if (emails.length > BATCH) return reply(400, { error: "too_many_emails" });
-    let sent = 0;
-    const failed: string[] = [];
-    for (const email of emails) {
-      try {
-        if (sent || failed.length) await pause();
-        await send(email);
-        await admin
-          .from("launch_waitlist")
-          .upsert({ email, notified_at: new Date().toISOString() }, { onConflict: "email" });
-        sent++;
-      } catch (error) {
-        console.error("direct send failed", email, error);
-        failed.push(email);
-        if (failed.length >= 3 && sent === 0) break;
-      }
-    }
+    const { sent, failed } = await sendEach(emails, send, recordInvited(admin));
     return reply(200, { ok: true, sent, failed });
   }
 
-  // 3c. Send to the next batch of people on the waitlist not yet notified.
-  const { data: batch, error: listError } = await admin
-    .from("launch_waitlist")
-    .select("email")
-    .is("notified_at", null)
-    .order("created_at", { ascending: true })
-    .limit(BATCH);
-  if (listError) return reply(500, { error: "list_failed" });
-
-  let sent = 0;
-  const failed: string[] = [];
-  for (const { email } of batch ?? []) {
-    try {
-      if (sent || failed.length) await pause();
-      await send(email);
-      await admin.from("launch_waitlist").update({ notified_at: new Date().toISOString() }).eq("email", email);
-      sent++;
-    } catch (error) {
-      console.error("send failed", email, error);
-      failed.push(email);
-      // Gmail's daily limit or a login problem: stop and report rather than failing everyone.
-      if (failed.length >= 3 && sent === 0) break;
-    }
+  try {
+    const { sent, failed } = await sendEach(await nextWaitlistBatch(admin), send, markNotified(admin));
+    return reply(200, { ok: true, sent, failed, remaining: await waitlistRemaining(admin) });
+  } catch (error) {
+    console.error("waitlist send failed", error);
+    return reply(500, { error: "list_failed" });
   }
-
-  const { count } = await admin.from("launch_waitlist").select("email", { count: "exact", head: true }).is("notified_at", null);
-  return reply(200, { ok: true, sent, failed, remaining: count ?? 0 });
 });
