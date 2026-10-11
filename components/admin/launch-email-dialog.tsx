@@ -10,16 +10,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { sendLaunchEmail } from "@/lib/storage/waitlist";
 
-const DEFAULT_SUBJECT = "RecipeNest is live! Your invitation is here 🎉";
-const DEFAULT_MESSAGE = `Hi there,
+// Written like a short personal note: emoji, "free", exclamation marks and sales
+// language are what push announcement mail into spam or Promotions.
+const DEFAULT_SUBJECT = "RecipeNest is open now";
+const DEFAULT_MESSAGE = `Hi,
 
-You asked us to let you know when RecipeNest opens, and today's the day!
+You asked us to tell you when RecipeNest opens. It's open now.
 
-RecipeNest brings together recipes from every Indian state and kitchens around the world, with a meal planner and smart shopping lists, all in one place.
+RecipeNest brings together recipes from every Indian state and kitchens around the world, with a meal planner and shopping lists in one place.
 
-Join free today, and your first month of Premium is on us: publish unlimited recipes and enter our weekly cooking contest.
+When you create your account, your first month of Premium is included, so you can publish as many recipes as you like and enter the weekly cooking contest.
 
-See you in the kitchen,
+If you have any questions, just reply to this email.
+
+Thanks,
 The RecipeNest team`;
 
 /**

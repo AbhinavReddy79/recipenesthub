@@ -15,12 +15,18 @@
 //   test -> sends one copy to the admin who asked
 //   send -> sends to up to BATCH people not yet notified, marks them notified,
 //           and returns how many are left (the dashboard calls again until 0)
+//
+// To keep mail out of spam, the email reads like a short letter (no colour
+// blocks or promo footer), carries Reply-To and List-Unsubscribe headers, and
+// goes out one at a time with a short pause.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import nodemailer from "npm:nodemailer@6.9.16";
 
 const SITES = ["https://recipe-nest-tan.vercel.app", "https://recipenesthub.com", "https://www.recipenesthub.com", "http://localhost:3000"];
 const DEFAULT_SITE = SITES[0];
-const BATCH = 40;
+const BATCH = 25;
+const PAUSE_MS = 2000;
+const pause = () => new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
 
 function cors(origin: string | null) {
   const allowed = origin && SITES.includes(origin) ? origin : DEFAULT_SITE;
@@ -35,23 +41,21 @@ function cors(origin: string | null) {
 const escapeHtml = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-function emailHtml(message: string, joinUrl: string, site: string) {
+function emailHtml(message: string, joinUrl: string, site: string, unsubscribe: string) {
   const paragraphs = escapeHtml(message)
     .split(/\n{2,}/)
     .map((p) => `<p style="margin:0 0 16px;line-height:1.6">${p.replace(/\n/g, "<br>")}</p>`)
     .join("");
-  return `<!doctype html><html><body style="margin:0;background:#f6f1e8;font-family:Arial,Helvetica,sans-serif;color:#2b2620">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f1e8;padding:24px 12px"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden">
-<tr><td style="background:#1b1916;padding:24px 28px;color:#ffffff;font-family:Georgia,serif;font-size:26px;font-weight:bold">Recipe<span style="color:#e8b84a">Nest</span></td></tr>
-<tr><td style="padding:28px;font-size:16px">${paragraphs}
-<p style="margin:24px 0"><a href="${joinUrl}" style="display:inline-block;background:#e8b84a;color:#1b1916;text-decoration:none;font-weight:bold;padding:14px 26px;border-radius:999px">Join RecipeNest</a></p>
-<p style="margin:0;color:#7a7266;font-size:13px;line-height:1.5">New members get 1 month of Premium free.</p>
-</td></tr>
-<tr><td style="padding:18px 28px;background:#faf7f2;color:#8a8275;font-size:12px;line-height:1.5">
-You're getting this one email because you asked to be told when RecipeNest launches. We won't email you again unless you join.
-<br><a href="${site}" style="color:#8a8275">${site.replace(/^https?:\/\//, "")}</a></td></tr>
-</table></td></tr></table></body></html>`;
+  return `<!doctype html><html><body style="margin:0;padding:24px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#222222">
+<div style="max-width:560px;margin:0 auto">
+<p style="margin:0 0 20px;font-family:Georgia,serif;font-size:22px;font-weight:bold">RecipeNest</p>
+${paragraphs}
+<p style="margin:20px 0"><a href="${joinUrl}" style="display:inline-block;background:#c8962e;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:6px">Join RecipeNest</a></p>
+<p style="margin:0 0 16px;line-height:1.6">Or open this link: <a href="${joinUrl}">${joinUrl}</a></p>
+<hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0 12px">
+<p style="margin:0;color:#777777;font-size:12px;line-height:1.5">You're getting this because you asked to be told when RecipeNest launches (${escapeHtml(site.replace(/^https?:\/\//, ""))}).
+Don't want emails from us? <a href="${unsubscribe}" style="color:#777777">Unsubscribe</a> or just reply "unsubscribe".</p>
+</div></body></html>`;
 }
 
 Deno.serve(async (req) => {
@@ -89,13 +93,24 @@ Deno.serve(async (req) => {
     host: "smtp.gmail.com",
     port: 465,
     secure: true,
-    auth: { user: gmailUser, pass: gmailPassword },
+    auth: { user: gmailUser, pass: gmailPassword.replace(/\s+/g, "") },
   });
 
   const site = origin && SITES.includes(origin) ? origin : DEFAULT_SITE;
-  const html = emailHtml(message, `${site}/register`, site);
-  const text = `${message}\n\nJoin RecipeNest: ${site}/register\nNew members get 1 month of Premium free.\n\nYou're getting this one email because you asked to be told when RecipeNest launches.`;
-  const send = (to: string) => transport.sendMail({ from: `RecipeNest <${gmailUser}>`, to, subject, text, html });
+  const joinUrl = `${site}/register`;
+  const unsubscribe = `mailto:${gmailUser}?subject=unsubscribe`;
+  const html = emailHtml(message, joinUrl, site, unsubscribe);
+  const text = `${message}\n\nJoin RecipeNest: ${joinUrl}\n\n--\nYou're getting this because you asked to be told when RecipeNest launches. Don't want emails from us? Reply "unsubscribe".`;
+  const send = (to: string) =>
+    transport.sendMail({
+      from: { name: "RecipeNest", address: gmailUser },
+      replyTo: gmailUser,
+      to,
+      subject,
+      text,
+      html,
+      headers: { "List-Unsubscribe": `<${unsubscribe}>` },
+    });
 
   // 3a. Test: one copy to the admin.
   if (mode === "test") {
@@ -127,6 +142,7 @@ Deno.serve(async (req) => {
   const failed: string[] = [];
   for (const { email } of batch ?? []) {
     try {
+      if (sent || failed.length) await pause();
       await send(email);
       await admin.from("launch_waitlist").update({ notified_at: new Date().toISOString() }).eq("email", email);
       sent++;
