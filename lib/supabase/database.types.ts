@@ -305,6 +305,27 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      lucky_draws: {
+        Row: {
+          id: string;
+          title: string;
+          starts_at: string;
+          ends_at: string;
+          winners_count: number;
+          cash_prize: number;
+          drawn_at: string | null;
+          created_at: string;
+        };
+        Insert: { id?: string; title?: string; starts_at: string; ends_at: string; winners_count?: number; cash_prize?: number };
+        Update: { title?: string; starts_at?: string; ends_at?: string; winners_count?: number; cash_prize?: number };
+        Relationships: [];
+      };
+      lucky_draw_entries: {
+        Row: { draw_id: string; user_id: string; winner: boolean; prize_paid: boolean; created_at: string };
+        Insert: { draw_id: string; user_id: string };
+        Update: never;
+        Relationships: [];
+      };
       /** Contact page messages: anyone may insert; only admins read them. */
       contact_messages: {
         Row: {
@@ -348,10 +369,6 @@ export type Database = {
           monthly_limit: number | null;
         }[];
       };
-      billing_start: { Args: { p_subscription_id: string; p_period: "monthly" | "yearly" }; Returns: undefined };
-      billing_confirm: { Args: { p_payment_id: string; p_subscription_id: string; p_signature: string }; Returns: string };
-      billing_webhook: { Args: { p_body: string; p_signature: string }; Returns: undefined };
-      billing_mark_cancelled: { Args: Record<PropertyKey, never>; Returns: undefined };
       admin_set_premium: { Args: { target: string; days: number }; Returns: undefined };
       admin_list_plans: {
         Args: Record<PropertyKey, never>;
@@ -378,6 +395,17 @@ export type Database = {
       site_is_launched: { Args: Record<PropertyKey, never>; Returns: boolean };
       owner_site_status: { Args: Record<PropertyKey, never>; Returns: string | null };
       owner_set_launched: { Args: { launched: boolean }; Returns: string | null };
+      lucky_draw_is_open: { Args: { p_draw: string }; Returns: boolean };
+      lucky_draw_summary: {
+        Args: { p_draw: string };
+        Returns: { entries: number; joined: boolean; i_won: boolean; winners: Json }[];
+      };
+      admin_draw_winners: { Args: { p_draw: string }; Returns: number };
+      admin_draw_winner_details: {
+        Args: { p_draw: string };
+        Returns: { user_id: string; name: string; username: string; email: string; prize_paid: boolean }[];
+      };
+      owner_set_draw_prize_paid: { Args: { p_draw: string; p_user: string; paid: boolean }; Returns: undefined };
       has_admin_power: { Args: { power_name: string }; Returns: boolean };
       my_admin_powers: {
         Args: Record<PropertyKey, never>;

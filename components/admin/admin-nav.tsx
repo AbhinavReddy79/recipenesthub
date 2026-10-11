@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, Inbox, LayoutDashboard, MessageSquareText, Trophy, Users } from "lucide-react";
+import { BookOpen, Clover, Inbox, LayoutDashboard, MessageSquareText, Trophy, Users } from "lucide-react";
 import { useAdminPowers } from "@/lib/storage/admin-powers";
 import { cn } from "@/lib/utils";
 import { SECTION_POWER } from "./admin-gate";
@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/admin/reviews", label: "Reviews", icon: MessageSquareText },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/contests", label: "Contests", icon: Trophy },
+  { href: "/admin/draws", label: "Lucky draws", icon: Clover },
   { href: "/admin/messages", label: "Messages", icon: Inbox },
 ];
 

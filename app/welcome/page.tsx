@@ -5,7 +5,7 @@ import { CalendarDays, Check, Crown, Map, ShoppingBasket, Sparkles, Trophy, Uten
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { unsplash } from "@/lib/images";
-import { formatRupees, FREE_RECIPES_PER_MONTH, PREMIUM_PRICES } from "@/lib/plans";
+import { DRAW_PREMIUM_MONTHS, FREE_RECIPES_PER_MONTH } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Welcome",
@@ -36,7 +36,7 @@ export default function WelcomePage() {
           </Link>
           <nav className="flex items-center gap-2">
             <Button asChild variant="ghost" className="hidden text-white hover:bg-white/10 hover:text-white sm:inline-flex">
-              <Link href="/pricing">Pricing</Link>
+              <Link href="/pricing">Premium</Link>
             </Button>
             <Button asChild variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
               <Link href="/login">Log in</Link>
@@ -93,14 +93,14 @@ export default function WelcomePage() {
       <section aria-labelledby="plans" className="bg-warm-glow">
         <div className="container-page grid gap-8 py-16 sm:py-20">
           <h2 id="plans" className="text-center text-[2.375rem] leading-tight font-semibold">
-            Simple plans
+            Free to join. Premium to win.
           </h2>
           <div className="mx-auto grid w-full max-w-3xl gap-5 sm:grid-cols-2">
             <div className="grid gap-3 rounded-3xl bg-card p-6 shadow-card ring-1 ring-border/70">
               <h3 className="text-xl font-semibold">Free</h3>
               <p className="font-display text-4xl font-semibold">₹0</p>
               <ul className="grid gap-2 text-sm">
-                {["Every recipe, cuisine and state", "Meal planner and shopping lists", `Publish ${FREE_RECIPES_PER_MONTH} recipes a month`, "Vote in the weekly contest"].map((f) => (
+                {["Every recipe, cuisine and state", "Meal planner and shopping lists", `Publish ${FREE_RECIPES_PER_MONTH} recipes a month`, "Join the weekly lucky draw"].map((f) => (
                   <li key={f} className="flex gap-2">
                     <Check className="size-4 shrink-0 text-herb" aria-hidden />
                     {f}
@@ -113,13 +113,10 @@ export default function WelcomePage() {
                 <Crown className="size-5 text-gold-light" aria-hidden />
                 Premium
               </h3>
-              <p className="font-display text-4xl font-semibold text-gold-light">
-                {formatRupees(PREMIUM_PRICES.monthly.amount)}
-                <span className="text-base font-normal text-white/70"> / month</span>
-              </p>
-              <p className="-mt-2 text-sm text-white/70">or {formatRupees(PREMIUM_PRICES.yearly.amount)} a year</p>
+              <p className="font-display text-4xl font-semibold text-gold-light">Not for sale</p>
+              <p className="-mt-2 text-sm text-white/70">Win {DRAW_PREMIUM_MONTHS} months free in the weekly lucky draw</p>
               <ul className="grid gap-2 text-sm">
-                {["Everything in Free", "Unlimited recipes", "Enter the weekly contest", "Win cash prizes"].map((f) => (
+                {["Everything in Free", "Unlimited recipes", "Enter the weekly contest", "Lucky draw winners also get cash"].map((f) => (
                   <li key={f} className="flex gap-2">
                     <Check className="size-4 shrink-0 text-gold-light" aria-hidden />
                     {f}
@@ -130,7 +127,7 @@ export default function WelcomePage() {
           </div>
           <p className="text-center text-sm">
             <Link href="/pricing" className="font-semibold text-primary underline-offset-4 hover:underline">
-              See full plan details
+              How to win Premium
             </Link>
           </p>
         </div>
@@ -140,10 +137,9 @@ export default function WelcomePage() {
         <div className="container-page flex flex-wrap items-center justify-between gap-4 py-8 text-sm">
           <p>© {new Date().getFullYear()} RecipeNest</p>
           <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link href="/pricing" className="hover:text-white">Pricing</Link>
+            <Link href="/pricing" className="hover:text-white">Premium</Link>
             <Link href="/terms" className="hover:text-white">Terms</Link>
             <Link href="/privacy" className="hover:text-white">Privacy</Link>
-            <Link href="/refund-policy" className="hover:text-white">Refunds &amp; cancellations</Link>
             <Link href="/contact" className="hover:text-white">Contact us</Link>
           </nav>
         </div>

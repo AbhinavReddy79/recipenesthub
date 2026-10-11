@@ -54,7 +54,7 @@ export function ContestTeaser() {
               ? `${contest.prizeAmount > 0 ? `${formatRupees(contest.prizeAmount)} cash prize` : "A prize"} + a free month of Premium. ${
                   plan.premium ? "Enter your best recipe" : "Premium members enter, everyone votes"
                 }.`
-              : "Go Premium from ₹79 a month to publish without limits and compete every week."}
+              : "Win Premium in the weekly lucky draw to publish without limits and compete every week."}
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-metallic-gold px-4 py-2 text-sm font-semibold text-[oklch(0.2_0.006_70)]">

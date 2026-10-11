@@ -126,7 +126,7 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
     const result = await userRecipeActions.save(recipe).finally(() => setSaving(false));
     if (!result.ok) {
       if (result.limitReached) {
-        toast.error(result.error, { action: { label: "Go Premium", onClick: () => router.push("/pricing") } });
+        toast.error(result.error, { action: { label: "Win Premium", onClick: () => router.push("/lucky-draw") } });
       } else {
         toast.error(result.error);
       }
@@ -255,13 +255,13 @@ export function RecipeForm({ existing, profile }: { existing?: Recipe; profile: 
                 >
                   <span>
                     {limitReached
-                      ? `You've published ${plan.monthlyLimit} recipes this month, the Free plan's limit. Save this one as a draft and publish it next month, or go Premium for unlimited recipes.`
+                      ? `You've published ${plan.monthlyLimit} recipes this month, the Free plan's limit. Save this one as a draft and publish it next month, or win Premium in the lucky draw for unlimited recipes.`
                       : `Free plan: ${plan.recipesThisMonth} of ${plan.monthlyLimit} recipes published this month.`}
                   </span>
                   <Button asChild size="sm" className="bg-metallic-gold text-[oklch(0.2_0.006_70)] hover:opacity-95">
                     <Link href="/pricing">
                       <Crown data-icon="inline-start" />
-                      {limitReached ? "Go Premium" : "Unlimited with Premium"}
+                      {limitReached ? "Win Premium" : "Unlimited with Premium"}
                     </Link>
                   </Button>
                 </div>

@@ -7,8 +7,7 @@ export type ContactMessage = Database["public"]["Tables"]["contact_messages"]["R
 
 export const CONTACT_TOPICS: { value: ContactTopic; label: string }[] = [
   { value: "general", label: "General question" },
-  { value: "billing", label: "Premium or payments" },
-  { value: "refund", label: "Refund request" },
+  { value: "billing", label: "Premium or lucky draw" },
   { value: "contest", label: "Weekly contest" },
   { value: "account", label: "My account" },
   { value: "other", label: "Something else" },

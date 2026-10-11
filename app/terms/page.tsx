@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FileText } from "lucide-react";
 import { LegalPage } from "@/components/shared/legal-page";
-import { formatRupees, FREE_RECIPES_PER_MONTH, PREMIUM_PRICES } from "@/lib/plans";
+import { DRAW_PREMIUM_MONTHS, FREE_RECIPES_PER_MONTH } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Terms of Use",
@@ -17,7 +17,7 @@ export default function TermsPage() {
       eyebrow="Legal"
       title="Terms of Use"
       description="By using RecipeNest you agree to these terms. They're written to be read, not skimmed past."
-      updated="October 10, 2026"
+      updated="October 11, 2026"
       sections={[
         {
           title: "Using RecipeNest",
@@ -59,15 +59,30 @@ export default function TermsPage() {
             <>
               <p>
                 The Free plan costs nothing and lets you publish up to {FREE_RECIPES_PER_MONTH} recipes a month.
-                Premium ({formatRupees(PREMIUM_PRICES.monthly.amount)} a month or{" "}
-                {formatRupees(PREMIUM_PRICES.yearly.amount)} a year) adds unlimited recipes and entry to the weekly
-                contest. See the <Link href="/pricing">Pricing</Link> page.
+                Premium adds unlimited recipes and entry to the weekly contest. See the <Link href="/pricing">Premium</Link> page.
               </p>
               <ul>
-                <li>Premium renews automatically until you turn off auto-renew; you keep it until the end of the paid period.</li>
-                <li>Payments are processed by Razorpay under its own terms. RecipeNest never stores your card or UPI details.</li>
+                <li>Premium can&apos;t be bought. It is only given as a prize in the weekly lucky draw or the weekly contest.</li>
+                <li>RecipeNest never takes payments and will never ask you for card numbers, OTPs or UPI PINs.</li>
+                <li>Premium won as a prize ends automatically at the end of its period. It has no cash value and can&apos;t be transferred.</li>
+              </ul>
+            </>
+          ),
+        },
+        {
+          title: "Weekly lucky draw",
+          body: (
+            <>
+              <p>Each week RecipeNest may run a free lucky draw, with the dates, number of winners and prize shown on the lucky draw page.</p>
+              <ul>
+                <li>Any member can join, once per draw, for free. No purchase or payment is needed to enter or to win.</li>
                 <li>
-                  Cancellations and refunds follow our <Link href="/refund-policy">Refund &amp; Cancellation Policy</Link>.
+                  When the draw closes, winners are picked at random from everyone who joined. Each winner gets {DRAW_PREMIUM_MONTHS} months of
+                  Premium straight away, plus any cash prize shown for that draw.
+                </li>
+                <li>
+                  One account per person. We may disqualify entries from fake or duplicate accounts. Cash prizes are paid to the winner after we
+                  contact them by email and may be subject to tax. RecipeNest&apos;s decision is final.
                 </li>
               </ul>
             </>
@@ -86,8 +101,8 @@ export default function TermsPage() {
                   involve fake accounts or vote trading, and may disqualify those involved.
                 </li>
                 <li>
-                  Prizes are paid as described in the <Link href="/refund-policy">Refund &amp; Cancellation Policy</Link>{" "}
-                  and may be subject to tax. RecipeNest&apos;s decision on results is final.
+                  Cash prizes are paid to the winner after we contact them by email and may be subject to tax. RecipeNest&apos;s decision on
+                  results is final.
                 </li>
               </ul>
             </>

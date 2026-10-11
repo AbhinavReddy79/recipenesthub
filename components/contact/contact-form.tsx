@@ -110,7 +110,7 @@ export function ContactForm({ defaultTopic = "general" }: { defaultTopic?: Conta
           maxLength={2000}
           value={form.message}
           aria-invalid={Boolean(errors.message)}
-          placeholder="How can we help? For payments, include the date and amount (but never your card or UPI PIN)."
+          placeholder="How can we help?"
           onChange={(e) => setForm({ ...form, message: e.target.value })}
         />
         <p className="flex justify-between text-xs text-muted-foreground">

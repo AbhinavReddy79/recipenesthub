@@ -145,7 +145,7 @@ export const recipesStorage = {
         return {
           ok: false,
           limitReached: true,
-          error: `Free members can publish ${FREE_RECIPES_PER_MONTH} recipes a month. Save this one as a draft, or go Premium for unlimited recipes.`,
+          error: `Free members can publish ${FREE_RECIPES_PER_MONTH} recipes a month. Save this one as a draft, or win Premium in the weekly lucky draw for unlimited recipes.`,
         };
       }
       console.error(recipeError);

@@ -17,7 +17,7 @@ export interface AdminPowers {
 export const ADMIN_POWER_LABELS: Record<AdminPower, { label: string; description: string }> = {
   moderate: { label: "Moderate recipes & reviews", description: "Hide, publish or delete community recipes; edit or delete reviews." },
   members: { label: "Manage members", description: "See the users list, disable or delete members, give Premium, invite people." },
-  contests: { label: "Manage contests", description: "Create contests, remove entries and announce winners." },
+  contests: { label: "Manage contests & lucky draws", description: "Create contests and lucky draws, remove entries, announce and draw winners." },
   messages: { label: "Read Contact messages", description: "Read, reply to and delete messages from the Contact page." },
 };
 

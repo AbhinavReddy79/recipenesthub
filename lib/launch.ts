@@ -13,7 +13,7 @@ export const COMING_SOON_PATH = "/coming-soon";
 /**
  * Pages anyone can still open before launch: the countdown, signing in (so
  * the owner can get in), password help, email-link landing pages, the legal,
- * pricing and contact pages and the Razorpay webhook. Creating an account opens at launch.
+ * Premium and contact pages. Creating an account opens at launch.
  */
 const PRE_LAUNCH_PATHS = [
   COMING_SOON_PATH,
@@ -23,10 +23,8 @@ const PRE_LAUNCH_PATHS = [
   "/auth",
   "/privacy",
   "/terms",
-  "/refund-policy",
   "/contact",
   "/pricing",
-  "/api/billing/webhook",
 ];
 
 export const isPreLaunchPath = (pathname: string) =>

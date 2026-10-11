@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shared/page-header";
 
 export const metadata: Metadata = {
   title: "Premium",
-  description: "RecipeNest Free and Premium plans: unlimited recipes and the weekly cooking contest for ₹79 a month or ₹899 a year.",
+  description: "RecipeNest Free and Premium. Premium can't be bought: win it in the weekly lucky draw.",
 };
 
 export default function PricingPage() {
@@ -14,9 +14,9 @@ export default function PricingPage() {
     <ModuleTone tone="amber">
       <PageHeader
         icon={<Crown />}
-        eyebrow="Plans"
-        title="Go Premium"
-        description="Publish as many recipes as you like and compete in the weekly cooking contest for cash prizes."
+        eyebrow="Premium"
+        title="Win Premium"
+        description="Premium isn't for sale. Join the weekly lucky draw for a chance to win 3 months of Premium and a cash prize."
       />
       <div className="container-page py-12 pb-24">
         <PricingView />

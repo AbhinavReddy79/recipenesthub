@@ -83,7 +83,7 @@ export function UserMenu() {
             <DropdownMenuItem asChild>
               <Link href="/pricing" className="font-semibold">
                 <Crown className="text-gold-ink" />
-                {plan.premium ? "Premium" : "Go Premium"}
+                {plan.premium ? "Premium" : "Win Premium"}
                 {plan.premium && (
                   <span className="ml-auto rounded-full bg-metallic-gold px-2 py-0.5 text-[0.625rem] font-bold text-[oklch(0.2_0.006_70)] uppercase">
                     Active

@@ -41,7 +41,7 @@ export async function proxy(request: NextRequest) {
   // early access; everyone else (admins included) sees the countdown. After launch the countdown page just leads home.
   // The site's address itself always shows a page (the countdown, or the welcome
   // page for signed-out visitors after launch) rather than redirecting, so it
-  // can be shared and verified (e.g. by Razorpay) as a working website.
+  // can be shared and verified as a working website.
   if (!(await siteLaunched(supabase))) {
     if (!isPreLaunchPath(pathname) && !(signedIn && (await hasSiteAccess(supabase)))) {
       if (pathname === "/") return rewriteKeepingCookies(new URL(COMING_SOON_PATH, request.url), request, response);

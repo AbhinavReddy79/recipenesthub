@@ -251,9 +251,9 @@ function ContestDetail({ contest }: { contest: Contest }) {
                 </Button>
               ) : (
                 <Button asChild className="bg-metallic-gold text-[oklch(0.2_0.006_70)] hover:opacity-95">
-                  <Link href="/pricing">
+                  <Link href="/lucky-draw">
                     <Crown data-icon="inline-start" />
-                    Go Premium to enter
+                    Win Premium to enter
                   </Link>
                 </Button>
               ))}

@@ -16,6 +16,7 @@ export const SECTION_POWER: Record<string, AdminPower> = {
   "/admin/reviews": "moderate",
   "/admin/users": "members",
   "/admin/contests": "contests",
+  "/admin/draws": "contests",
   "/admin/messages": "messages",
 };
 
