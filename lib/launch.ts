@@ -11,9 +11,10 @@ export const LAUNCH_AT = new Date("2026-10-20T00:00:00+05:30");
 export const COMING_SOON_PATH = "/coming-soon";
 
 /**
- * Pages anyone can still open before launch: the countdown, signing in (so
- * the owner can get in), password help, email-link landing pages, the legal,
- * Premium and contact pages. Creating an account opens at launch.
+ * Pages anyone can still open before launch: only the countdown and what the
+ * owner and early-access members need to get in (sign in, password help,
+ * email-link landing pages). Everything else, including Premium, Terms,
+ * Privacy and Contact, opens at launch.
  */
 const PRE_LAUNCH_PATHS = [
   COMING_SOON_PATH,
@@ -21,10 +22,6 @@ const PRE_LAUNCH_PATHS = [
   "/forgot-password",
   "/reset-password",
   "/auth",
-  "/privacy",
-  "/terms",
-  "/contact",
-  "/pricing",
 ];
 
 export const isPreLaunchPath = (pathname: string) =>

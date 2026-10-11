@@ -54,14 +54,8 @@ export default function ComingSoonPage() {
         </div>
 
         <div className="grid gap-3 text-xs text-white/55">
-          <nav aria-label="About RecipeNest" className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-sm text-white/75">
-            <Link href="/pricing" className="hover:text-white">Premium</Link>
-            <Link href="/terms" className="hover:text-white">Terms</Link>
-            <Link href="/privacy" className="hover:text-white">Privacy</Link>
-            <Link href="/contact" className="hover:text-white">Contact us</Link>
-          </nav>
           <p>
-            Site owner?{" "}
+            Have early access?{" "}
             <Link href="/login" className="font-semibold text-white/80 underline-offset-4 hover:text-white hover:underline">
               Sign in
             </Link>
