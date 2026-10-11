@@ -32,7 +32,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
 
         <aside className="grid content-start gap-4">
           <InfoCard icon={<Clock />} title="Reply time">
-            We reply by email within 2 working days (Monday to Saturday, India time).
+            We reply within 2 working days (Monday to Saturday, India time). If you&apos;re signed in, our reply appears under Support messages in your account menu; otherwise we reply by email.
           </InfoCard>
           {contactEmail && (
             <InfoCard icon={<Mail />} title="Email">

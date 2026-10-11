@@ -9,6 +9,7 @@ import {
   FolderHeart,
   Heart,
   LayoutDashboard,
+  LifeBuoy,
   LogIn,
   LogOut,
   Settings,
@@ -33,6 +34,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useUnreadSupport } from "@/hooks/use-unread-support";
 import { authClient } from "@/lib/auth";
 import { usePlan } from "@/lib/storage/plan";
 import { THEME_OPTIONS } from "./theme-toggle";
@@ -43,6 +45,7 @@ export const accountLinks = [
   { href: "/my-recipes", label: "My Recipes", icon: BookOpen },
   { href: "/collections", label: "Collections", icon: FolderHeart },
   { href: "/shopping-list", label: "Shopping List", icon: ShoppingBasket },
+  { href: "/support", label: "Support messages", icon: LifeBuoy },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
@@ -50,6 +53,7 @@ export function UserMenu() {
   const hydrated = useHydrated();
   const { user, isAdmin } = useCurrentUser();
   const plan = usePlan();
+  const unreadSupport = useUnreadSupport();
   const { openAuth } = useAuthDialog();
   const signedIn = hydrated && user;
   const { theme, setTheme } = useTheme();
@@ -59,10 +63,17 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        aria-label={signedIn ? `Account menu for ${user.name}` : "Account menu"}
+        aria-label={
+          signedIn ? `Account menu for ${user.name}${unreadSupport ? `, ${unreadSupport} new support ${unreadSupport === 1 ? "reply" : "replies"}` : ""}` : "Account menu"
+        }
       >
         {signedIn ? (
-          <UserAvatar name={user.name} src={user.avatar} className="size-9" />
+          <span className="relative block">
+            <UserAvatar name={user.name} src={user.avatar} className="size-9" />
+            {unreadSupport > 0 && (
+              <span aria-hidden className="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-primary ring-2 ring-background" />
+            )}
+          </span>
         ) : (
           <span className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
             <CircleUser className="size-5" aria-hidden />
@@ -98,6 +109,11 @@ export function UserMenu() {
                   <Link href={href}>
                     <Icon />
                     {label}
+                    {href === "/support" && unreadSupport > 0 && (
+                      <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-[0.625rem] font-bold text-primary-foreground">
+                        {unreadSupport} new
+                      </span>
+                    )}
                   </Link>
                 </DropdownMenuItem>
               ))}

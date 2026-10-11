@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { CircleCheck, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,8 +53,15 @@ export function ContactForm({ defaultTopic = "general" }: { defaultTopic?: Conta
         <CircleCheck className="size-12 text-herb" aria-hidden />
         <h2 className="text-2xl font-semibold">Message sent</h2>
         <p className="max-w-sm text-muted-foreground">
-          Thanks for getting in touch. We reply by email within 2 working days.
+          {user
+            ? "Thanks for getting in touch. We reply within 2 working days: you'll find our answer under Support messages in your account menu."
+            : "Thanks for getting in touch. We reply by email within 2 working days."}
         </p>
+        {user && (
+          <Button asChild variant="outline">
+            <Link href="/support">Open Support messages</Link>
+          </Button>
+        )}
       </div>
     );
   }

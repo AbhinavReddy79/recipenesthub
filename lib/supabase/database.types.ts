@@ -336,10 +336,17 @@ export type Database = {
           message: string;
           user_id: string | null;
           handled: boolean;
+          user_read_at: string | null;
           created_at: string;
         };
         Insert: { name: string; email: string; topic?: ContactTopic; message: string; user_id?: string | null };
         Update: { handled?: boolean };
+        Relationships: [];
+      };
+      contact_replies: {
+        Row: { id: string; message_id: string; author_id: string | null; from_admin: boolean; body: string; created_at: string };
+        Insert: { message_id: string; author_id: string; from_admin: boolean; body: string };
+        Update: never;
         Relationships: [];
       };
     };
@@ -396,6 +403,8 @@ export type Database = {
       owner_site_status: { Args: Record<PropertyKey, never>; Returns: string | null };
       owner_set_launched: { Args: { launched: boolean }; Returns: string | null };
       lucky_draw_is_open: { Args: { p_draw: string }; Returns: boolean };
+      mark_contact_message_read: { Args: { p_message: string }; Returns: undefined };
+      my_unread_support_replies: { Args: Record<PropertyKey, never>; Returns: number };
       lucky_draw_summary: {
         Args: { p_draw: string };
         Returns: { entries: number; joined: boolean; i_won: boolean; winners: Json }[];
