@@ -33,8 +33,12 @@ export async function scheduleEmail(input: {
   if (!error) return { ok: true };
   if (error.code === "42501") return { ok: false, error: "Only the owner, or admins who manage members, can schedule emails." };
   if (error.code === "23514") return { ok: false, error: "Check the subject, message and addresses (up to 25)." };
-  if (error.code === "42P01") return { ok: false, error: "Scheduling isn't set up yet: run the scheduled-emails database script." };
-  return { ok: false, error: "We couldn't schedule the email. Please try again." };
+  // The table doesn't exist yet (Postgres says 42P01, the API layer says PGRST205).
+  if (error.code === "42P01" || error.code === "PGRST205" || error.code === "PGRST204") {
+    return { ok: false, error: "Scheduling isn't set up yet: the scheduled-emails database script needs to be run in Supabase." };
+  }
+  console.error("schedule email failed", error);
+  return { ok: false, error: `We couldn't schedule the email (${error.message}).` };
 }
 
 export async function cancelScheduledEmail(id: string): Promise<boolean> {
