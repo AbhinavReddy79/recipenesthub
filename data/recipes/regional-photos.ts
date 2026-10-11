@@ -210,4 +210,52 @@ export const regionalPhotos: Record<string, { image: string; imageCredit: ImageC
     image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cb/Hot_chocolate_%28Unsplash%29.jpg/1280px-Hot_chocolate_%28Unsplash%29.jpg",
     imageCredit: { author: "Alisa Anton", license: "CC0", source: "https://commons.wikimedia.org/wiki/File:Hot_chocolate_(Unsplash).jpg" },
   },
+  "hyderabadi-haleem": {
+    image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/31/Haleem_hyderabadi.jpg/1280px-Haleem_hyderabadi.jpg",
+    imageCredit: { author: "Chandu7299", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Haleem_hyderabadi.jpg" },
+  },
+  "mirchi-ka-salan": {
+    image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e4/Hyderabadi_Hari_Mirchi_Ka_Salan.JPG/1280px-Hyderabadi_Hari_Mirchi_Ka_Salan.JPG",
+    imageCredit: { author: "Miansari66", license: "CC0", source: "https://commons.wikimedia.org/wiki/File:Hyderabadi_Hari_Mirchi_Ka_Salan.JPG" },
+  },
+  "double-ka-meetha": {
+    image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/Double_Ka_Meetha.JPG/1280px-Double_Ka_Meetha.JPG",
+    imageCredit: { author: "Miansari66", license: "CC0", source: "https://commons.wikimedia.org/wiki/File:Double_Ka_Meetha.JPG" },
+  },
+  "qubani-ka-meetha": {
+    image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/Khobani_Ka_Meetha.JPG/1280px-Khobani_Ka_Meetha.JPG",
+    imageCredit: { author: "Miansari66", license: "CC0", source: "https://commons.wikimedia.org/wiki/File:Khobani_Ka_Meetha.JPG" },
+  },
+  "sarva-pindi": {
+    image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/Sarvapindi_%2C_mango_pickle_-_aavakai.jpg/1280px-Sarvapindi_%2C_mango_pickle_-_aavakai.jpg",
+    imageCredit: { author: "Apoorva lakshmi", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Sarvapindi_,_mango_pickle_-_aavakai.jpg" },
+  },
+  "sakinalu": {
+    image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/77/Sakinalu%2C_dark_and_light-2159.jpg/1280px-Sakinalu%2C_dark_and_light-2159.jpg",
+    imageCredit: { author: "Raimond Spekking", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Sakinalu,_dark_and_light-2159.jpg" },
+  },
+  "andhra-kodi-kura": {
+    image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c2/Andhra_kodi_kura_%28chicken_gravy%29.JPG/1280px-Andhra_kodi_kura_%28chicken_gravy%29.JPG",
+    imageCredit: { author: "Karteeki4u", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Andhra_kodi_kura_(chicken_gravy).JPG" },
+  },
+  "gutti-vankaya-kura": {
+    image: "https://upload.wikimedia.org/wikipedia/commons/1/12/Gutti-vankaya_kura.jpg",
+    imageCredit: { author: "Ashok Kumar P S", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Gutti-vankaya_kura.jpg" },
+  },
+  "pulihora": {
+    image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/Tamarind_Rice_%28Puliyogare%29.jpg/1280px-Tamarind_Rice_%28Puliyogare%29.jpg",
+    imageCredit: { author: "Talupu", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Tamarind_Rice_(Puliyogare).jpg" },
+  },
+  "gongura-pachadi": {
+    image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/62/Gongura_Pickle.jpg/1280px-Gongura_Pickle.jpg",
+    imageCredit: { author: "Chandu100", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Gongura_Pickle.jpg" },
+  },
+  "punugulu": {
+    image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/49/Punugulu_with_chutney.JPG/1280px-Punugulu_with_chutney.JPG",
+    imageCredit: { author: "Balajijagadesh", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Punugulu_with_chutney.JPG" },
+  },
+  "andhra-tomato-pappu": {
+    image: "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/47/Pappu-Nellore-Andhra_Pradesh-DED_008.jpg/1280px-Pappu-Nellore-Andhra_Pradesh-DED_008.jpg",
+    imageCredit: { author: "Evangelin5", license: "CC BY-SA 4.0", source: "https://commons.wikimedia.org/wiki/File:Pappu-Nellore-Andhra_Pradesh-DED_008.jpg" },
+  },
 };

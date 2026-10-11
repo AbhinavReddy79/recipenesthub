@@ -6,6 +6,7 @@ import { eastNortheastIndianRecipes } from "./indian-east-northeast";
 import { northIndianRecipes } from "./indian-north";
 import { regionalIndianRecipes } from "./indian-regional";
 import { southIndianRecipes } from "./indian-south";
+import { teluguRecipes } from "./indian-telugu";
 import { westCentralIndianRecipes } from "./indian-west-central";
 import { italianRecipes } from "./italian";
 import { mediterraneanRecipes } from "./mediterranean";
@@ -19,6 +20,7 @@ export const recipes: Recipe[] = [
   ...westCentralIndianRecipes,
   ...eastNortheastIndianRecipes,
   ...southIndianRecipes,
+  ...teluguRecipes,
   ...italianRecipes,
   ...asianRecipes,
   ...americasRecipes,

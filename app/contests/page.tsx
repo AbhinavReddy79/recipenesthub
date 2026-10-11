@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Crown, Trophy } from "lucide-react";
+import { ContestEligibility } from "@/components/contests/contest-eligibility";
 import { ContestView } from "@/components/contests/contest-view";
 import { ModuleTone } from "@/components/shared/module-tone";
 import { PageHeader } from "@/components/shared/page-header";
@@ -28,8 +29,9 @@ export default function ContestsPage() {
           </Button>
         }
       />
-      <div className="container-page py-12 pb-24">
+      <div className="container-page grid gap-14 py-12 pb-24">
         <ContestView />
+        <ContestEligibility />
       </div>
     </ModuleTone>
   );
