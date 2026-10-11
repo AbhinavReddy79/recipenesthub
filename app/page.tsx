@@ -56,10 +56,16 @@ export default async function HomePage() {
     { label: "Meal categories", value: categories.length },
   ];
 
+  // The hero card rotates: the signature biryani first, then the other featured dishes.
+  const heroRecipes = [heroRecipe, ...featuredList]
+    .filter((r, i, list): r is Recipe => Boolean(r) && list.findIndex((x) => x?.slug === r?.slug) === i)
+    .slice(0, 8)
+    .map(toCardRecipe);
+
   return (
     <>
       <WelcomeBar />
-      <Hero featured={(heroRecipe ?? featuredList[0]) as Recipe} stats={heroStats} todaysPick={ofTheDay?.recipe} />
+      <Hero featured={heroRecipes} stats={heroStats} todaysPick={ofTheDay?.recipe} />
 
       <div className="grid grid-cols-1 gap-20 py-14 sm:gap-24 sm:py-20">
         {ofTheDay && <RecipeOfTheDay recipe={ofTheDay.recipe} date={ofTheDay.date} />}

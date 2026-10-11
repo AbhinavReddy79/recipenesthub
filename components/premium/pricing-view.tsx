@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { formatDate } from "@/lib/format";
-import { DRAW_PREMIUM_MONTHS, FREE_FEATURES, PREMIUM_FEATURES } from "@/lib/plans";
+import { DRAW_PREMIUM_MONTHS, FREE_FEATURES, PREMIUM_FEATURES, WELCOME_PREMIUM_MONTHS } from "@/lib/plans";
 import { usePlan } from "@/lib/storage/plan";
 import { cn } from "@/lib/utils";
 
@@ -65,7 +65,7 @@ export function PricingView() {
               <Crown className="size-6 text-gold-light" aria-hidden />
               Premium
             </h2>
-            <p className="text-white/75">Not for sale: win it in our weekly lucky draw.</p>
+            <p className="text-white/75">Not for sale. New members get it free for {WELCOME_PREMIUM_MONTHS} month, then win more in the weekly lucky draw.</p>
           </div>
           <p className="font-display text-3xl font-semibold text-gold-light">{DRAW_PREMIUM_MONTHS} months free</p>
           <FeatureList items={PREMIUM_FEATURES} onDark />
@@ -82,7 +82,14 @@ export function PricingView() {
         <h2 id="how-to-win" className="text-center text-2xl font-semibold">
           How to get Premium
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <WayCard
+            icon={<Crown />}
+            title={`${WELCOME_PREMIUM_MONTHS} month free when you join`}
+            text="Every new member starts with Premium for their first month, automatically. No card, no payment."
+            href={hydrated && !user ? "/register" : "/lucky-draw"}
+            cta={hydrated && !user ? "Join free" : "Keep it going: join the draw"}
+          />
           <WayCard
             icon={<Gift />}
             title="Weekly lucky draw"

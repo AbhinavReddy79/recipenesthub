@@ -1,12 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ChefHat, Clock, Flame, Sparkles } from "lucide-react";
+import { ArrowRight, Flame, Sparkles } from "lucide-react";
 import { RecipeSearchForm } from "@/components/recipes/recipe-search-form";
-import { formatMinutes } from "@/lib/format";
 import { unsplash } from "@/lib/images";
-import { CUISINE_LABELS } from "@/lib/labels";
-import { totalMinutes } from "@/lib/recipes/query";
 import type { Recipe } from "@/types/recipe";
+import { FeaturedCarousel } from "./featured-carousel";
 
 const EXAMPLES = ["Chicken", "Pasta", "Biryani", "Desserts", "Vegetarian"];
 
@@ -14,15 +12,15 @@ const EXAMPLES = ["Chicken", "Pasta", "Biryani", "Desserts", "Vegetarian"];
 const BACKDROP = unsplash("1504674900247-0877df9cc836", 2400);
 
 interface HeroProps {
-  /** The dish pictured in the hero card. */
-  featured: Recipe;
+  /** The dishes the hero card rotates through, one at a time. */
+  featured: Recipe[];
   /** Real catalog counts, shown under the search. */
   stats: { label: string; value: number }[];
   /** Today's recipe of the day, promoted with a button that jumps to it. */
   todaysPick?: Recipe;
 }
 
-/** Front page: a full-bleed food photo, a clear headline, search, and one featured recipe. */
+/** Front page: a full-bleed food photo, a clear headline, search, and a rotating featured recipe. */
 export function Hero({ featured, stats, todaysPick }: HeroProps) {
   return (
     <section aria-labelledby="hero-title" className="relative isolate overflow-hidden bg-ink text-white">
@@ -85,7 +83,7 @@ export function Hero({ featured, stats, todaysPick }: HeroProps) {
         </div>
 
         <div className="hidden animate-float-slow lg:block">
-          <FeaturedCard recipe={featured} />
+          <FeaturedCarousel recipes={featured} />
         </div>
       </div>
     </section>
@@ -111,51 +109,5 @@ function TodaysPickLink({ recipe }: { recipe: Recipe }) {
       </span>
       <ArrowRight className="size-5 shrink-0 transition-transform group-hover:translate-x-0.5" aria-hidden />
     </Link>
-  );
-}
-
-function FeaturedCard({ recipe }: { recipe: Recipe }) {
-  return (
-    <article className="group relative mx-auto w-full max-w-md animate-rise rounded-[1.75rem] bg-card p-3 text-card-foreground shadow-2xl ring-1 ring-white/10 [animation-delay:150ms] lg:rotate-[1.5deg] lg:transition-transform lg:duration-500 lg:hover:rotate-0 lg:hover:scale-[1.02]">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-muted">
-        <Image
-          src={recipe.image}
-          alt={recipe.title}
-          fill
-          sizes="420px"
-          className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-        />
-        <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/65 px-3 py-1 text-xs font-semibold text-white">
-          <Flame className="size-3.5 text-saffron" aria-hidden />
-          Featured recipe
-        </span>
-      </div>
-      <div className="grid gap-3 px-2 pt-4 pb-2">
-        <p className="text-xs font-semibold tracking-[0.14em] text-gold-ink uppercase">
-          {CUISINE_LABELS[recipe.cuisine]}
-        </p>
-        <h2 className="text-2xl leading-tight font-semibold">
-          <Link href={`/recipes/${recipe.slug}`} className="after:absolute after:inset-0 after:rounded-[1.75rem]">
-            {recipe.title}
-          </Link>
-        </h2>
-        <div className="flex items-center justify-between gap-4 border-t pt-3 text-sm text-muted-foreground">
-          <span className="flex items-center gap-4">
-            <span className="inline-flex items-center gap-1.5">
-              <Clock className="size-4" aria-hidden />
-              {formatMinutes(totalMinutes(recipe))}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <ChefHat className="size-4" aria-hidden />
-              {recipe.difficulty}
-            </span>
-          </span>
-          <span className="inline-flex items-center gap-1 font-semibold text-primary">
-            Cook it
-            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
-          </span>
-        </div>
-      </div>
-    </article>
   );
 }

@@ -5,7 +5,7 @@ import { CalendarDays, Check, Crown, Map, ShoppingBasket, Sparkles, Trophy, Uten
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { unsplash } from "@/lib/images";
-import { DRAW_PREMIUM_MONTHS, FREE_RECIPES_PER_MONTH } from "@/lib/plans";
+import { DRAW_PREMIUM_MONTHS, FREE_RECIPES_PER_MONTH, WELCOME_PREMIUM_MONTHS } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Welcome",
@@ -113,8 +113,8 @@ export default function WelcomePage() {
                 <Crown className="size-5 text-gold-light" aria-hidden />
                 Premium
               </h3>
-              <p className="font-display text-4xl font-semibold text-gold-light">Not for sale</p>
-              <p className="-mt-2 text-sm text-white/70">Win {DRAW_PREMIUM_MONTHS} months free in the weekly lucky draw</p>
+              <p className="font-display text-4xl font-semibold text-gold-light">{WELCOME_PREMIUM_MONTHS} month free</p>
+              <p className="-mt-2 text-sm text-white/70">for every new member, then win {DRAW_PREMIUM_MONTHS} more months in the weekly lucky draw</p>
               <ul className="grid gap-2 text-sm">
                 {["Everything in Free", "Unlimited recipes", "Enter the weekly contest", "Lucky draw winners also get cash"].map((f) => (
                   <li key={f} className="flex gap-2">

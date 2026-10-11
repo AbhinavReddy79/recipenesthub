@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FileText } from "lucide-react";
 import { LegalPage } from "@/components/shared/legal-page";
-import { DRAW_PREMIUM_MONTHS, FREE_RECIPES_PER_MONTH } from "@/lib/plans";
+import { DRAW_PREMIUM_MONTHS, FREE_RECIPES_PER_MONTH, WELCOME_PREMIUM_MONTHS } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Terms of Use",
@@ -62,7 +62,10 @@ export default function TermsPage() {
                 Premium adds unlimited recipes and entry to the weekly contest. See the <Link href="/pricing">Premium</Link> page.
               </p>
               <ul>
-                <li>Premium can&apos;t be bought. It is only given as a prize in the weekly lucky draw or the weekly contest.</li>
+                <li>
+                  Premium can&apos;t be bought. Every new account gets {WELCOME_PREMIUM_MONTHS} month of Premium free when it is created;
+                  after that, Premium is only given as a prize in the weekly lucky draw or the weekly contest.
+                </li>
                 <li>RecipeNest never takes payments and will never ask you for card numbers, OTPs or UPI PINs.</li>
                 <li>Premium won as a prize ends automatically at the end of its period. It has no cash value and can&apos;t be transferred.</li>
               </ul>
