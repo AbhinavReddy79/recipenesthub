@@ -39,3 +39,39 @@ export async function removeFromWaitlist(email: string): Promise<boolean> {
   const { error } = await ctx.supabase.from("launch_waitlist").delete().eq("email", email);
   return !error;
 }
+
+export type LaunchEmailResult =
+  | { ok: true; sentTo?: string; sent?: number; failed?: string[]; remaining?: number }
+  | { ok: false; error: string };
+
+/**
+ * Sends the launch email through the send-launch-email Edge Function (the owner's Gmail).
+ * "test" sends one copy to you; "send" emails the next batch of people not yet
+ * notified and reports how many are left.
+ */
+export async function sendLaunchEmail(mode: "test" | "send", subject: string, message: string): Promise<LaunchEmailResult> {
+  const ctx = userContext();
+  if (!ctx) return { ok: false, error: "Please log in again." };
+  const { data, error } = await ctx.supabase.functions.invoke<LaunchEmailResult & { error?: string }>("send-launch-email", {
+    body: { mode, subject, message },
+  });
+  if (!error && data?.ok) return data;
+  // Errors from the function arrive with its JSON body in the response context.
+  let code = data && "error" in data ? data.error : undefined;
+  if (error && "context" in error && error.context instanceof Response) {
+    code = ((await error.context.json().catch(() => ({}))) as { error?: string }).error;
+  }
+  const messages: Record<string, string> = {
+    email_not_configured: "Email isn't set up yet: add GMAIL_USER and GMAIL_APP_PASSWORD in Supabase (Edge Functions, Secrets).",
+    send_failed: "Gmail refused the email. Check the Gmail address and app password in Supabase secrets.",
+    invalid_content: "Write a subject and a message first.",
+    not_admin: "Only the owner, or admins who manage members, can send this.",
+    signed_out: "Please log in again.",
+    no_email: "Your account has no email address to send the test to.",
+  };
+  if (!code) console.error("launch email failed", error);
+  return {
+    ok: false,
+    error: messages[code ?? ""] ?? "We couldn't reach the email service. Is the send-launch-email function deployed?",
+  };
+}

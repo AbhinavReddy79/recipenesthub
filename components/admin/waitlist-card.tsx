@@ -1,19 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { BellRing, Check, ChevronDown, Copy, Download, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { BellRing, Check, ChevronDown, Copy, Download, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/format";
 import { useAdminPowers } from "@/lib/storage/admin-powers";
 import { listWaitlist, markWaitlistNotified, removeFromWaitlist, type WaitlistEntry } from "@/lib/storage/waitlist";
 import { cn } from "@/lib/utils";
+import { LaunchEmailDialog } from "./launch-email-dialog";
 
 /** Dashboard: people who asked to be emailed at launch (owner and admins with the Members power). */
 export function WaitlistCard() {
   const { members: canSee } = useAdminPowers();
   const [entries, setEntries] = useState<WaitlistEntry[] | null>(null);
   const [open, setOpen] = useState(false);
+  const [emailing, setEmailing] = useState(false);
+
+  const reload = useCallback(() => {
+    listWaitlist()
+      .then(setEntries)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!canSee) return;
@@ -94,9 +102,13 @@ export function WaitlistCard() {
               <Download data-icon="inline-start" />
               Download CSV
             </Button>
-            <Button size="sm" onClick={markAll} disabled={!waiting.length}>
+            <Button size="sm" variant="outline" onClick={markAll} disabled={!waiting.length}>
               <Check data-icon="inline-start" />
               Mark notified
+            </Button>
+            <Button size="sm" onClick={() => setEmailing(true)} disabled={!waiting.length}>
+              <Send data-icon="inline-start" />
+              Send launch email
             </Button>
           </div>
         )}
@@ -130,6 +142,7 @@ export function WaitlistCard() {
           )}
         </>
       )}
+      <LaunchEmailDialog open={emailing} onOpenChange={setEmailing} waiting={waiting.length} onSent={reload} />
     </section>
   );
 }
