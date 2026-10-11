@@ -164,7 +164,7 @@ export function LaunchEmailDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !busy && onOpenChange(next)}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Send the RecipeNest invitation</DialogTitle>
           <DialogDescription>
@@ -172,7 +172,8 @@ export function LaunchEmailDialog({
             link works.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4">
+        {/* Only the middle scrolls, so the title and the buttons always stay on screen. */}
+        <div className="-mx-4 grid min-h-0 flex-1 gap-4 overflow-y-auto px-4 pb-1">
           <fieldset className="grid gap-2">
             <legend className="mb-2 text-sm font-medium">Send to</legend>
             <div className="grid gap-2 sm:grid-cols-2">
