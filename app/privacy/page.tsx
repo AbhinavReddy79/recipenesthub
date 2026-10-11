@@ -16,7 +16,7 @@ export default function PrivacyPage() {
       eyebrow="Legal"
       title="Privacy Policy"
       description="This Privacy Policy explains how RecipeNest collects, uses, stores and protects information when you use our website and services."
-      updated="October 7, 2026"
+      updated="October 11, 2026"
       keyPoints={[
         "Your account and personal content are stored securely with our database provider, Supabase, so they sync across your devices.",
         "Passwords are handled by Supabase Authentication, stored only as salted hashes, and never visible to RecipeNest.",
@@ -53,6 +53,11 @@ export default function PrivacyPage() {
                 <li>
                   Content and preferences: saved recipes, collections, meal plans, shopping lists, reviews, recipes you
                   create, dietary preferences, region and display settings.
+                </li>
+                <li>
+                  Launch notifications: if you leave your email in the &ldquo;Notify me&rdquo; box before launch, we keep only that
+                  address and when you signed up, use it only to tell you RecipeNest has opened, and remove it on request through our
+                  Contact page.
                 </li>
               </ul>
               <h3>Information collected automatically</h3>

@@ -327,6 +327,12 @@ export type Database = {
         Relationships: [];
       };
       /** Contact page messages: anyone may insert; only admins read them. */
+      launch_waitlist: {
+        Row: { email: string; created_at: string; notified_at: string | null };
+        Insert: never;
+        Update: { notified_at?: string | null };
+        Relationships: [];
+      };
       contact_messages: {
         Row: {
           id: string;
@@ -405,6 +411,7 @@ export type Database = {
       lucky_draw_is_open: { Args: { p_draw: string }; Returns: boolean };
       mark_contact_message_read: { Args: { p_message: string }; Returns: undefined };
       my_unread_support_replies: { Args: Record<PropertyKey, never>; Returns: number };
+      join_launch_waitlist: { Args: { p_email: string }; Returns: undefined };
       lucky_draw_summary: {
         Args: { p_draw: string };
         Returns: { entries: number; joined: boolean; i_won: boolean; winners: Json }[];

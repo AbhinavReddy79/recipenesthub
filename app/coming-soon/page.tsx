@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { Countdown } from "@/components/launch/countdown";
+import { LaunchNotifyForm } from "@/components/launch/launch-notify-form";
 import { Logo } from "@/components/layout/logo";
 import { unsplash } from "@/lib/images";
 import { LAUNCH_AT } from "@/lib/launch";
@@ -48,6 +49,8 @@ export default function ComingSoonPage() {
             <CalendarDays className="size-4 text-saffron" aria-hidden />
             Opening {launchDate}
           </p>
+
+          <LaunchNotifyForm />
         </div>
 
         <div className="grid gap-3 text-xs text-white/55">
