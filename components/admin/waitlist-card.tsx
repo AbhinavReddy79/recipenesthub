@@ -92,26 +92,29 @@ export function WaitlistCard() {
                 : "Sign-ups from the countdown page's “Notify me” box appear here."}
           </p>
         </div>
-        {entries.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={copy} disabled={!waiting.length}>
-              <Copy data-icon="inline-start" />
-              Copy emails
-            </Button>
-            <Button size="sm" variant="outline" onClick={download}>
-              <Download data-icon="inline-start" />
-              Download CSV
-            </Button>
-            <Button size="sm" variant="outline" onClick={markAll} disabled={!waiting.length}>
-              <Check data-icon="inline-start" />
-              Mark notified
-            </Button>
-            <Button size="sm" onClick={() => setEmailing(true)} disabled={!waiting.length}>
-              <Send data-icon="inline-start" />
-              Send launch email
-            </Button>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {entries.length > 0 && (
+            <>
+              <Button size="sm" variant="outline" onClick={copy} disabled={!waiting.length}>
+                <Copy data-icon="inline-start" />
+                Copy emails
+              </Button>
+              <Button size="sm" variant="outline" onClick={download}>
+                <Download data-icon="inline-start" />
+                Download CSV
+              </Button>
+              <Button size="sm" variant="outline" onClick={markAll} disabled={!waiting.length}>
+                <Check data-icon="inline-start" />
+                Mark notified
+              </Button>
+            </>
+          )}
+          {/* Always available: email the waitlist, or invite specific people by address. */}
+          <Button size="sm" onClick={() => setEmailing(true)}>
+            <Send data-icon="inline-start" />
+            Send invitations
+          </Button>
+        </div>
       </div>
 
       {entries.length > 0 && (

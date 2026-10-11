@@ -11,10 +11,12 @@
 //
 // Deploy with "Verify JWT with legacy secret" OFF: this function checks access itself.
 //
-// Request body: { mode: "test" | "send", subject: string, message: string }
-//   test -> sends one copy to the admin who asked
-//   send -> sends to up to BATCH people not yet notified, marks them notified,
-//           and returns how many are left (the dashboard calls again until 0)
+// Request body: { mode: "test" | "send" | "direct", subject: string, message: string, emails?: string[] }
+//   test   -> sends one copy to the admin who asked
+//   send   -> sends to up to BATCH people not yet notified, marks them notified,
+//             and returns how many are left (the dashboard calls again until 0)
+//   direct -> sends to the addresses the admin typed in (up to BATCH, no
+//             account is created) and records them on the waitlist as notified
 //
 // To keep mail out of spam, the email reads like a short letter (no colour
 // blocks or promo footer), carries Reply-To and List-Unsubscribe headers, and
@@ -27,6 +29,7 @@ const DEFAULT_SITE = SITES[0];
 const BATCH = 25;
 const PAUSE_MS = 2000;
 const pause = () => new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
+const EMAIL = /^[^@\s,;<>"]+@[^@\s,;<>"]+\.[^@\s,;<>"]+$/;
 
 function cors(origin: string | null) {
   const allowed = origin && SITES.includes(origin) ? origin : DEFAULT_SITE;
@@ -78,8 +81,8 @@ Deno.serve(async (req) => {
   if (powerError || allowed !== true) return reply(403, { error: "not_admin" });
 
   // 2. Validate the request.
-  const body = (await req.json().catch(() => null)) as { mode?: unknown; subject?: unknown; message?: unknown } | null;
-  const mode = body?.mode === "send" ? "send" : body?.mode === "test" ? "test" : null;
+  const body = (await req.json().catch(() => null)) as { mode?: unknown; subject?: unknown; message?: unknown; emails?: unknown } | null;
+  const mode = body?.mode === "send" || body?.mode === "test" || body?.mode === "direct" ? body.mode : null;
   const subject = typeof body?.subject === "string" ? body.subject.trim().slice(0, 150) : "";
   const message = typeof body?.message === "string" ? body.message.trim().slice(0, 4000) : "";
   if (!mode) return reply(400, { error: "invalid_mode" });
@@ -126,10 +129,40 @@ Deno.serve(async (req) => {
     }
   }
 
-  // 3b. Send to the next batch of people not yet notified (service role, only after the checks above).
+  // Service role from here on, only after the checks above.
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
     auth: { persistSession: false },
   });
+
+  // 3b. Direct invitations to addresses the admin typed in. No account is created;
+  // each address is kept on the waitlist as notified so it isn't emailed twice.
+  if (mode === "direct") {
+    const list = Array.isArray(body?.emails) ? body.emails : [];
+    const emails = [
+      ...new Set(list.filter((e): e is string => typeof e === "string").map((e) => e.trim().toLowerCase())),
+    ].filter((e) => e.length <= 254 && EMAIL.test(e));
+    if (emails.length === 0) return reply(400, { error: "invalid_emails" });
+    if (emails.length > BATCH) return reply(400, { error: "too_many_emails" });
+    let sent = 0;
+    const failed: string[] = [];
+    for (const email of emails) {
+      try {
+        if (sent || failed.length) await pause();
+        await send(email);
+        await admin
+          .from("launch_waitlist")
+          .upsert({ email, notified_at: new Date().toISOString() }, { onConflict: "email" });
+        sent++;
+      } catch (error) {
+        console.error("direct send failed", email, error);
+        failed.push(email);
+        if (failed.length >= 3 && sent === 0) break;
+      }
+    }
+    return reply(200, { ok: true, sent, failed });
+  }
+
+  // 3c. Send to the next batch of people on the waitlist not yet notified.
   const { data: batch, error: listError } = await admin
     .from("launch_waitlist")
     .select("email")

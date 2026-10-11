@@ -46,14 +46,20 @@ export type LaunchEmailResult =
 
 /**
  * Sends the launch email through the send-launch-email Edge Function (the owner's Gmail).
- * "test" sends one copy to you; "send" emails the next batch of people not yet
+ * "test" sends one copy to you; "direct" emails the addresses you typed in (no
+ * account is created); "send" emails the next batch of people not yet
  * notified and reports how many are left.
  */
-export async function sendLaunchEmail(mode: "test" | "send", subject: string, message: string): Promise<LaunchEmailResult> {
+export async function sendLaunchEmail(
+  mode: "test" | "send" | "direct",
+  subject: string,
+  message: string,
+  emails?: string[],
+): Promise<LaunchEmailResult> {
   const ctx = userContext();
   if (!ctx) return { ok: false, error: "Please log in again." };
   const { data, error } = await ctx.supabase.functions.invoke<LaunchEmailResult & { error?: string }>("send-launch-email", {
-    body: { mode, subject, message },
+    body: { mode, subject, message, emails },
   });
   if (!error && data?.ok) return data;
   // Errors from the function arrive with its JSON body in the response context.
@@ -68,6 +74,8 @@ export async function sendLaunchEmail(mode: "test" | "send", subject: string, me
     not_admin: "Only the owner, or admins who manage members, can send this.",
     signed_out: "Please log in again.",
     no_email: "Your account has no email address to send the test to.",
+    invalid_emails: "Enter at least one valid email address.",
+    too_many_emails: "You can invite up to 25 addresses at a time.",
   };
   if (!code) console.error("launch email failed", error);
   return {

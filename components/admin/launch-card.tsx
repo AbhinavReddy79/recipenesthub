@@ -56,7 +56,7 @@ export function LaunchCard() {
     setConfirm(null);
     if (error) return toast.error("That didn't work. Please try again.");
     setLaunchedAt(data ?? null);
-    toast.success(launched ? "🚀 RecipeNest is live! Everyone can now join. Next: “Send launch email” in the Launch waitlist card below." : "Back to the countdown. Only you and early-access members can get in.");
+    toast.success(launched ? "🚀 RecipeNest is live! Everyone can now join. Next: “Send invitations” in the Launch waitlist card below." : "Back to the countdown. Only you and early-access members can get in.");
   };
 
   const live = Boolean(launchedAt);
