@@ -62,7 +62,8 @@ function PowersForm({
       <DialogHeader>
         <DialogTitle>What can {admin.name} do?</DialogTitle>
         <DialogDescription>
-          Only you can make admins, give early access, change these permissions and mark contest prizes as paid.
+          Only you can launch the site, make admins, give early access, change these permissions and mark contest and lucky draw
+          prizes as paid.
         </DialogDescription>
       </DialogHeader>
       <ul className="grid gap-3">
