@@ -684,3 +684,9 @@
 @keyframes rotd-breathe {
   50% { opacity: 0.7; }
 }
+
+/* Before launch the countdown covers the screen: hide the site's header, footer
+   and tab bar behind it so their links can't be reached with the keyboard either. */
+body:has([data-coming-soon]) [data-site-chrome] {
+  visibility: hidden;
+}

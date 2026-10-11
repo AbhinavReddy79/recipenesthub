@@ -36,7 +36,7 @@ const columns = [
 /** Always dark (the `dark` class scopes the dark tokens to the footer). */
 export function Footer() {
   return (
-    <footer className="dark band-charcoal relative isolate mt-auto overflow-hidden bg-ink text-foreground">
+    <footer data-site-chrome className="dark band-charcoal relative isolate mt-auto overflow-hidden bg-ink text-foreground">
       <div
         aria-hidden
         className="absolute inset-0 -z-10 bg-[radial-gradient(40%_60%_at_40%_0%,color-mix(in_oklch,var(--saffron)_10%,transparent),transparent)]"

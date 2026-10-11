@@ -34,6 +34,7 @@ export function Navbar() {
 
   return (
     <header
+      data-site-chrome
       className={cn(
         "sticky top-0 z-40 border-b bg-background/95 transition-shadow duration-300 pointer-fine:bg-background/80 pointer-fine:backdrop-blur-xl pointer-fine:backdrop-saturate-150 pointer-fine:supports-[backdrop-filter]:bg-background/70",
         scrolled ? "border-border/70 shadow-card" : "border-transparent",
