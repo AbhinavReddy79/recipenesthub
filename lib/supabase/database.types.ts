@@ -340,13 +340,22 @@ export type Database = {
           failed_emails: string[];
           sent_to: string[];
           kind: "scheduled" | "instant";
+          variant: "launch" | "teaser";
           error: string | null;
           claimed_at: string | null;
           finished_at: string | null;
           created_by: string | null;
           created_at: string;
         };
-        Insert: { subject: string; message: string; audience: "waitlist" | "direct"; emails?: string[]; send_at: string; created_by: string };
+        Insert: {
+          subject: string;
+          message: string;
+          audience: "waitlist" | "direct";
+          variant?: "launch" | "teaser";
+          emails?: string[];
+          send_at: string;
+          created_by: string;
+        };
         Update: never;
         Relationships: [];
       };

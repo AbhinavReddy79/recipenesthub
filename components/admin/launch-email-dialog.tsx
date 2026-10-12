@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarClock, Loader2, Mail, Send, UserPlus, Users, Zap } from "lucide-react";
+import { BellRing, CalendarClock, Loader2, Mail, PartyPopper, Send, UserPlus, Users, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -12,10 +12,14 @@ import { scheduleEmail } from "@/lib/storage/scheduled-emails";
 import { sendLaunchEmail } from "@/lib/storage/waitlist";
 import { cn } from "@/lib/utils";
 
-// Written like a short personal note: emoji, "free", exclamation marks and sales
-// language are what push announcement mail into spam or Promotions.
-const DEFAULT_SUBJECT = "RecipeNest is open now";
-const DEFAULT_MESSAGE = `Hi,
+// Written like a short personal note: lots of emoji, "free", exclamation marks and
+// sales language are what push announcement mail into spam or Promotions.
+type Variant = "launch" | "teaser";
+
+const TEMPLATES: Record<Variant, { subject: string; message: string }> = {
+  launch: {
+    subject: "RecipeNest is open now",
+    message: `Hi,
 
 You asked us to tell you when RecipeNest opens. It's open now.
 
@@ -26,7 +30,30 @@ When you create your account, your first month of Premium is included, so you ca
 If you have any questions, just reply to this email.
 
 Thanks,
-The RecipeNest team`;
+The RecipeNest team`,
+  },
+  // Before launch: the button goes to the countdown page's "Notify me" box.
+  teaser: {
+    subject: "RecipeNest is launching soon",
+    message: `Hi,
+
+Something delicious is coming your way 🍲
+
+RecipeNest is launching soon, and we'd love for you to be part of the journey.
+
+Explore recipes from every corner of India and kitchens around the world, discover new flavours, plan your meals and organise your shopping lists, all in one place.
+
+And that's just the beginning. Members can publish their own recipes, every new member gets their first month of Premium free, and there's a weekly cooking contest.
+
+Want to be among the first to try it? Tap the button below to get your invitation the day we go live.
+
+Have questions or ideas? Just reply to this email. We'd love to hear from you.
+
+Thanks,
+The RecipeNest Team
+Your next favourite recipe is waiting.`,
+  },
+};
 
 const DIRECT_LIMIT = 25;
 const EMAIL = /^[^@\s,;<>"]+@[^@\s,;<>"]+\.[^@\s,;<>"]+$/;
@@ -55,7 +82,7 @@ function defaultSendAt(): string {
 }
 
 /**
- * Admin: send the RecipeNest invitation from the dashboard, through the owner's Gmail,
+ * Admin: send the RecipeNest invitation (or a pre-launch teaser) from the dashboard,
  * either to everyone on the launch waitlist or to addresses typed in by hand.
  * Nobody needs an account: the email invites them to join.
  */
@@ -78,8 +105,19 @@ export function LaunchEmailDialog({
   const [audience, setAudience] = useState<Audience>(waiting > 0 ? "waitlist" : "direct");
   const [timing, setTiming] = useState<Timing>("now");
   const [sendAt, setSendAt] = useState(defaultSendAt);
-  const [subject, setSubject] = useState(DEFAULT_SUBJECT);
-  const [message, setMessage] = useState(DEFAULT_MESSAGE);
+  const [variant, setVariant] = useState<Variant>("launch");
+  const [subject, setSubject] = useState(TEMPLATES.launch.subject);
+  const [message, setMessage] = useState(TEMPLATES.launch.message);
+  // Swapping the type swaps in its ready-made text, unless the admin has already edited it.
+  const pickVariant = (next: Variant) => {
+    if (next === variant) return;
+    const untouched = subject === TEMPLATES[variant].subject && message === TEMPLATES[variant].message;
+    if (untouched || window.confirm("Replace your subject and message with the ready-made text for this type?")) {
+      setSubject(TEMPLATES[next].subject);
+      setMessage(TEMPLATES[next].message);
+    }
+    setVariant(next);
+  };
   const [addresses, setAddresses] = useState("");
   const [busy, setBusy] = useState<"test" | "send" | null>(null);
   const [progress, setProgress] = useState<{ sent: number; total: number } | null>(null);
@@ -87,7 +125,7 @@ export function LaunchEmailDialog({
 
   const test = async () => {
     setBusy("test");
-    const result = await sendLaunchEmail("test", subject, message);
+    const result = await sendLaunchEmail("test", subject, message, undefined, variant);
     setBusy(null);
     if (!result.ok) return toast.error(result.error);
     toast.success(`Test sent to ${result.sentTo}. Check your inbox (and spam folder).`);
@@ -96,7 +134,7 @@ export function LaunchEmailDialog({
   const finish = (sent: number, failed: number) => {
     setBusy(null);
     if (sent) toast.success(`Invitation sent to ${sent} ${sent === 1 ? "person" : "people"}.`);
-    if (failed) toast.error(`${failed} couldn't be sent (Gmail sends about 500 a day). Try again tomorrow.`);
+    if (failed) toast.error(`${failed} couldn't be sent (the free plan sends 300 a day). Try again tomorrow.`);
     if (sent && !failed) onOpenChange(false);
   };
 
@@ -108,7 +146,7 @@ export function LaunchEmailDialog({
     setProgress({ sent: 0, total: waiting });
     // The function sends a batch at a time; keep going until everyone is done or a batch sends nothing.
     for (;;) {
-      const result = await sendLaunchEmail("send", subject, message);
+      const result = await sendLaunchEmail("send", subject, message, undefined, variant);
       if (!result.ok) {
         toast.error(result.error);
         break;
@@ -130,7 +168,7 @@ export function LaunchEmailDialog({
     if (!window.confirm(`Send the invitation to ${valid.length} ${valid.length === 1 ? "address" : "addresses"}?`)) return;
     setBusy("send");
     setProgress({ sent: 0, total: valid.length });
-    const result = await sendLaunchEmail("direct", subject, message, valid);
+    const result = await sendLaunchEmail("direct", subject, message, valid, variant);
     if (!result.ok) {
       toast.error(result.error);
       setBusy(null);
@@ -152,7 +190,7 @@ export function LaunchEmailDialog({
       if (parsed.valid.length > DIRECT_LIMIT) return toast.error(`You can schedule up to ${DIRECT_LIMIT} addresses at a time.`);
     }
     setBusy("send");
-    const result = await scheduleEmail({ subject, message, audience, emails: parsed.valid, sendAt: when });
+    const result = await scheduleEmail({ subject, message, audience, variant, emails: parsed.valid, sendAt: when });
     setBusy(null);
     if (!result.ok) return toast.error(result.error);
     const label = when.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
@@ -168,12 +206,32 @@ export function LaunchEmailDialog({
         <DialogHeader>
           <DialogTitle>Send the RecipeNest invitation</DialogTitle>
           <DialogDescription>
-            Sent from your Gmail. Nobody needs an account: the email has a “Join RecipeNest” button. Send it after you press Launch, so the
-            link works.
+            Nobody needs an account. Before launch, send a pre-launch teaser; from launch day, send the launch invitation, whose
+            “Join RecipeNest” button only works once the site is open.
           </DialogDescription>
         </DialogHeader>
         {/* Only the middle scrolls, so the title and the buttons always stay on screen. */}
         <div className="-mx-4 grid min-h-0 flex-1 gap-4 overflow-y-auto px-4 pb-1">
+          <fieldset className="grid gap-2">
+            <legend className="mb-2 text-sm font-medium">Email type</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <AudienceOption
+                active={variant === "teaser"}
+                onClick={() => pickVariant("teaser")}
+                icon={<BellRing />}
+                title="Pre-launch teaser"
+                detail="Button: “Get notified at launch”"
+              />
+              <AudienceOption
+                active={variant === "launch"}
+                onClick={() => pickVariant("launch")}
+                icon={<PartyPopper />}
+                title="Launch invitation"
+                detail="Button: “Join RecipeNest” (from 20 Oct)"
+              />
+            </div>
+          </fieldset>
+
           <fieldset className="grid gap-2">
             <legend className="mb-2 text-sm font-medium">Send to</legend>
             <div className="grid gap-2 sm:grid-cols-2">
@@ -248,7 +306,10 @@ export function LaunchEmailDialog({
           <div className="grid gap-2">
             <Label htmlFor="launch-message">Message</Label>
             <Textarea id="launch-message" value={message} maxLength={4000} rows={10} onChange={(e) => setMessage(e.target.value)} />
-            <p className="text-xs text-muted-foreground">A “Join RecipeNest” button and a short footer are added below your message.</p>
+            <p className="text-xs text-muted-foreground">
+              {variant === "teaser" ? "A “Get notified at launch” button" : "A “Join RecipeNest” button"} and a short footer are added below
+              your message. Plain text only: *stars* show as typed.
+            </p>
           </div>
           {progress && (
             <p className="text-sm font-medium" role="status">

@@ -55,11 +55,12 @@ export async function sendLaunchEmail(
   subject: string,
   message: string,
   emails?: string[],
+  variant: "launch" | "teaser" = "launch",
 ): Promise<LaunchEmailResult> {
   const ctx = userContext();
   if (!ctx) return { ok: false, error: "Please log in again." };
   const { data, error } = await ctx.supabase.functions.invoke<LaunchEmailResult & { error?: string }>("send-launch-email", {
-    body: { mode, subject, message, emails },
+    body: { mode, subject, message, emails, variant },
   });
   if (!error && data?.ok) return data;
   // Errors from the function arrive with its JSON body in the response context.

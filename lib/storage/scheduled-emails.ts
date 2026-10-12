@@ -10,13 +10,14 @@ export async function listScheduledEmails(): Promise<ScheduledEmail[]> {
   const { data, error } = await ctx.supabase.from("scheduled_emails").select("*").order("send_at", { ascending: false }).limit(50);
   if (error) throw error;
   // Rows saved before the email-history script ran have no sent_to / kind yet.
-  return (data ?? []).map((row) => ({ ...row, sent_to: row.sent_to ?? [], kind: row.kind ?? "scheduled" }));
+  return (data ?? []).map((row) => ({ ...row, sent_to: row.sent_to ?? [], kind: row.kind ?? "scheduled", variant: row.variant ?? "launch" }));
 }
 
 export async function scheduleEmail(input: {
   subject: string;
   message: string;
   audience: "waitlist" | "direct";
+  variant: "launch" | "teaser";
   emails: string[];
   sendAt: Date;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -27,6 +28,7 @@ export async function scheduleEmail(input: {
     subject: input.subject.trim(),
     message: input.message.trim(),
     audience: input.audience,
+    variant: input.variant,
     emails: input.audience === "direct" ? input.emails : [],
     send_at: input.sendAt.toISOString(),
     created_by: ctx.userId,

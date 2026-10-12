@@ -14,7 +14,7 @@
 // Request body:
 //   From the admin dashboard (owner, or an admin with the "Members" power,
 //   checked in the database with the caller's own sign-in token):
-//     { mode: "test" | "send" | "direct", subject, message, emails? }
+//     { mode: "test" | "send" | "direct", subject, message, emails?, variant? }
 //     test   -> one copy to the admin who asked
 //     send   -> the next BATCH people on the waitlist not yet notified; returns
 //               how many are left (the dashboard calls again until 0)
@@ -50,7 +50,27 @@ function cors(origin: string | null) {
 const escapeHtml = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-function emailHtml(message: string, joinUrl: string, site: string, unsubscribe: string) {
+/** "launch": join now (from launch day). "teaser": get notified at launch (before it). */
+type Variant = "launch" | "teaser";
+const asVariant = (value: unknown): Variant => (value === "teaser" ? "teaser" : "launch");
+
+/** The button, its link and the footer reason for each kind of email. */
+function variantParts(variant: Variant, site: string) {
+  const host = site.replace(/^https?:\/\//, "");
+  return variant === "teaser"
+    ? {
+        button: "Get notified at launch",
+        url: `${site}/`,
+        reason: `You're getting this because someone at RecipeNest (${host}) thought you'd like to hear about it. We won't email you again unless you sign up for launch updates.`,
+      }
+    : {
+        button: "Join RecipeNest",
+        url: `${site}/register`,
+        reason: `You're getting this because you asked to be told when RecipeNest launches, or someone at RecipeNest (${host}) invited you.`,
+      };
+}
+
+function emailHtml(message: string, parts: ReturnType<typeof variantParts>, unsubscribe: string) {
   const paragraphs = escapeHtml(message)
     .split(/\n{2,}/)
     .map((p) => `<p style="margin:0 0 16px;line-height:1.6">${p.replace(/\n/g, "<br>")}</p>`)
@@ -59,10 +79,10 @@ function emailHtml(message: string, joinUrl: string, site: string, unsubscribe: 
 <div style="max-width:560px;margin:0 auto">
 <p style="margin:0 0 20px;font-family:Georgia,serif;font-size:22px;font-weight:bold">RecipeNest</p>
 ${paragraphs}
-<p style="margin:20px 0"><a href="${joinUrl}" style="display:inline-block;background:#c8962e;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:6px">Join RecipeNest</a></p>
-<p style="margin:0 0 16px;line-height:1.6">Or open this link: <a href="${joinUrl}">${joinUrl}</a></p>
+<p style="margin:20px 0"><a href="${parts.url}" style="display:inline-block;background:#c8962e;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:6px">${parts.button}</a></p>
+<p style="margin:0 0 16px;line-height:1.6">Or open this link: <a href="${parts.url}">${parts.url}</a></p>
 <hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0 12px">
-<p style="margin:0;color:#777777;font-size:12px;line-height:1.5">You're getting this because you asked to be told when RecipeNest launches (${escapeHtml(site.replace(/^https?:\/\//, ""))}).
+<p style="margin:0;color:#777777;font-size:12px;line-height:1.5">${escapeHtml(parts.reason)}
 Don't want emails from us? <a href="${unsubscribe}" style="color:#777777">Unsubscribe</a> or just reply "unsubscribe".</p>
 </div></body></html>`;
 }
@@ -72,16 +92,16 @@ Don't want emails from us? <a href="${unsubscribe}" style="color:#777777">Unsubs
  * Uses Brevo when BREVO_API_KEY is set (built for website email: no sign-in
  * blocks, better delivery), otherwise the owner's Gmail.
  */
-function makeSender(subject: string, message: string, site: string) {
+function makeSender(subject: string, message: string, site: string, variant: Variant = "launch") {
   const brevoKey = Deno.env.get("BREVO_API_KEY");
   // The address emails come from (verified as a sender in Brevo); GMAIL_USER for older setups.
   const fromAddress = Deno.env.get("SENDER_EMAIL") ?? Deno.env.get("GMAIL_USER");
   if (!fromAddress) return null;
 
-  const joinUrl = `${site}/register`;
+  const parts = variantParts(variant, site);
   const unsubscribe = `mailto:${fromAddress}?subject=unsubscribe`;
-  const html = emailHtml(message, joinUrl, site, unsubscribe);
-  const text = `${message}\n\nJoin RecipeNest: ${joinUrl}\n\n--\nYou're getting this because you asked to be told when RecipeNest launches. Don't want emails from us? Reply "unsubscribe".`;
+  const html = emailHtml(message, parts, unsubscribe);
+  const text = `${message}\n\n${parts.button}: ${parts.url}\n\n--\n${parts.reason} Don't want emails from us? Reply "unsubscribe".`;
 
   if (brevoKey) {
     return async (to: string) => {
@@ -164,11 +184,12 @@ function check<T extends { error: unknown }>(result: T, what: string): T {
 /** Adds a finished "Send now" email to the dashboard history. */
 async function recordInstant(
   admin: SupabaseClient,
-  fields: { subject: string; message: string; audience: "waitlist" | "direct"; emails: string[]; sentTo: string[]; failed: string[]; by: string | null },
+  fields: { subject: string; message: string; audience: "waitlist" | "direct"; variant: Variant; emails: string[]; sentTo: string[]; failed: string[]; by: string | null },
 ) {
   const now = new Date().toISOString();
   const result = await admin.from("scheduled_emails").insert({
     kind: "instant",
+    variant: fields.variant,
     subject: fields.subject,
     message: fields.message,
     audience: fields.audience,
@@ -228,7 +249,7 @@ async function runScheduled(admin: SupabaseClient) {
   const id = job.id as string;
   const finish = async (fields: Record<string, unknown>) =>
     check(await admin.from("scheduled_emails").update(fields).eq("id", id), "update scheduled email");
-  const send = makeSender(job.subject as string, job.message as string, DEFAULT_SITE);
+  const send = makeSender(job.subject as string, job.message as string, DEFAULT_SITE, asVariant(job.variant));
   if (!send) {
     await finish({ status: "failed", error: "Email isn't set up (GMAIL_USER / GMAIL_APP_PASSWORD).", finished_at: new Date().toISOString() });
     return { ok: false, error: "email_not_configured" };
@@ -277,7 +298,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return reply(405, { error: "method_not_allowed" });
 
   const body = (await req.json().catch(() => null)) as
-    | { mode?: unknown; subject?: unknown; message?: unknown; emails?: unknown; nonce?: unknown }
+    | { mode?: unknown; subject?: unknown; message?: unknown; emails?: unknown; nonce?: unknown; variant?: unknown }
     | null;
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
@@ -316,7 +337,8 @@ Deno.serve(async (req) => {
   if (subject.length < 3 || message.length < 10) return reply(400, { error: "invalid_content" });
 
   const site = origin && SITES.includes(origin) ? origin : DEFAULT_SITE;
-  const send = makeSender(subject, message, site);
+  const variant = asVariant(body?.variant);
+  const send = makeSender(subject, message, site, variant);
   if (!send) return reply(500, { error: "email_not_configured" });
 
   const { data: me } = await asCaller.auth.getUser();
@@ -339,14 +361,14 @@ Deno.serve(async (req) => {
     if (emails.length === 0) return reply(400, { error: "invalid_emails" });
     if (emails.length > BATCH) return reply(400, { error: "too_many_emails" });
     const { sent, sentTo, failed } = await sendEach(emails, send, recordInvited(admin));
-    await recordInstant(admin, { subject, message, audience: "direct", emails, sentTo, failed, by: callerId });
+    await recordInstant(admin, { subject, message, audience: "direct", variant, emails, sentTo, failed, by: callerId });
     return reply(200, { ok: true, sent, failed });
   }
 
   try {
     const batch = await nextWaitlistBatch(admin);
     const { sent, sentTo, failed } = await sendEach(batch, send, markNotified(admin));
-    if (batch.length) await recordInstant(admin, { subject, message, audience: "waitlist", emails: [], sentTo, failed, by: callerId });
+    if (batch.length) await recordInstant(admin, { subject, message, audience: "waitlist", variant, emails: [], sentTo, failed, by: callerId });
     return reply(200, { ok: true, sent, failed, remaining: await waitlistRemaining(admin) });
   } catch (error) {
     console.error("waitlist send failed", error);

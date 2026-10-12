@@ -137,6 +137,7 @@ export function ScheduledEmailsList({ version }: { version: number }) {
 function EmailDetails({ item }: { item: ScheduledEmail }) {
   const rows: [string, React.ReactNode][] = [
     ["How", item.kind === "instant" ? "Sent with “Send now”" : "Scheduled"],
+    ["Type", item.variant === "teaser" ? "Pre-launch teaser (“Get notified at launch”)" : "Launch invitation (“Join RecipeNest”)"],
     ["To", item.audience === "waitlist" ? "Everyone on the launch waitlist not yet emailed" : item.emails.join(", ")],
     ["Created", when(item.created_at)],
     ...(item.kind === "scheduled" ? ([["Scheduled for", when(item.send_at)]] as [string, React.ReactNode][]) : []),
