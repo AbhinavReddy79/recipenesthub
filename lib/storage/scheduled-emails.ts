@@ -9,7 +9,8 @@ export async function listScheduledEmails(): Promise<ScheduledEmail[]> {
   if (!ctx) return [];
   const { data, error } = await ctx.supabase.from("scheduled_emails").select("*").order("send_at", { ascending: false }).limit(50);
   if (error) throw error;
-  return data ?? [];
+  // Rows saved before the email-history script ran have no sent_to / kind yet.
+  return (data ?? []).map((row) => ({ ...row, sent_to: row.sent_to ?? [], kind: row.kind ?? "scheduled" }));
 }
 
 export async function scheduleEmail(input: {

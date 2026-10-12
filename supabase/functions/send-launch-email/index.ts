@@ -92,28 +92,65 @@ function makeSender(subject: string, message: string, site: string) {
 
 /** Sends to each address in turn; returns who got it and who didn't. */
 async function sendEach(emails: string[], send: (to: string) => Promise<unknown>, onSent: (email: string) => Promise<unknown>) {
-  let sent = 0;
+  const sentTo: string[] = [];
   const failed: string[] = [];
   for (const email of emails) {
     try {
-      if (sent || failed.length) await pause();
+      if (sentTo.length || failed.length) await pause();
       await send(email);
+      sentTo.push(email);
       await onSent(email);
-      sent++;
     } catch (error) {
       console.error("send failed", email, error);
-      failed.push(email);
+      if (!sentTo.includes(email)) failed.push(email);
       // Gmail's daily limit or a login problem: stop and report rather than failing everyone.
-      if (failed.length >= 3 && sent === 0) break;
+      if (failed.length >= 3 && sentTo.length === 0) break;
     }
   }
-  return { sent, failed };
+  return { sent: sentTo.length, sentTo, failed };
 }
 
-const markNotified = (admin: SupabaseClient) => (email: string) =>
-  admin.from("launch_waitlist").update({ notified_at: new Date().toISOString() }).eq("email", email);
-const recordInvited = (admin: SupabaseClient) => (email: string) =>
-  admin.from("launch_waitlist").upsert({ email, notified_at: new Date().toISOString() }, { onConflict: "email" });
+/** Throws if a database write failed, so problems show up in the logs instead of passing silently. */
+function check<T extends { error: unknown }>(result: T, what: string): T {
+  if (result.error) {
+    console.error(`could not ${what}`, result.error);
+    throw new Error(`could not ${what}`);
+  }
+  return result;
+}
+
+/** Adds a finished "Send now" email to the dashboard history. */
+async function recordInstant(
+  admin: SupabaseClient,
+  fields: { subject: string; message: string; audience: "waitlist" | "direct"; emails: string[]; sentTo: string[]; failed: string[]; by: string | null },
+) {
+  const now = new Date().toISOString();
+  const result = await admin.from("scheduled_emails").insert({
+    kind: "instant",
+    subject: fields.subject,
+    message: fields.message,
+    audience: fields.audience,
+    emails: fields.audience === "direct" ? fields.emails : [],
+    send_at: now,
+    status: fields.sentTo.length ? "sent" : "failed",
+    sent_count: fields.sentTo.length,
+    sent_to: fields.sentTo,
+    failed_emails: fields.failed,
+    error: fields.sentTo.length ? null : "Gmail refused every address.",
+    finished_at: now,
+    created_by: fields.by,
+  });
+  // History is a convenience: log a failure but don't fail the send.
+  if (result.error) console.error("could not record history", result.error);
+}
+
+const markNotified = (admin: SupabaseClient) => async (email: string) =>
+  check(await admin.from("launch_waitlist").update({ notified_at: new Date().toISOString() }).eq("email", email), "mark notified");
+const recordInvited = (admin: SupabaseClient) => async (email: string) =>
+  check(
+    await admin.from("launch_waitlist").upsert({ email, notified_at: new Date().toISOString() }, { onConflict: "email" }),
+    "record invited",
+  );
 
 /** The next waitlist batch not yet notified. */
 async function nextWaitlistBatch(admin: SupabaseClient) {
@@ -147,21 +184,23 @@ async function runScheduled(admin: SupabaseClient) {
   if (!job) return { ok: true, idle: true };
 
   const id = job.id as string;
-  const finish = (fields: Record<string, unknown>) => admin.from("scheduled_emails").update(fields).eq("id", id);
+  const finish = async (fields: Record<string, unknown>) =>
+    check(await admin.from("scheduled_emails").update(fields).eq("id", id), "update scheduled email");
   const send = makeSender(job.subject as string, job.message as string, DEFAULT_SITE);
   if (!send) {
     await finish({ status: "failed", error: "Email isn't set up (GMAIL_USER / GMAIL_APP_PASSWORD).", finished_at: new Date().toISOString() });
     return { ok: false, error: "email_not_configured" };
   }
 
+  const previousSentTo = (job.sent_to as string[] | null) ?? [];
   const previousFailed = (job.failed_emails as string[] | null) ?? [];
-  const previousSent = (job.sent_count as number | null) ?? 0;
 
   if (job.audience === "direct") {
-    const { sent, failed } = await sendEach(cleanEmails(job.emails), send, recordInvited(admin));
+    const { sent, sentTo, failed } = await sendEach(cleanEmails(job.emails), send, recordInvited(admin));
     await finish({
       status: sent ? "sent" : "failed",
       sent_count: sent,
+      sent_to: sentTo,
       failed_emails: failed,
       error: sent ? null : "Gmail refused every address. Check the app password.",
       finished_at: new Date().toISOString(),
@@ -170,17 +209,19 @@ async function runScheduled(admin: SupabaseClient) {
   }
 
   const batch = await nextWaitlistBatch(admin);
-  const { sent, failed } = await sendEach(batch, send, markNotified(admin));
+  const { sent, sentTo, failed } = await sendEach(batch, send, markNotified(admin));
   const remaining = await waitlistRemaining(admin);
-  const total = previousSent + sent;
-  const allFailed = [...previousFailed, ...failed];
+  const allSentTo = [...new Set([...previousSentTo, ...sentTo])];
+  // Someone who failed once but got it on a retry is no longer a failure.
+  const allFailed = [...new Set([...previousFailed, ...failed])].filter((e) => !allSentTo.includes(e));
+  const progress = { sent_count: allSentTo.length, sent_to: allSentTo, failed_emails: allFailed };
   if (batch.length && !sent) {
-    await finish({ status: "failed", sent_count: total, failed_emails: allFailed, error: "Gmail stopped sending (daily limit or app password).", finished_at: new Date().toISOString() });
+    await finish({ ...progress, status: "failed", error: "Gmail stopped sending (daily limit or app password).", finished_at: new Date().toISOString() });
   } else if (remaining > failed.length && sent) {
     // More to go: hand it back so the next minute's run continues.
-    await finish({ status: "scheduled", sent_count: total, failed_emails: allFailed, claimed_at: null });
+    await finish({ ...progress, status: "scheduled", claimed_at: null });
   } else {
-    await finish({ status: "sent", sent_count: total, failed_emails: allFailed, finished_at: new Date().toISOString() });
+    await finish({ ...progress, status: "sent", finished_at: new Date().toISOString() });
   }
   return { ok: true, sent, failed, remaining };
 }
@@ -236,8 +277,10 @@ Deno.serve(async (req) => {
   const send = makeSender(subject, message, site);
   if (!send) return reply(500, { error: "email_not_configured" });
 
+  const { data: me } = await asCaller.auth.getUser();
+  const callerId = me.user?.id ?? null;
+
   if (mode === "test") {
-    const { data: me } = await asCaller.auth.getUser();
     const to = me.user?.email;
     if (!to) return reply(400, { error: "no_email" });
     try {
@@ -253,12 +296,15 @@ Deno.serve(async (req) => {
     const emails = cleanEmails(body?.emails);
     if (emails.length === 0) return reply(400, { error: "invalid_emails" });
     if (emails.length > BATCH) return reply(400, { error: "too_many_emails" });
-    const { sent, failed } = await sendEach(emails, send, recordInvited(admin));
+    const { sent, sentTo, failed } = await sendEach(emails, send, recordInvited(admin));
+    await recordInstant(admin, { subject, message, audience: "direct", emails, sentTo, failed, by: callerId });
     return reply(200, { ok: true, sent, failed });
   }
 
   try {
-    const { sent, failed } = await sendEach(await nextWaitlistBatch(admin), send, markNotified(admin));
+    const batch = await nextWaitlistBatch(admin);
+    const { sent, sentTo, failed } = await sendEach(batch, send, markNotified(admin));
+    if (batch.length) await recordInstant(admin, { subject, message, audience: "waitlist", emails: [], sentTo, failed, by: callerId });
     return reply(200, { ok: true, sent, failed, remaining: await waitlistRemaining(admin) });
   } catch (error) {
     console.error("waitlist send failed", error);

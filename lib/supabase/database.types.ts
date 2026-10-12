@@ -338,6 +338,8 @@ export type Database = {
           status: "scheduled" | "sending" | "sent" | "failed" | "cancelled";
           sent_count: number;
           failed_emails: string[];
+          sent_to: string[];
+          kind: "scheduled" | "instant";
           error: string | null;
           claimed_at: string | null;
           finished_at: string | null;

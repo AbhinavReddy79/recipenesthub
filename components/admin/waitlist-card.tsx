@@ -152,7 +152,10 @@ export function WaitlistCard() {
         open={emailing}
         onOpenChange={setEmailing}
         waiting={waiting.length}
-        onSent={reload}
+        onSent={() => {
+          reload();
+          setScheduleVersion((v) => v + 1);
+        }}
         onScheduled={() => setScheduleVersion((v) => v + 1)}
       />
     </section>
