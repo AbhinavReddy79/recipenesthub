@@ -1,9 +1,11 @@
-// Supabase Edge Function: sends RecipeNest invitation emails through the
-// owner's Gmail. Nobody needs an account: the email links them to sign up.
+// Supabase Edge Function: sends RecipeNest invitation emails. Nobody needs an
+// account: the email links them to sign up.
 //
 // Secrets (Supabase -> Edge Functions -> Secrets), entered by the owner:
-//   GMAIL_USER          the Gmail address to send from
-//   GMAIL_APP_PASSWORD  a Google "app password" for that account (not the normal password)
+//   BREVO_API_KEY       Brevo API key; when set, email goes through Brevo
+//   SENDER_EMAIL        optional "from" address (a verified Brevo sender); defaults to GMAIL_USER
+//   GMAIL_USER          the Gmail address (sender address, and Gmail fallback login)
+//   GMAIL_APP_PASSWORD  Google app password, only used when BREVO_API_KEY isn't set
 //
 // Deploy with "Verify JWT with legacy secret" OFF: this function checks access itself.
 //
@@ -63,8 +65,41 @@ Don't want emails from us? <a href="${unsubscribe}" style="color:#777777">Unsubs
 </div></body></html>`;
 }
 
-/** A sender for one subject and message. Throws if Gmail isn't set up. */
+/**
+ * A sender for one subject and message, or null if no email service is set up.
+ * Uses Brevo when BREVO_API_KEY is set (built for website email: no sign-in
+ * blocks, better delivery), otherwise the owner's Gmail.
+ */
 function makeSender(subject: string, message: string, site: string) {
+  const brevoKey = Deno.env.get("BREVO_API_KEY");
+  // The address emails come from (verified as a sender in Brevo); GMAIL_USER for older setups.
+  const fromAddress = Deno.env.get("SENDER_EMAIL") ?? Deno.env.get("GMAIL_USER");
+  if (!fromAddress) return null;
+
+  const joinUrl = `${site}/register`;
+  const unsubscribe = `mailto:${fromAddress}?subject=unsubscribe`;
+  const html = emailHtml(message, joinUrl, site, unsubscribe);
+  const text = `${message}\n\nJoin RecipeNest: ${joinUrl}\n\n--\nYou're getting this because you asked to be told when RecipeNest launches. Don't want emails from us? Reply "unsubscribe".`;
+
+  if (brevoKey) {
+    return async (to: string) => {
+      const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: { "api-key": brevoKey.trim(), "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify({
+          sender: { name: "RecipeNest", email: fromAddress },
+          replyTo: { email: fromAddress },
+          to: [{ email: to }],
+          subject,
+          htmlContent: html,
+          textContent: text,
+          headers: { "List-Unsubscribe": `<${unsubscribe}>` },
+        }),
+      });
+      if (!response.ok) throw new Error(`Brevo ${response.status}: ${(await response.text()).slice(0, 300)}`);
+    };
+  }
+
   const gmailUser = Deno.env.get("GMAIL_USER");
   const gmailPassword = Deno.env.get("GMAIL_APP_PASSWORD");
   if (!gmailUser || !gmailPassword) return null;
@@ -74,10 +109,6 @@ function makeSender(subject: string, message: string, site: string) {
     secure: true,
     auth: { user: gmailUser, pass: gmailPassword.replace(/\s+/g, "") },
   });
-  const joinUrl = `${site}/register`;
-  const unsubscribe = `mailto:${gmailUser}?subject=unsubscribe`;
-  const html = emailHtml(message, joinUrl, site, unsubscribe);
-  const text = `${message}\n\nJoin RecipeNest: ${joinUrl}\n\n--\nYou're getting this because you asked to be told when RecipeNest launches. Don't want emails from us? Reply "unsubscribe".`;
   return (to: string) =>
     transport.sendMail({
       from: { name: "RecipeNest", address: gmailUser },

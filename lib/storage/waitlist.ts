@@ -68,8 +68,8 @@ export async function sendLaunchEmail(
     code = ((await error.context.json().catch(() => ({}))) as { error?: string }).error;
   }
   const messages: Record<string, string> = {
-    email_not_configured: "Email isn't set up yet: add GMAIL_USER and GMAIL_APP_PASSWORD in Supabase (Edge Functions, Secrets).",
-    send_failed: "Gmail refused the email. Check the Gmail address and app password in Supabase secrets.",
+    email_not_configured: "Email isn't set up yet: add BREVO_API_KEY (or the Gmail secrets) in Supabase (Edge Functions, Secrets).",
+    send_failed: "The email service refused the email. Check the BREVO_API_KEY secret in Supabase (and that the sender is verified in Brevo).",
     invalid_content: "Write a subject and a message first.",
     not_admin: "Only the owner, or admins who manage members, can send this.",
     signed_out: "Please log in again.",
