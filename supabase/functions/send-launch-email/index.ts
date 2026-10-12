@@ -2,10 +2,12 @@
 // account: the email links them to sign up.
 //
 // Secrets (Supabase -> Edge Functions -> Secrets), entered by the owner:
-//   BREVO_API_KEY       Brevo API key; when set, email goes through Brevo
+//   BREVO_API_KEY       Brevo API key; when set, email goes through Brevo's API
+//   BREVO_SMTP_LOGIN    Brevo SMTP login + BREVO_SMTP_KEY: email goes through
+//   BREVO_SMTP_KEY        Brevo's SMTP server (used when there's no API key)
 //   SENDER_EMAIL        optional "from" address (a verified Brevo sender); defaults to GMAIL_USER
 //   GMAIL_USER          the Gmail address (sender address, and Gmail fallback login)
-//   GMAIL_APP_PASSWORD  Google app password, only used when BREVO_API_KEY isn't set
+//   GMAIL_APP_PASSWORD  Google app password, only used when neither Brevo option is set
 //
 // Deploy with "Verify JWT with legacy secret" OFF: this function checks access itself.
 //
@@ -100,19 +102,28 @@ function makeSender(subject: string, message: string, site: string) {
     };
   }
 
+  // Brevo SMTP (an SMTP key from Brevo -> SMTP & API -> SMTP). Port 465: Supabase blocks 587.
+  const brevoLogin = Deno.env.get("BREVO_SMTP_LOGIN");
+  const brevoSmtpKey = Deno.env.get("BREVO_SMTP_KEY");
   const gmailUser = Deno.env.get("GMAIL_USER");
   const gmailPassword = Deno.env.get("GMAIL_APP_PASSWORD");
-  if (!gmailUser || !gmailPassword) return null;
+  const smtp =
+    brevoLogin && brevoSmtpKey
+      ? { host: "smtp-relay.brevo.com", user: brevoLogin.trim(), pass: brevoSmtpKey.trim() }
+      : gmailUser && gmailPassword
+        ? { host: "smtp.gmail.com", user: gmailUser, pass: gmailPassword.replace(/\s+/g, "") }
+        : null;
+  if (!smtp) return null;
   const transport = nodemailer.createTransport({
-    host: "smtp.gmail.com",
+    host: smtp.host,
     port: 465,
     secure: true,
-    auth: { user: gmailUser, pass: gmailPassword.replace(/\s+/g, "") },
+    auth: { user: smtp.user, pass: smtp.pass },
   });
   return (to: string) =>
     transport.sendMail({
-      from: { name: "RecipeNest", address: gmailUser },
-      replyTo: gmailUser,
+      from: { name: "RecipeNest", address: fromAddress },
+      replyTo: fromAddress,
       to,
       subject,
       text,
