@@ -21,6 +21,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
@@ -102,6 +103,12 @@ export function AdminUsersTable() {
   useEffect(loadPlans, [loadPlans]);
 
   const givePremium = async (user: UserProfile, days: number) => {
+    // Premium sits next to early access in the menu, so confirm before changing it.
+    const question =
+      days === 0
+        ? `Remove Premium from ${user.name}? They go back to the Free plan straight away.`
+        : `Give ${user.name} ${days === 365 ? "1 year" : "1 month"} of Premium? It's added to any Premium time they already have.`;
+    if (!window.confirm(question)) return;
     const ok = await adminSetPremium(user.id, days);
     if (!ok) return toast.error("We couldn't change that plan. Please try again.");
     toast.success(days === 0 ? `${user.name} is back on the Free plan` : `Gave ${user.name} ${days === 365 ? "a year" : "a month"} of Premium`);
@@ -298,7 +305,8 @@ export function AdminUsersTable() {
                             {earlyAccess.has(user.id) ? "Remove early access" : "Give early access (before launch)"}
                           </DropdownMenuItem>
                         )}
-                        {/* For members who pay another way (e.g. UPI), prizes or testing. */}
+                        {/* Prizes, thank-yous or testing (each asks for confirmation). */}
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onSelect={() => givePremium(user, 30)}>
                           <Crown />
                           Give 1 month Premium
@@ -313,6 +321,7 @@ export function AdminUsersTable() {
                             Remove Premium
                           </DropdownMenuItem>
                         )}
+                        {canModerate && <DropdownMenuSeparator />}
                         {canModerate && (
                           <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(user)}>
                             <Trash2 />
