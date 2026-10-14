@@ -93,7 +93,7 @@ export function PricingView() {
           <WayCard
             icon={<Gift />}
             title="Weekly lucky draw"
-            text={`Every week, join the draw with one click. Winners get ${DRAW_PREMIUM_MONTHS} months of Premium plus a cash prize.`}
+            text={`Every week, join the draw with one click. Winners get ${DRAW_PREMIUM_MONTHS} months of Premium, plus a cash prize in some weeks.`}
             href="/lucky-draw"
             cta="See this week's draw"
           />

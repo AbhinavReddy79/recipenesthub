@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Lucky Draw",
-  description: "Join the weekly RecipeNest lucky draw for a chance to win 3 months of Premium and a cash prize.",
+  description: "Join the weekly RecipeNest lucky draw for a chance to win 3 months of Premium, plus a cash prize in some weeks.",
 };
 
 export default function LuckyDrawPage() {
@@ -18,7 +18,7 @@ export default function LuckyDrawPage() {
         icon={<Clover />}
         eyebrow="Weekly lucky draw"
         title="Join. Wait. Win."
-        description="Every week, members join the draw for free. Winners are picked at random and get 3 months of Premium plus a cash prize."
+        description="Every week, members join the draw for free. Winners are picked at random and get 3 months of Premium, plus a cash prize in some weeks."
         actions={
           <Button asChild variant="outline" size="lg">
             <Link href="/pricing">

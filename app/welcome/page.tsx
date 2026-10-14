@@ -116,7 +116,7 @@ export default function WelcomePage() {
               <p className="font-display text-4xl font-semibold text-gold-light">{WELCOME_PREMIUM_MONTHS} month free</p>
               <p className="-mt-2 text-sm text-white/70">for every new member, then win {DRAW_PREMIUM_MONTHS} more months in the weekly lucky draw</p>
               <ul className="grid gap-2 text-sm">
-                {["Everything in Free", "Unlimited recipes", "Enter the weekly contest", "Lucky draw winners also get cash"].map((f) => (
+                {["Everything in Free", "Unlimited recipes", "Enter the weekly contest", "Win it free in the lucky draw"].map((f) => (
                   <li key={f} className="flex gap-2">
                     <Check className="size-4 shrink-0 text-gold-light" aria-hidden />
                     {f}

@@ -16,7 +16,7 @@ export default function PricingPage() {
         icon={<Crown />}
         eyebrow="Premium"
         title="Win Premium"
-        description="Premium isn't for sale. Join the weekly lucky draw for a chance to win 3 months of Premium and a cash prize."
+        description="Premium isn't for sale. Join the weekly lucky draw for a chance to win 3 months of Premium, plus a cash prize in some weeks."
       />
       <div className="container-page py-12 pb-24">
         <PricingView />

@@ -68,7 +68,7 @@ export function LuckyDrawView() {
       <EmptyState
         icon={Clover}
         title="The first lucky draw is coming soon"
-        description={`Every week we draw winners for ${DRAW_PREMIUM_MONTHS} months of Premium and a cash prize. Check back soon!`}
+        description={`Every week we draw winners for ${DRAW_PREMIUM_MONTHS} months of Premium. Check back soon!`}
       />
     );
   }
