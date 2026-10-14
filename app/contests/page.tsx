@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Weekly Contest",
-  description: "Every week a new theme: Premium cooks enter their best recipe, members vote, and the winner takes home a cash prize.",
+  description: "Every week a new theme: Premium cooks enter their best recipe, members vote, and the winners take home a cash prize.",
 };
 
 export default function ContestsPage() {
@@ -19,7 +19,7 @@ export default function ContestsPage() {
         icon={<Trophy />}
         eyebrow="Weekly contest"
         title="Cook. Share. Win."
-        description="A new theme every week. Premium members enter their best recipe, everyone votes, and the top recipe wins a cash prize plus a free month of Premium."
+        description="A new theme every week. Premium members enter their best recipe, everyone votes, and the top recipes win a cash prize plus a free month of Premium."
         actions={
           <Button asChild variant="outline" size="lg">
             <Link href="/pricing">

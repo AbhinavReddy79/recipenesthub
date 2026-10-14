@@ -8,6 +8,7 @@ import { ListSkeleton } from "@/components/shared/skeletons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -55,9 +56,10 @@ export function AdminContests() {
   const { isAdmin } = useCurrentUser();
   const [contests, setContests] = useState<Contest[] | null>(null);
   const [winners, setWinners] = useState<Record<string, ContestEntry | undefined>>({});
+  const [runnersUp, setRunnersUp] = useState<Record<string, ContestEntry | undefined>>({});
   const [entryCounts, setEntryCounts] = useState<Record<string, number>>({});
   const week = nextWeek();
-  const [form, setForm] = useState({ title: "", description: "", startsAt: week.start, endsAt: week.end, prize: "500" });
+  const [form, setForm] = useState({ title: "", description: "", startsAt: week.start, endsAt: week.end, prize: "500", winnerCount: "2" });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -67,6 +69,7 @@ export function AdminContests() {
     const details = await Promise.all(list.map((c) => listEntries(c.id).catch(() => [] as ContestEntry[])));
     setEntryCounts(Object.fromEntries(list.map((c, i) => [c.id, details[i].length])));
     setWinners(Object.fromEntries(list.map((c, i) => [c.id, details[i].find((e) => e.id === c.winnerEntryId)])));
+    setRunnersUp(Object.fromEntries(list.map((c, i) => [c.id, details[i].find((e) => e.id === c.runnerUpEntryId)])));
   }, []);
 
   useEffect(() => {
@@ -80,6 +83,7 @@ export function AdminContests() {
       if (cancelled) return;
       setEntryCounts(Object.fromEntries(list.map((c, i) => [c.id, details[i].length])));
       setWinners(Object.fromEntries(list.map((c, i) => [c.id, details[i].find((e) => e.id === c.winnerEntryId)])));
+      setRunnersUp(Object.fromEntries(list.map((c, i) => [c.id, details[i].find((e) => e.id === c.runnerUpEntryId)])));
     })();
     return () => {
       cancelled = true;
@@ -91,6 +95,7 @@ export function AdminContests() {
     const startsAt = new Date(form.startsAt);
     const endsAt = new Date(form.endsAt);
     const prize = Number(form.prize);
+    const winnerCount = Number(form.winnerCount);
     if (form.title.trim().length < 3) return toast.error("Give the contest a theme (at least 3 characters).");
     if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime()) || endsAt <= startsAt) {
       return toast.error("The contest must end after it starts.");
@@ -103,6 +108,7 @@ export function AdminContests() {
       startsAt: startsAt.toISOString(),
       endsAt: endsAt.toISOString(),
       prizeAmount: prize,
+      winnerCount,
     });
     setSaving(false);
     if (!result.ok) return toast.error(result.error);
@@ -114,7 +120,13 @@ export function AdminContests() {
   const announce = async (contest: Contest) => {
     const result = await announceWinner(contest.id);
     if (!result.ok) return toast.error(result.error);
-    toast.success(result.value ? "Winner announced and given a free Premium month." : "Contest closed with no entries.");
+    toast.success(
+      result.value
+        ? contest.winnerCount > 1
+          ? "Winners announced. Each got a free Premium month."
+          : "Winner announced and given a free Premium month."
+        : "Contest closed with no entries.",
+    );
     void load();
   };
 
@@ -157,7 +169,7 @@ export function AdminContests() {
             onChange={(e) => setForm({ ...form, description: e.target.value })}
           />
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-4">
           <div className="grid gap-2">
             <Label htmlFor="contest-start">Starts</Label>
             <Input id="contest-start" type="datetime-local" value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} />
@@ -167,7 +179,19 @@ export function AdminContests() {
             <Input id="contest-end" type="datetime-local" value={form.endsAt} onChange={(e) => setForm({ ...form, endsAt: e.target.value })} />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="contest-prize">Cash prize (₹)</Label>
+            <Label htmlFor="contest-winners">Winners</Label>
+            <Select value={form.winnerCount} onValueChange={(winnerCount) => setForm({ ...form, winnerCount })}>
+              <SelectTrigger id="contest-winners" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 winner</SelectItem>
+                <SelectItem value="2">2 winners</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="contest-prize">Cash prize per winner (₹)</Label>
             <Input
               id="contest-prize"
               type="number"
@@ -180,7 +204,7 @@ export function AdminContests() {
           </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          The winner automatically gets one free month of Premium. You pay the cash prize yourself, then tick “Prize paid”.
+          Votes decide: the most-voted recipe wins, and with 2 winners the second most-voted also wins. Each winner gets the cash prize and a free month of Premium automatically. You pay the cash prizes yourself, then tick “Prize paid”.
         </p>
         <Button type="submit" className="justify-self-start" disabled={saving}>
           {saving ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Plus data-icon="inline-start" />}
@@ -201,6 +225,7 @@ export function AdminContests() {
             {contests.map((contest) => {
               const phase = contestPhase(contest);
               const winner = winners[contest.id];
+              const runnerUp = runnersUp[contest.id];
               return (
                 <li key={contest.id} className="grid gap-3 rounded-2xl border bg-card p-4 shadow-soft sm:grid-cols-[1fr_auto] sm:items-center">
                   <div className="grid gap-1">
@@ -209,16 +234,10 @@ export function AdminContests() {
                     </span>
                     <span className="font-display text-lg font-semibold">{contest.title}</span>
                     <span className="text-sm text-muted-foreground">
-                      Prize {formatRupees(contest.prizeAmount)} + 1 month Premium
-                      {winner && (
-                        <>
-                          {" · "}Winner:{" "}
-                          <Link href={`/recipes/${winner.recipeSlug}`} className="font-semibold text-foreground hover:text-primary">
-                            {winner.recipeTitle}
-                          </Link>{" "}
-                          by {winner.authorName} (@{winner.authorUsername})
-                        </>
-                      )}
+                      Prize {formatRupees(contest.prizeAmount)}
+                      {contest.winnerCount > 1 ? ` each to ${contest.winnerCount} winners` : ""} + 1 month Premium
+                      {winner && <WinnerLine label={runnerUp ? "1st" : "Winner"} entry={winner} />}
+                      {runnerUp && <WinnerLine label="2nd" entry={runnerUp} />}
                     </span>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
@@ -245,5 +264,18 @@ export function AdminContests() {
         )}
       </section>
     </div>
+  );
+}
+
+function WinnerLine({ label, entry }: { label: string; entry: ContestEntry }) {
+  return (
+    <>
+      {" · "}
+      {label}:{" "}
+      <Link href={`/recipes/${entry.recipeSlug}`} className="font-semibold text-foreground hover:text-primary">
+        {entry.recipeTitle}
+      </Link>{" "}
+      by {entry.authorName} (@{entry.authorUsername})
+    </>
   );
 }

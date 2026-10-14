@@ -98,13 +98,13 @@ export default function TermsPage() {
               <p>Each week RecipeNest may run a cooking contest with a theme and prize announced on the contest page.</p>
               <ul>
                 <li>Only Premium members can enter, with one of their own published recipes that fits the theme. There is no separate entry fee.</li>
-                <li>All members can vote, once per entry. The entry with the most votes when voting closes wins; ties go to the earlier entry.</li>
+                <li>All members can vote, once per entry. The entry with the most votes when voting closes wins; if the contest page shows 2 winners, the entry with the second most votes also wins. Ties go to the earlier entry.</li>
                 <li>
                   Entries must be your own work. We may remove entries or votes that break these terms, are off-theme, or
                   involve fake accounts or vote trading, and may disqualify those involved.
                 </li>
                 <li>
-                  Cash prizes are paid to the winner after we contact them by email and may be subject to tax. RecipeNest&apos;s decision on
+                  Cash prizes are paid to each winner after we contact them by email and may be subject to tax. RecipeNest&apos;s decision on
                   results is final.
                 </li>
               </ul>

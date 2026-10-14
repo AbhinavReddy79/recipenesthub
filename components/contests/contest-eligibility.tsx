@@ -25,8 +25,8 @@ const RULES = [
   },
   {
     icon: Heart,
-    title: "Votes decide the winner",
-    text: "Every member can vote once per entry. The most-voted entry wins; a tie goes to the earlier entry.",
+    title: "Votes decide the winners",
+    text: "Every member can vote once per entry. The most-voted entry wins. When a contest has 2 winners, the second most-voted entry wins too. A tie goes to the earlier entry.",
   },
   {
     icon: ShieldCheck,
@@ -70,7 +70,7 @@ export function ContestEligibility() {
         ))}
       </ol>
       <p className="text-xs text-muted-foreground">
-        The winner gets the cash prize shown for that week plus one free month of Premium. Cash prizes are paid after we contact the winner by
+        Each winner gets the cash prize shown for that week plus one free month of Premium. Cash prizes are paid after we contact the winners by
         email. Full rules are in our{" "}
         <Link href="/terms" className="font-semibold text-primary underline-offset-4 hover:underline">
           Terms

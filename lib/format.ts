@@ -65,7 +65,8 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
   year: "numeric",
-  timeZone: "UTC",
+  // Fixed zone so server and browser agree; India time, as the site is India-first.
+  timeZone: "Asia/Kolkata",
 });
 
 export function formatDate(iso: string): string {

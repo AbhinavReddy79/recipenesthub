@@ -123,7 +123,7 @@ export function ContestView() {
                   <span className="font-display text-lg font-semibold">{c.title}</span>
                   <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                     <Trophy className="size-4 text-gold-ink" aria-hidden />
-                    {c.announcedAt ? (c.winnerEntryId ? "Winner announced" : "No entries") : "Results coming soon"}
+                    {c.announcedAt ? (c.winnerEntryId ? (c.runnerUpEntryId ? "Winners announced" : "Winner announced") : "No entries") : "Results coming soon"}
                   </span>
                 </button>
               </li>
@@ -165,6 +165,8 @@ function ContestDetail({ contest }: { contest: Contest }) {
 
   const myEntry = entries?.find((e) => e.userId === user?.id) ?? null;
   const winner = entries?.find((e) => e.id === contest.winnerEntryId) ?? null;
+  const runnerUp = entries?.find((e) => e.id === contest.runnerUpEntryId) ?? null;
+  const twoWinners = contest.winnerCount > 1;
   const enteredRecipeIds = new Set(entries?.map((e) => e.recipeId));
   const eligible = myPublished.filter((r) => !enteredRecipeIds.has(r.id));
 
@@ -226,13 +228,14 @@ function ContestDetail({ contest }: { contest: Contest }) {
           </div>
 
           <div className="grid gap-3 rounded-2xl bg-white/[0.06] p-5 ring-1 ring-white/10">
-            <p className="text-xs font-bold tracking-[0.16em] text-white/60 uppercase">Prize</p>
+            <p className="text-xs font-bold tracking-[0.16em] text-white/60 uppercase">{twoWinners ? "Prize · 2 winners" : "Prize"}</p>
             <p className="font-display text-3xl font-semibold text-gold-light">
-              {contest.prizeAmount > 0 ? `${formatRupees(contest.prizeAmount)} cash` : "Bragging rights"}
+              {contest.prizeAmount > 0 ? `${formatRupees(contest.prizeAmount)} cash${twoWinners ? " each" : ""}` : "Bragging rights"}
             </p>
             <p className="inline-flex items-center gap-1.5 text-sm text-white/80">
-              <Crown className="size-4 text-gold-light" aria-hidden />+ 1 month of Premium free
+              <Crown className="size-4 text-gold-light" aria-hidden />+ 1 month of Premium free{twoWinners ? " each" : ""}
             </p>
+            {twoWinners && <p className="text-xs text-white/60">The top 2 recipes by votes both win.</p>}
 
             {phase === "open" &&
               (myEntry ? (
@@ -261,26 +264,34 @@ function ContestDetail({ contest }: { contest: Contest }) {
         </div>
       </section>
 
-      {/* Winner */}
-      {phase === "announced" && winner && (
-        <section aria-labelledby="winner-heading" className="flex flex-wrap items-center gap-5 rounded-3xl bg-warm-glow p-5 ring-1 ring-saffron/40 sm:p-6">
-          <span className="relative size-24 shrink-0 overflow-hidden rounded-2xl ring-4 ring-saffron/60">
-            <Image src={winner.recipeImage} alt="" fill sizes="96px" className="object-cover" />
-          </span>
-          <div className="grid gap-1">
-            <p id="winner-heading" className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.16em] text-gold-ink uppercase">
-              <PartyPopper className="size-4" aria-hidden />
-              Weekly champion
-            </p>
-            <Link href={`/recipes/${winner.recipeSlug}`} className="font-display text-2xl font-semibold hover:text-primary">
-              {winner.recipeTitle}
-            </Link>
-            <p className="text-sm text-muted-foreground">
-              by {winner.authorName} · {winner.votes} {winner.votes === 1 ? "vote" : "votes"}
-            </p>
-          </div>
-        </section>
-      )}
+      {/* Winners */}
+      {phase === "announced" &&
+        [winner, runnerUp].map(
+          (entry, i) =>
+            entry && (
+              <section
+                key={entry.id}
+                aria-label={i === 0 ? (runnerUp ? "First place" : "Weekly champion") : "Second place"}
+                className="flex flex-wrap items-center gap-5 rounded-3xl bg-warm-glow p-5 ring-1 ring-saffron/40 sm:p-6"
+              >
+                <span className="relative size-24 shrink-0 overflow-hidden rounded-2xl ring-4 ring-saffron/60">
+                  <Image src={entry.recipeImage} alt="" fill sizes="96px" className="object-cover" />
+                </span>
+                <div className="grid gap-1">
+                  <p className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.16em] text-gold-ink uppercase">
+                    <PartyPopper className="size-4" aria-hidden />
+                    {i === 0 ? (runnerUp ? "Weekly champion · 1st place" : "Weekly champion") : "Winner · 2nd place"}
+                  </p>
+                  <Link href={`/recipes/${entry.recipeSlug}`} className="font-display text-2xl font-semibold hover:text-primary">
+                    {entry.recipeTitle}
+                  </Link>
+                  <p className="text-sm text-muted-foreground">
+                    by {entry.authorName} · {entry.votes} {entry.votes === 1 ? "vote" : "votes"}
+                  </p>
+                </div>
+              </section>
+            ),
+        )}
 
       {/* Entries */}
       <section aria-labelledby="entries-heading" className="grid gap-5">
@@ -301,7 +312,7 @@ function ContestDetail({ contest }: { contest: Contest }) {
           <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {ranked.map((entry, index) => {
               const mine = entry.userId === user?.id;
-              const isWinner = entry.id === contest.winnerEntryId;
+              const isWinner = entry.id === contest.winnerEntryId || entry.id === contest.runnerUpEntryId;
               return (
                 <li
                   key={entry.id}
@@ -324,7 +335,7 @@ function ContestDetail({ contest }: { contest: Contest }) {
                     {isWinner && (
                       <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-metallic-gold px-2.5 py-1 text-xs font-bold text-[oklch(0.2_0.006_70)]">
                         <Trophy className="size-3.5" aria-hidden />
-                        Winner
+                        {contest.runnerUpEntryId ? (entry.id === contest.winnerEntryId ? "1st" : "2nd") : "Winner"}
                       </span>
                     )}
                   </div>

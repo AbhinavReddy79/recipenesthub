@@ -51,7 +51,7 @@ export function ContestTeaser() {
           </h2>
           <p className="text-sm text-white/75">
             {contest
-              ? `${contest.prizeAmount > 0 ? `${formatRupees(contest.prizeAmount)} cash prize` : "A prize"} + a free month of Premium. ${
+              ? `${contest.prizeAmount > 0 ? `${formatRupees(contest.prizeAmount)} cash prize${contest.winnerCount > 1 ? ` for each of ${contest.winnerCount} winners` : ""}` : "A prize"} + a free month of Premium. ${
                   plan.premium ? "Enter your best recipe" : "Premium members enter, everyone votes"
                 }.`
               : "Win Premium in the weekly lucky draw to publish without limits and compete every week."}

@@ -284,12 +284,22 @@ export type Database = {
           starts_at: string;
           ends_at: string;
           prize_amount: number;
+          winner_count: number;
           winner_entry_id: string | null;
+          runner_up_entry_id: string | null;
           announced_at: string | null;
           prize_paid: boolean;
           created_at: string;
         };
-        Insert: { id?: string; title: string; description?: string; starts_at: string; ends_at: string; prize_amount?: number };
+        Insert: {
+          id?: string;
+          title: string;
+          description?: string;
+          starts_at: string;
+          ends_at: string;
+          prize_amount?: number;
+          winner_count?: number;
+        };
         Update: { title?: string; description?: string; starts_at?: string; ends_at?: string; prize_amount?: number; prize_paid?: boolean };
         Relationships: [];
       };

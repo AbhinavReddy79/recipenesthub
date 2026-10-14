@@ -12,8 +12,12 @@ export interface Contest {
   description: string;
   startsAt: string;
   endsAt: string;
+  /** Cash prize for each winner. */
   prizeAmount: number;
+  /** 1 or 2: the most-voted entry wins; with 2 the runner-up also wins. */
+  winnerCount: number;
   winnerEntryId: string | null;
+  runnerUpEntryId: string | null;
   announcedAt: string | null;
   prizePaid: boolean;
 }
@@ -49,7 +53,9 @@ const toContest = (row: ContestRow): Contest => ({
   startsAt: row.starts_at,
   endsAt: row.ends_at,
   prizeAmount: row.prize_amount,
+  winnerCount: row.winner_count ?? 1,
   winnerEntryId: row.winner_entry_id,
+  runnerUpEntryId: row.runner_up_entry_id ?? null,
   announcedAt: row.announced_at,
   prizePaid: row.prize_paid,
 });
@@ -131,6 +137,7 @@ export interface ContestInput {
   startsAt: string;
   endsAt: string;
   prizeAmount: number;
+  winnerCount: number;
 }
 
 export async function createContest(input: ContestInput): Promise<Result> {
@@ -142,6 +149,7 @@ export async function createContest(input: ContestInput): Promise<Result> {
     starts_at: input.startsAt,
     ends_at: input.endsAt,
     prize_amount: input.prizeAmount,
+    winner_count: input.winnerCount,
   });
   return error ? failure(error, "We couldn't create the contest. Check the dates and try again.") : { ok: true, value: undefined };
 }
@@ -160,7 +168,7 @@ export async function deleteContest(contestId: string): Promise<Result> {
   return error ? failure(error, "We couldn't delete the contest.") : { ok: true, value: undefined };
 }
 
-/** Picks the most-voted entry and gives its author a free Premium month. */
+/** Picks the most-voted entry (and runner-up, for 2-winner contests); each author gets a free Premium month. */
 export async function announceWinner(contestId: string): Promise<Result<string | null>> {
   const ctx = userContext();
   if (!ctx) return { ok: false, error: "Please log in again." };
