@@ -151,7 +151,7 @@ export function WaitlistCard() {
       <LaunchEmailDialog
         open={emailing}
         onOpenChange={setEmailing}
-        waiting={waiting.length}
+        waiting={{ launch: waiting.length, teaser: entries.filter((e) => !e.teased_at).length }}
         onSent={() => {
           reload();
           setScheduleVersion((v) => v + 1);

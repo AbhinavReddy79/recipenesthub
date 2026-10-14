@@ -370,9 +370,9 @@ export type Database = {
         Relationships: [];
       };
       launch_waitlist: {
-        Row: { email: string; created_at: string; notified_at: string | null };
+        Row: { email: string; created_at: string; notified_at: string | null; teased_at: string | null };
         Insert: never;
-        Update: { notified_at?: string | null };
+        Update: { notified_at?: string | null; teased_at?: string | null };
         Relationships: [];
       };
       contact_messages: {

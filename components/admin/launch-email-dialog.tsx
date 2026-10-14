@@ -39,7 +39,7 @@ The RecipeNest team`,
 
 Something delicious is coming your way 🍲
 
-RecipeNest is launching soon, and we'd love for you to be part of the journey.
+RecipeNest is launching soon, and we'd love for you to be part of the journey. We open on Tuesday, 20 October.
 
 Explore recipes from every corner of India and kitchens around the world, discover new flavours, plan your meals and organise your shopping lists, all in one place.
 
@@ -96,13 +96,14 @@ export function LaunchEmailDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** People on the waitlist not yet emailed. */
-  waiting: number;
+  /** Waitlist people who haven't had each type of email yet. */
+  waiting: Record<Variant, number>;
   /** Called after each batch so the list can refresh. */
   onSent: () => void;
   /** Called after an email is scheduled. */
   onScheduled: () => void;
 }) {
-  const [audience, setAudience] = useState<Audience>(waiting > 0 ? "waitlist" : "direct");
+  const [audience, setAudience] = useState<Audience>(waiting.launch > 0 || waiting.teaser > 0 ? "waitlist" : "direct");
   const [timing, setTiming] = useState<Timing>("now");
   const [sendAt, setSendAt] = useState(defaultSendAt);
   const [variant, setVariant] = useState<Variant>("launch");
@@ -118,6 +119,7 @@ export function LaunchEmailDialog({
     }
     setVariant(next);
   };
+  const toEmail = waiting[variant];
   const [addresses, setAddresses] = useState("");
   const [busy, setBusy] = useState<"test" | "send" | null>(null);
   const [progress, setProgress] = useState<{ sent: number; total: number } | null>(null);
@@ -139,11 +141,11 @@ export function LaunchEmailDialog({
   };
 
   const sendWaitlist = async () => {
-    if (!window.confirm(`Email ${waiting} ${waiting === 1 ? "person" : "people"} on the waitlist now? This can't be undone.`)) return;
+    if (!window.confirm(`Email ${toEmail} ${toEmail === 1 ? "person" : "people"} on the waitlist now? This can't be undone.`)) return;
     setBusy("send");
     let sent = 0;
     let failed = 0;
-    setProgress({ sent: 0, total: waiting });
+    setProgress({ sent: 0, total: toEmail });
     // The function sends a batch at a time; keep going until everyone is done or a batch sends nothing.
     for (;;) {
       const result = await sendLaunchEmail("send", subject, message, undefined, variant);
@@ -153,7 +155,7 @@ export function LaunchEmailDialog({
       }
       sent += result.sent ?? 0;
       failed += result.failed?.length ?? 0;
-      setProgress({ sent, total: waiting });
+      setProgress({ sent, total: toEmail });
       onSent();
       if (!result.remaining || !result.sent) break;
     }
@@ -240,7 +242,7 @@ export function LaunchEmailDialog({
                 onClick={() => setAudience("waitlist")}
                 icon={<Users />}
                 title="Launch waitlist"
-                detail={waiting ? `${waiting} not emailed yet` : "Nobody waiting"}
+                detail={toEmail ? `${toEmail} haven't had this email yet` : "Everyone has had this email"}
               />
               <AudienceOption
                 active={audience === "direct"}
@@ -328,9 +330,9 @@ export function LaunchEmailDialog({
               Schedule email
             </Button>
           ) : audience === "waitlist" ? (
-            <Button onClick={sendWaitlist} disabled={Boolean(busy) || waiting === 0}>
+            <Button onClick={sendWaitlist} disabled={Boolean(busy) || toEmail === 0}>
               {busy === "send" ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Send data-icon="inline-start" />}
-              Send to {waiting} {waiting === 1 ? "person" : "people"}
+              Send to {toEmail} {toEmail === 1 ? "person" : "people"}
             </Button>
           ) : (
             <Button onClick={sendDirect} disabled={Boolean(busy) || parsed.valid.length === 0}>

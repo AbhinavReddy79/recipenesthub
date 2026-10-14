@@ -16,10 +16,10 @@
 //   checked in the database with the caller's own sign-in token):
 //     { mode: "test" | "send" | "direct", subject, message, emails?, variant? }
 //     test   -> one copy to the admin who asked
-//     send   -> the next BATCH people on the waitlist not yet notified; returns
+//     send   -> the next BATCH waitlist people who haven't had this type yet; returns
 //               how many are left (the dashboard calls again until 0)
 //     direct -> the addresses the admin typed in (up to BATCH); no account is
-//               created, they're recorded on the waitlist as notified
+//               created; launch invitations are recorded on the waitlist as notified
 //   From the minute timer (pg_cron, see the scheduled_emails migration):
 //     { mode: "scheduled", nonce } -> the nonce is a single-use code the
 //               database just created; sends the next due scheduled email
@@ -207,28 +207,34 @@ async function recordInstant(
   if (result.error) console.error("could not record history", result.error);
 }
 
-const markNotified = (admin: SupabaseClient) => async (email: string) =>
-  check(await admin.from("launch_waitlist").update({ notified_at: new Date().toISOString() }).eq("email", email), "mark notified");
-const recordInvited = (admin: SupabaseClient) => async (email: string) =>
+/** A teaser and the launch email are tracked separately, so a teaser never stops someone getting the launch email. */
+const sentColumn = (variant: Variant) => (variant === "teaser" ? "teased_at" : "notified_at");
+
+const markSent = (admin: SupabaseClient, variant: Variant) => async (email: string) =>
+  check(await admin.from("launch_waitlist").update({ [sentColumn(variant)]: new Date().toISOString() }).eq("email", email), "mark sent");
+/** Launch invitations to typed-in addresses are recorded on the waitlist as notified; teasers leave it alone. */
+const recordInvited = (admin: SupabaseClient, variant: Variant) => async (email: string) => {
+  if (variant === "teaser") return;
   check(
     await admin.from("launch_waitlist").upsert({ email, notified_at: new Date().toISOString() }, { onConflict: "email" }),
     "record invited",
   );
+};
 
-/** The next waitlist batch not yet notified. */
-async function nextWaitlistBatch(admin: SupabaseClient) {
+/** The next waitlist batch that hasn't had this type of email yet. */
+async function nextWaitlistBatch(admin: SupabaseClient, variant: Variant) {
   const { data, error } = await admin
     .from("launch_waitlist")
     .select("email")
-    .is("notified_at", null)
+    .is(sentColumn(variant), null)
     .order("created_at", { ascending: true })
     .limit(BATCH);
   if (error) throw error;
   return (data ?? []).map((row) => row.email as string);
 }
 
-async function waitlistRemaining(admin: SupabaseClient) {
-  const { count } = await admin.from("launch_waitlist").select("email", { count: "exact", head: true }).is("notified_at", null);
+async function waitlistRemaining(admin: SupabaseClient, variant: Variant) {
+  const { count } = await admin.from("launch_waitlist").select("email", { count: "exact", head: true }).is(sentColumn(variant), null);
   return count ?? 0;
 }
 
@@ -249,7 +255,8 @@ async function runScheduled(admin: SupabaseClient) {
   const id = job.id as string;
   const finish = async (fields: Record<string, unknown>) =>
     check(await admin.from("scheduled_emails").update(fields).eq("id", id), "update scheduled email");
-  const send = makeSender(job.subject as string, job.message as string, DEFAULT_SITE, asVariant(job.variant));
+  const jobVariant = asVariant(job.variant);
+  const send = makeSender(job.subject as string, job.message as string, DEFAULT_SITE, jobVariant);
   if (!send) {
     await finish({ status: "failed", error: "Email isn't set up (GMAIL_USER / GMAIL_APP_PASSWORD).", finished_at: new Date().toISOString() });
     return { ok: false, error: "email_not_configured" };
@@ -259,7 +266,7 @@ async function runScheduled(admin: SupabaseClient) {
   const previousFailed = (job.failed_emails as string[] | null) ?? [];
 
   if (job.audience === "direct") {
-    const { sent, sentTo, failed } = await sendEach(cleanEmails(job.emails), send, recordInvited(admin));
+    const { sent, sentTo, failed } = await sendEach(cleanEmails(job.emails), send, recordInvited(admin, jobVariant));
     await finish({
       status: sent ? "sent" : "failed",
       sent_count: sent,
@@ -271,9 +278,9 @@ async function runScheduled(admin: SupabaseClient) {
     return { ok: true, sent, failed };
   }
 
-  const batch = await nextWaitlistBatch(admin);
-  const { sent, sentTo, failed } = await sendEach(batch, send, markNotified(admin));
-  const remaining = await waitlistRemaining(admin);
+  const batch = await nextWaitlistBatch(admin, jobVariant);
+  const { sent, sentTo, failed } = await sendEach(batch, send, markSent(admin, jobVariant));
+  const remaining = await waitlistRemaining(admin, jobVariant);
   const allSentTo = [...new Set([...previousSentTo, ...sentTo])];
   // Someone who failed once but got it on a retry is no longer a failure.
   const allFailed = [...new Set([...previousFailed, ...failed])].filter((e) => !allSentTo.includes(e));
@@ -360,16 +367,16 @@ Deno.serve(async (req) => {
     const emails = cleanEmails(body?.emails);
     if (emails.length === 0) return reply(400, { error: "invalid_emails" });
     if (emails.length > BATCH) return reply(400, { error: "too_many_emails" });
-    const { sent, sentTo, failed } = await sendEach(emails, send, recordInvited(admin));
+    const { sent, sentTo, failed } = await sendEach(emails, send, recordInvited(admin, variant));
     await recordInstant(admin, { subject, message, audience: "direct", variant, emails, sentTo, failed, by: callerId });
     return reply(200, { ok: true, sent, failed });
   }
 
   try {
-    const batch = await nextWaitlistBatch(admin);
-    const { sent, sentTo, failed } = await sendEach(batch, send, markNotified(admin));
+    const batch = await nextWaitlistBatch(admin, variant);
+    const { sent, sentTo, failed } = await sendEach(batch, send, markSent(admin, variant));
     if (batch.length) await recordInstant(admin, { subject, message, audience: "waitlist", variant, emails: [], sentTo, failed, by: callerId });
-    return reply(200, { ok: true, sent, failed, remaining: await waitlistRemaining(admin) });
+    return reply(200, { ok: true, sent, failed, remaining: await waitlistRemaining(admin, variant) });
   } catch (error) {
     console.error("waitlist send failed", error);
     return reply(500, { error: "list_failed" });
