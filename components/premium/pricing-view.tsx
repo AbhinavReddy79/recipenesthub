@@ -100,7 +100,7 @@ export function PricingView() {
           <WayCard
             icon={<Trophy />}
             title="Weekly cooking contest"
-            text="Premium members enter their best recipe for the theme. The most-voted recipe wins a cash prize and a free month."
+            text="Premium members enter their best recipe for the theme. The most-voted recipes win a cash prize and a free month."
             href="/contests"
             cta="See the contest"
           />

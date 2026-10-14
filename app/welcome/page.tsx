@@ -19,7 +19,7 @@ const FEATURES = [
   { icon: CalendarDays, title: "Plan your week", text: "Drag recipes into a weekly meal plan and adjust servings for your family." },
   { icon: ShoppingBasket, title: "Smart shopping lists", text: "Turn your plan into one combined shopping list, with quantities scaled to your servings." },
   { icon: Sparkles, title: "Share your recipes", text: "Publish your own recipes with photos, and save and review your favourites." },
-  { icon: Trophy, title: "Weekly contest", text: "Premium cooks compete on a new theme every week. Members vote and the winner gets a cash prize." },
+  { icon: Trophy, title: "Weekly contest", text: "Premium cooks compete on a new theme every week. Members vote and the top recipes win a cash prize." },
 ];
 
 /**
