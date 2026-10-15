@@ -18,19 +18,25 @@ type Variant = "launch" | "teaser";
 
 const TEMPLATES: Record<Variant, { subject: string; message: string }> = {
   launch: {
-    subject: "RecipeNest is open now",
+    subject: "RecipeNest is open! Your free month of Premium is waiting 🍲",
     message: `Hi,
 
-You asked us to tell you when RecipeNest opens. It's open now.
+You asked us to tell you when RecipeNest opens. It's open now!
 
-RecipeNest brings together recipes from every Indian state and kitchens around the world, with a meal planner and shopping lists in one place.
+RecipeNest brings together recipes from every Indian state and kitchens around the world, with a meal planner and smart shopping lists, all in one place.
 
-When you create your account, your first month of Premium is included, so you can publish as many recipes as you like and enter the weekly cooking contest.
+Join today and you get:
+• Your first month of Premium free: publish as many recipes as you like
+• Entry to our first weekly contest, "Your Favourite Telugu Dish": 2 winners get ₹500 each
+• A spot in the Launch Week Lucky Draw: 5 winners get 3 months of Premium
 
-If you have any questions, just reply to this email.
+The contest and lucky draw run until Mon 26 October.
+
+Tap the button below to create your free account. Have a question? Just reply to this email.
 
 Thanks,
-The RecipeNest team`,
+The RecipeNest Team
+Your next favourite recipe is waiting.`,
   },
   // Before launch: the button goes to the countdown page's "Notify me" box.
   teaser: {
