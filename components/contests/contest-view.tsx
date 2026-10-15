@@ -264,34 +264,47 @@ function ContestDetail({ contest }: { contest: Contest }) {
         </div>
       </section>
 
-      {/* Winners */}
-      {phase === "announced" &&
-        [winner, runnerUp].map(
-          (entry, i) =>
-            entry && (
-              <section
-                key={entry.id}
-                aria-label={i === 0 ? (runnerUp ? "First place" : "Weekly champion") : "Second place"}
-                className="flex flex-wrap items-center gap-5 rounded-3xl bg-warm-glow p-5 ring-1 ring-saffron/40 sm:p-6"
-              >
-                <span className="relative size-24 shrink-0 overflow-hidden rounded-2xl ring-4 ring-saffron/60">
-                  <Image src={entry.recipeImage} alt="" fill sizes="96px" className="object-cover" />
-                </span>
-                <div className="grid gap-1">
-                  <p className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.16em] text-gold-ink uppercase">
-                    <PartyPopper className="size-4" aria-hidden />
-                    {i === 0 ? (runnerUp ? "Weekly champion · 1st place" : "Weekly champion") : "Winner · 2nd place"}
-                  </p>
-                  <Link href={`/recipes/${entry.recipeSlug}`} className="font-display text-2xl font-semibold hover:text-primary">
-                    {entry.recipeTitle}
-                  </Link>
-                  <p className="text-sm text-muted-foreground">
-                    by {entry.authorName} · {entry.votes} {entry.votes === 1 ? "vote" : "votes"}
-                  </p>
-                </div>
-              </section>
-            ),
-        )}
+      {/* Winners: who won (name and @username) and with which recipe */}
+      {phase === "announced" && winner && (
+        <section aria-labelledby="winners-heading" className="grid gap-4">
+          <h2 id="winners-heading" className="inline-flex items-center gap-2 text-[1.75rem] font-semibold">
+            <PartyPopper className="size-6 text-gold-ink" aria-hidden />
+            {runnerUp ? "Winners" : "Winner"}
+          </h2>
+          <ul className={cn("grid gap-4", runnerUp && "lg:grid-cols-2")}>
+            {[winner, runnerUp].map(
+              (entry, i) =>
+                entry && (
+                  <li key={entry.id} className="flex flex-wrap items-center gap-5 rounded-3xl bg-warm-glow p-5 ring-1 ring-saffron/40 sm:p-6">
+                    <span className="relative size-24 shrink-0 overflow-hidden rounded-2xl ring-4 ring-saffron/60">
+                      <Image src={entry.recipeImage} alt="" fill sizes="96px" className="object-cover" />
+                    </span>
+                    <div className="grid min-w-0 flex-1 gap-1.5">
+                      <p className="inline-flex items-center gap-2 text-xs font-bold tracking-[0.16em] text-gold-ink uppercase">
+                        <Trophy className="size-4" aria-hidden />
+                        {i === 0 ? (runnerUp ? "1st place · Weekly champion" : "Weekly champion") : "2nd place"}
+                      </p>
+                      <p className="flex items-center gap-2.5">
+                        <UserAvatar name={entry.authorName} src={entry.authorAvatar} className="size-9" />
+                        <span className="grid min-w-0">
+                          <span className="truncate font-display text-xl font-semibold">{entry.authorName}</span>
+                          <span className="truncate text-sm text-muted-foreground">@{entry.authorUsername}</span>
+                        </span>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        with{" "}
+                        <Link href={`/recipes/${entry.recipeSlug}`} className="font-semibold text-foreground hover:text-primary">
+                          {entry.recipeTitle}
+                        </Link>{" "}
+                        · {entry.votes} {entry.votes === 1 ? "vote" : "votes"}
+                      </p>
+                    </div>
+                  </li>
+                ),
+            )}
+          </ul>
+        </section>
+      )}
 
       {/* Entries */}
       <section aria-labelledby="entries-heading" className="grid gap-5">
@@ -346,6 +359,7 @@ function ContestDetail({ contest }: { contest: Contest }) {
                     <span className="flex items-center gap-2 text-sm text-muted-foreground">
                       <UserAvatar name={entry.authorName} src={entry.authorAvatar} className="size-6" />
                       {entry.authorName}
+                      <span className="text-xs">@{entry.authorUsername}</span>
                       {mine && <span className="rounded-full bg-accent px-2 text-xs font-semibold text-accent-foreground">You</span>}
                     </span>
                     <div className="mt-auto flex items-center justify-between gap-2 border-t pt-3">
