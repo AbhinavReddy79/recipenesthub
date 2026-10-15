@@ -6,6 +6,7 @@
 //   BREVO_SMTP_LOGIN    Brevo SMTP login + BREVO_SMTP_KEY: email goes through
 //   BREVO_SMTP_KEY        Brevo's SMTP server (used when there's no API key)
 //   SENDER_EMAIL        optional "from" address (a verified Brevo sender); defaults to GMAIL_USER
+//   REPLY_TO_EMAIL      optional inbox for replies; defaults to GMAIL_USER
 //   GMAIL_USER          the Gmail address (sender address, and Gmail fallback login)
 //   GMAIL_APP_PASSWORD  Google app password, only used when neither Brevo option is set
 //
@@ -30,7 +31,7 @@
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import nodemailer from "npm:nodemailer@6.9.16";
 
-const SITES = ["https://recipe-nest-tan.vercel.app", "https://recipenesthub.com", "https://www.recipenesthub.com", "http://localhost:3000"];
+const SITES = ["https://recipenest.shop", "https://www.recipenest.shop", "https://recipe-nest-tan.vercel.app", "http://localhost:3000"];
 const DEFAULT_SITE = SITES[0];
 const BATCH = 25;
 const PAUSE_MS = 2000;
@@ -97,9 +98,11 @@ function makeSender(subject: string, message: string, site: string, variant: Var
   // The address emails come from (verified as a sender in Brevo); GMAIL_USER for older setups.
   const fromAddress = Deno.env.get("SENDER_EMAIL") ?? Deno.env.get("GMAIL_USER");
   if (!fromAddress) return null;
+  // Replies and unsubscribe requests go to a real inbox (the Gmail), even when sending from the domain.
+  const replyAddress = Deno.env.get("REPLY_TO_EMAIL") ?? Deno.env.get("GMAIL_USER") ?? fromAddress;
 
   const parts = variantParts(variant, site);
-  const unsubscribe = `mailto:${fromAddress}?subject=unsubscribe`;
+  const unsubscribe = `mailto:${replyAddress}?subject=unsubscribe`;
   const html = emailHtml(message, parts, unsubscribe);
   const text = `${message}\n\n${parts.button}: ${parts.url}\n\n--\n${parts.reason} Don't want emails from us? Reply "unsubscribe".`;
 
@@ -110,7 +113,7 @@ function makeSender(subject: string, message: string, site: string, variant: Var
         headers: { "api-key": brevoKey.trim(), "content-type": "application/json", accept: "application/json" },
         body: JSON.stringify({
           sender: { name: "RecipeNest", email: fromAddress },
-          replyTo: { email: fromAddress },
+          replyTo: { email: replyAddress },
           to: [{ email: to }],
           subject,
           htmlContent: html,
@@ -143,7 +146,7 @@ function makeSender(subject: string, message: string, site: string, variant: Var
   return (to: string) =>
     transport.sendMail({
       from: { name: "RecipeNest", address: fromAddress },
-      replyTo: fromAddress,
+      replyTo: replyAddress,
       to,
       subject,
       text,

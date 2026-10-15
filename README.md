@@ -21,8 +21,8 @@ Without the Supabase variables the catalog still works; sign-in and personal fea
 1. **Create a project** at [supabase.com](https://supabase.com). From **Project Settings → API** copy the project URL and the **publishable** key (or the legacy **anon** key) into `.env.local`. Never use the `service_role`/secret key in this app: it bypasses Row Level Security and the app doesn't need it.
 2. **Create the schema**: open **SQL Editor**, paste the whole of [`supabase/migrations/20261007000000_init.sql`](supabase/migrations/20261007000000_init.sql) and run it. (With the Supabase CLI: `supabase link` then `supabase db push`.) It creates tables, RLS policies, triggers, RPCs and the `avatars` / `recipe-images` storage buckets.
 3. **Configure Auth** (**Authentication → URL Configuration**):
-   - Site URL: your production origin, e.g. `https://recipe-nest-tan.vercel.app`
-   - Redirect URLs: `http://localhost:3000/auth/callback` and `https://recipe-nest-tan.vercel.app/auth/callback`
+   - Site URL: your production origin, e.g. `https://recipenest.shop`
+   - Redirect URLs: `http://localhost:3000/auth/callback`, `https://recipenest.shop/auth/callback` and `https://recipe-nest-tan.vercel.app/auth/callback`
    - Keep **Confirm email** enabled (**Authentication → Sign In / Providers → Email**). For real traffic, set up custom SMTP: the built-in email sender is heavily rate-limited.
    - **Branded emails**: set up custom SMTP (**Authentication → Emails → SMTP Settings**, sender name `RecipeNest`), then paste the templates from [`supabase/templates/`](supabase/templates) into **Confirm sign up**, **Reset password** and **Change email address**. Their `token_hash` links work in any browser (the default links only sign in from the browser that started the flow).
 4. **Make yourself an admin** after signing up once:

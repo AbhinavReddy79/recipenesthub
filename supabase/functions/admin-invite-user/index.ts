@@ -11,7 +11,7 @@
 // <site>/reset-password?invite=1, where the person chooses their password.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const SITES = ["https://recipe-nest-tan.vercel.app", "https://recipenesthub.com", "https://www.recipenesthub.com", "http://localhost:3000"];
+const SITES = ["https://recipenest.shop", "https://www.recipenest.shop", "https://recipe-nest-tan.vercel.app", "http://localhost:3000"];
 const DEFAULT_SITE = SITES[0];
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
