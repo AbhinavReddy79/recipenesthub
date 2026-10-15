@@ -26,6 +26,7 @@ import {
   type ContestEntry,
   type ContestPhase,
 } from "@/lib/storage/contests";
+import { emailWinnersToOwner } from "@/lib/storage/waitlist";
 
 const PHASE_LABEL: Record<ContestPhase, string> = {
   upcoming: "Upcoming",
@@ -127,6 +128,13 @@ export function AdminContests() {
           : "Winner announced and given a free Premium month."
         : "Contest closed with no entries.",
     );
+    if (result.value) {
+      void emailWinnersToOwner("contest", contest.id).then((sent) =>
+        sent
+          ? toast.success("Winners' details emailed to the owner.")
+          : toast.error("We couldn't email the winners' details. Their emails are in Admin > Users."),
+      );
+    }
     void load();
   };
 

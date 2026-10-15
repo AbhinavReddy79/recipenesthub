@@ -21,6 +21,9 @@
 //               how many are left (the dashboard calls again until 0)
 //     direct -> the addresses the admin typed in (up to BATCH); no account is
 //               created; launch invitations are recorded on the waitlist as notified
+//     winners -> { mode: "winners", kind: "contest" | "draw", id }: after an admin
+//               announces a contest or draws a lucky draw, emails the winners'
+//               details to the owner (needs the "Contests" power)
 //   From the minute timer (pg_cron, see the scheduled_emails migration):
 //     { mode: "scheduled", nonce } -> the nonce is a single-use code the
 //               database just created; sends the next due scheduled email
@@ -93,7 +96,7 @@ Don't want emails from us? <a href="${unsubscribe}" style="color:#777777">Unsubs
  * Uses Brevo when BREVO_API_KEY is set (built for website email: no sign-in
  * blocks, better delivery), otherwise the owner's Gmail.
  */
-function makeSender(subject: string, message: string, site: string, variant: Variant = "launch") {
+function makeSender(subject: string, message: string, site: string, variant: Variant = "launch", partsOverride?: ReturnType<typeof variantParts>) {
   const brevoKey = Deno.env.get("BREVO_API_KEY");
   // The address emails come from (verified as a sender in Brevo); GMAIL_USER for older setups.
   const fromAddress = Deno.env.get("SENDER_EMAIL") ?? Deno.env.get("GMAIL_USER");
@@ -101,7 +104,7 @@ function makeSender(subject: string, message: string, site: string, variant: Var
   // Replies and unsubscribe requests go to a real inbox (the Gmail), even when sending from the domain.
   const replyAddress = Deno.env.get("REPLY_TO_EMAIL") ?? Deno.env.get("GMAIL_USER") ?? fromAddress;
 
-  const parts = variantParts(variant, site);
+  const parts = partsOverride ?? variantParts(variant, site);
   const unsubscribe = `mailto:${replyAddress}?subject=unsubscribe`;
   const html = emailHtml(message, parts, unsubscribe);
   const text = `${message}\n\n${parts.button}: ${parts.url}\n\n--\n${parts.reason} Don't want emails from us? Reply "unsubscribe".`;
@@ -153,6 +156,56 @@ function makeSender(subject: string, message: string, site: string, variant: Var
       html,
       headers: { "List-Unsubscribe": `<${unsubscribe}>` },
     });
+}
+
+type WinnersReport = {
+  title: string;
+  prize: number;
+  done_at: string | null;
+  owner_email: string | null;
+  winners: { place?: number; recipe?: string; slug?: string; name: string; username: string; email: string; votes?: number }[];
+};
+
+const rupees = (amount: number) => `₹${amount.toLocaleString("en-IN")}`;
+/** Lucky draw winners get this many months of Premium (DRAW_PREMIUM_MONTHS in the app). */
+const DRAW_PREMIUM_MONTHS = 3;
+
+/** The owner's email after a contest is announced or a lucky draw is drawn. */
+function winnersEmail(kind: "contest" | "draw", report: WinnersReport, site: string) {
+  const { title, prize, winners } = report;
+  if (kind === "contest") {
+    const blocks = winners.map((w) =>
+      [
+        `${w.place === 1 ? "1st" : "2nd"} place: ${w.name} (@${w.username})`,
+        `Email: ${w.email}`,
+        `Recipe: ${w.recipe} (${w.votes} ${w.votes === 1 ? "vote" : "votes"}) ${site}/recipes/${w.slug}`,
+        `Prize: ${prize > 0 ? `${rupees(prize)} cash + ` : ""}1 month of Premium (the Premium is already given)`,
+      ].join("\n"),
+    );
+    return {
+      subject: `Contest winners: ${title}`,
+      message: [
+        `The winners of the weekly contest "${title}" have been announced.`,
+        ...(blocks.length ? blocks : ["Nobody entered, so there are no winners."]),
+        prize > 0 && blocks.length
+          ? `Next: email each winner to ask for their UPI ID, pay ${rupees(prize)} each, then tick "Prize paid" in Admin > Contests.`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
+    };
+  }
+  const list = winners.map((w, i) => `${i + 1}. ${w.name} (@${w.username}) ${w.email}`).join("\n");
+  return {
+    subject: `Lucky draw winners: ${title}`,
+    message: [
+      `The lucky draw "${title}" has been drawn. Each winner already has ${DRAW_PREMIUM_MONTHS} months of Premium${prize > 0 ? ` and is owed ${rupees(prize)} cash` : ""}.`,
+      list || "Nobody joined, so there are no winners.",
+      prize > 0 && list ? `Next: pay each winner, then tick "Prize paid" in Admin > Lucky draws.` : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
+  };
 }
 
 /** Sends to each address in turn; returns who got it and who didn't. */
@@ -308,7 +361,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return reply(405, { error: "method_not_allowed" });
 
   const body = (await req.json().catch(() => null)) as
-    | { mode?: unknown; subject?: unknown; message?: unknown; emails?: unknown; nonce?: unknown; variant?: unknown }
+    | { mode?: unknown; subject?: unknown; message?: unknown; emails?: unknown; nonce?: unknown; variant?: unknown; kind?: unknown; id?: unknown }
     | null;
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
@@ -337,6 +390,38 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authorization } },
     auth: { persistSession: false },
   });
+  // C. Winners' details to the owner, right after an admin announces a contest or draws a lucky draw.
+  if (body?.mode === "winners") {
+    const { data: canManage } = await asCaller.rpc("has_admin_power", { power_name: "contests" });
+    if (canManage !== true) return reply(403, { error: "not_admin" });
+    const kind = body.kind === "contest" || body.kind === "draw" ? body.kind : null;
+    const id = typeof body.id === "string" && /^[0-9a-f-]{36}$/i.test(body.id) ? body.id : null;
+    if (!kind || !id) return reply(400, { error: "invalid_request" });
+    const { data: report, error: reportError } = await admin.rpc("winners_report", { p_kind: kind, p_id: id });
+    if (reportError) {
+      console.error("winners report failed", reportError);
+      return reply(500, { error: "report_failed" });
+    }
+    const found = report as WinnersReport | null;
+    if (!found?.done_at) return reply(400, { error: "not_announced" });
+    if (!found.owner_email) return reply(500, { error: "no_owner" });
+    const site = origin && SITES.includes(origin) ? origin : DEFAULT_SITE;
+    const { subject, message } = winnersEmail(kind, found, site);
+    const send = makeSender(subject, message, site, "launch", {
+      button: "Open the admin dashboard",
+      url: `${site}/admin/${kind === "draw" ? "draws" : "contests"}`,
+      reason: "You're getting this because you're the RecipeNest owner.",
+    });
+    if (!send) return reply(500, { error: "email_not_configured" });
+    try {
+      await send(found.owner_email);
+      return reply(200, { ok: true, sentTo: found.owner_email });
+    } catch (error) {
+      console.error("winners email failed", error);
+      return reply(502, { error: "send_failed" });
+    }
+  }
+
   const { data: allowed, error: powerError } = await asCaller.rpc("has_admin_power", { power_name: "members" });
   if (powerError || allowed !== true) return reply(403, { error: "not_admin" });
 

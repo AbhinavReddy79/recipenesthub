@@ -40,6 +40,20 @@ export async function removeFromWaitlist(email: string): Promise<boolean> {
   return !error;
 }
 
+/**
+ * Emails the winners' names, emails and recipes to the owner, right after an
+ * admin announces a contest or draws a lucky draw. Returns false if it failed.
+ */
+export async function emailWinnersToOwner(kind: "contest" | "draw", id: string): Promise<boolean> {
+  const ctx = userContext();
+  if (!ctx) return false;
+  const { data, error } = await ctx.supabase.functions.invoke<{ ok?: boolean }>("send-launch-email", {
+    body: { mode: "winners", kind, id },
+  });
+  if (error || !data?.ok) console.error("winners email failed", error);
+  return !error && Boolean(data?.ok);
+}
+
 export type LaunchEmailResult =
   | { ok: true; sentTo?: string; sent?: number; failed?: string[]; remaining?: number }
   | { ok: false; error: string };

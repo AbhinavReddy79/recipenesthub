@@ -24,6 +24,7 @@ import {
   type LuckyDraw,
   type WinnerDetails,
 } from "@/lib/storage/draws";
+import { emailWinnersToOwner } from "@/lib/storage/waitlist";
 
 const PHASE_LABEL: Record<DrawPhase, string> = {
   upcoming: "Upcoming",
@@ -131,6 +132,11 @@ export function AdminDraws() {
         ? `${result.value} ${result.value === 1 ? "winner" : "winners"} drawn and given ${DRAW_PREMIUM_MONTHS} months of Premium.`
         : "Draw closed. Nobody had joined.",
     );
+    if (result.value) {
+      void emailWinnersToOwner("draw", d.id).then((sent) =>
+        sent ? toast.success("Winners' details emailed to the owner.") : toast.error("We couldn't email the winners' details."),
+      );
+    }
     void load();
   };
 
