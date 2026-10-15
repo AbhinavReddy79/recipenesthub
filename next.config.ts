@@ -52,6 +52,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  async redirects() {
+    // One address for everyone: www goes to the bare domain.
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.recipenest.shop" }],
+        destination: "https://recipenest.shop/:path*",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     // Fewer, well-spread widths: shorter image tags on every page, and no 2K/4K
     // downloads on large screens (photos never show wider than ~1900px).
