@@ -53,15 +53,13 @@ const nextConfig: NextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   async redirects() {
-    // One address for everyone: www goes to the bare domain.
-    return [
-      {
-        source: "/:path*",
-        has: [{ type: "host", value: "www.recipenest.shop" }],
-        destination: "https://recipenest.shop/:path*",
-        permanent: true,
-      },
-    ];
+    // One address for everyone: www and the old Vercel address go to the bare domain.
+    return ["www.recipenest.shop", "recipe-nest-tan.vercel.app"].map((host) => ({
+      source: "/:path*",
+      has: [{ type: "host" as const, value: host }],
+      destination: "https://recipenest.shop/:path*",
+      permanent: true,
+    }));
   },
   images: {
     // Fewer, well-spread widths: shorter image tags on every page, and no 2K/4K
