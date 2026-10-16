@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarClock, ChevronDown, History, RotateCw, Trash2, X, Zap } from "lucide-react";
+import { CalendarClock, ChevronDown, History, Pencil, RotateCw, Trash2, X, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cancelScheduledEmail, clearScheduledEmail, listScheduledEmails, type ScheduledEmail } from "@/lib/storage/scheduled-emails";
 import { cn } from "@/lib/utils";
+import { EditScheduledEmailDialog } from "./edit-scheduled-email-dialog";
 
 const STATUS: Record<ScheduledEmail["status"], { label: string; className: string }> = {
   scheduled: { label: "Scheduled", className: "bg-accent text-accent-foreground" },
@@ -26,6 +27,7 @@ export function ScheduledEmailsList({ version }: { version: number }) {
   const [items, setItems] = useState<ScheduledEmail[] | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [editing, setEditing] = useState<ScheduledEmail | null>(null);
 
   const load = () =>
     listScheduledEmails()
@@ -114,6 +116,12 @@ export function ScheduledEmailsList({ version }: { version: number }) {
                   <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden />
                 </button>
                 {item.status === "scheduled" && item.sent_count === 0 && (
+                  <Button size="sm" variant="outline" onClick={() => setEditing(item)}>
+                    <Pencil data-icon="inline-start" />
+                    Edit
+                  </Button>
+                )}
+                {item.status === "scheduled" && item.sent_count === 0 && (
                   <Button size="sm" variant="outline" onClick={() => cancel(item)}>
                     <X data-icon="inline-start" />
                     Cancel
@@ -130,6 +138,7 @@ export function ScheduledEmailsList({ version }: { version: number }) {
           );
         })}
       </ul>
+      <EditScheduledEmailDialog email={editing} onOpenChange={(open) => !open && setEditing(null)} onSaved={() => void load()} />
     </div>
   );
 }

@@ -44,6 +44,34 @@ export async function scheduleEmail(input: {
   return { ok: false, error: `We couldn't schedule the email (${error.message}).` };
 }
 
+/** Changes a scheduled email that hasn't started sending yet. */
+export async function updateScheduledEmail(
+  id: string,
+  input: { subject: string; message: string; audience: "waitlist" | "direct"; variant: "launch" | "teaser"; emails: string[]; sendAt: Date },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const ctx = userContext();
+  if (!ctx) return { ok: false, error: "Please log in again." };
+  if (input.sendAt.getTime() < Date.now() + 60_000) return { ok: false, error: "Pick a time at least a minute from now." };
+  const { data, error } = await ctx.supabase.rpc("update_scheduled_email", {
+    p_id: id,
+    p_subject: input.subject.trim(),
+    p_message: input.message.trim(),
+    p_variant: input.variant,
+    p_audience: input.audience,
+    p_emails: input.audience === "direct" ? input.emails : [],
+    p_send_at: input.sendAt.toISOString(),
+  });
+  if (!error) return data === true ? { ok: true } : { ok: false, error: "It has already started sending (or was cancelled), so it can't be changed." };
+  if (error.code === "42501") return { ok: false, error: "Only the owner, or admins who manage members, can change scheduled emails." };
+  if (error.code === "23514") return { ok: false, error: "Check the subject, message and addresses (up to 25)." };
+  if (error.code === "22023") return { ok: false, error: "Pick a time at least a minute from now." };
+  if (error.code === "PGRST202" || error.code === "42883") {
+    return { ok: false, error: "Editing isn't set up yet: the edit-scheduled-email database script needs to be run in Supabase." };
+  }
+  console.error("update scheduled email failed", error);
+  return { ok: false, error: `We couldn't save the changes (${error.message}).` };
+}
+
 export async function cancelScheduledEmail(id: string): Promise<boolean> {
   const ctx = userContext();
   if (!ctx) return false;

@@ -455,6 +455,18 @@ export type Database = {
       my_unread_support_replies: { Args: Record<PropertyKey, never>; Returns: number };
       join_launch_waitlist: { Args: { p_email: string }; Returns: undefined };
       cancel_scheduled_email: { Args: { p_id: string }; Returns: boolean };
+      update_scheduled_email: {
+        Args: {
+          p_id: string;
+          p_subject: string;
+          p_message: string;
+          p_variant: string;
+          p_audience: string;
+          p_emails: string[];
+          p_send_at: string;
+        };
+        Returns: boolean;
+      };
       lucky_draw_summary: {
         Args: { p_draw: string };
         Returns: { entries: number; joined: boolean; i_won: boolean; winners: Json }[];

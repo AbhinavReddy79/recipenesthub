@@ -14,9 +14,9 @@ import { cn } from "@/lib/utils";
 
 // Written like a short personal note: lots of emoji, "free", exclamation marks and
 // sales language are what push announcement mail into spam or Promotions.
-type Variant = "launch" | "teaser";
+export type Variant = "launch" | "teaser";
 
-const TEMPLATES: Record<Variant, { subject: string; message: string }> = {
+export const TEMPLATES: Record<Variant, { subject: string; message: string }> = {
   launch: {
     subject: "RecipeNest is open! Your free month of Premium is waiting 🍲",
     message: `Hi,
@@ -61,11 +61,11 @@ Your next favourite recipe is waiting.`,
   },
 };
 
-const DIRECT_LIMIT = 25;
+export const DIRECT_LIMIT = 25;
 const EMAIL = /^[^@\s,;<>"]+@[^@\s,;<>"]+\.[^@\s,;<>"]+$/;
 
 /** Splits what the admin typed (commas, spaces or new lines) into valid and invalid addresses. */
-function parseEmails(text: string) {
+export function parseEmails(text: string) {
   const parts = [...new Set(text.split(/[\s,;]+/).map((p) => p.trim().toLowerCase()).filter(Boolean))];
   return { valid: parts.filter((p) => EMAIL.test(p)), invalid: parts.filter((p) => !EMAIL.test(p)) };
 }
@@ -74,7 +74,7 @@ type Audience = "waitlist" | "direct";
 type Timing = "now" | "later";
 
 /** "YYYY-MM-DDTHH:mm" in the browser's time zone, for <input type="datetime-local">. */
-function toLocalInput(date: Date): string {
+export function toLocalInput(date: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
@@ -273,7 +273,7 @@ export function LaunchEmailDialog({
               <p className={cn("text-xs", parsed.invalid.length ? "text-destructive" : "text-muted-foreground")}>
                 {parsed.invalid.length
                   ? `Not a valid address: ${parsed.invalid.slice(0, 3).join(", ")}`
-                  : `${parsed.valid.length} ${parsed.valid.length === 1 ? "address" : "addresses"} (up to ${DIRECT_LIMIT} at a time). No account is created; they're added to the waitlist as invited.`}
+                  : `${parsed.valid.length} ${parsed.valid.length === 1 ? "address" : "addresses"} (up to ${DIRECT_LIMIT} at a time). No account is created${variant === "launch" ? "; they're added to the waitlist as invited" : ""}.`}
               </p>
             </div>
           )}
@@ -352,7 +352,7 @@ export function LaunchEmailDialog({
   );
 }
 
-function AudienceOption({
+export function AudienceOption({
   active,
   onClick,
   icon,
