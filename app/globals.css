@@ -101,7 +101,9 @@
   --animate-bounce-soft: bounce-soft 2.2s ease-in-out infinite;
 
   @keyframes page-in {
-    from { opacity: 0; transform: translateY(14px); }
+    /* Movement only: starting at opacity 0 kept the main text "not painted" until the
+       browser was free, which made the largest-paint time on phones seconds slower. */
+    from { transform: translateY(14px); }
   }
   @keyframes float {
     0%, 100% { transform: translateY(0); }
