@@ -87,6 +87,7 @@ export async function sendLaunchEmail(
     send_failed: "The email service refused the email. Check the Brevo secrets in Supabase (and that the sender is verified in Brevo).",
     invalid_content: "Write a subject and a message first.",
     not_admin: "Only the owner, or admins who manage members, can send this.",
+    owner_only: "Only the owner can send the launch invitation. Admins can send the pre-launch teaser.",
     signed_out: "Please log in again.",
     no_email: "Your account has no email address to send the test to.",
     invalid_emails: "Enter at least one valid email address.",

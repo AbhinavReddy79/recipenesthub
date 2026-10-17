@@ -19,11 +19,12 @@ export const ADMIN_POWER_LABELS: Record<AdminPower, { label: string; description
   members: {
     label: "Manage members & invitations",
     description:
-      "See the users list, disable or delete members, give Premium and add users. Manage the launch waitlist and send or schedule invitation emails.",
+      "See the users list, disable or delete members, give Premium and add users. Manage the launch waitlist, and send, schedule, edit or cancel pre-launch teaser emails. Only you send or change the launch invitation and clear the email history.",
   },
   contests: {
     label: "Manage contests & lucky draws",
-    description: "Create contests and lucky draws, remove entries, announce and draw winners. Only you mark cash prizes as paid.",
+    description:
+      "Create contests and lucky draws, remove entries, announce and draw winners (winners then show on the contest page, and their details are emailed to you). Only you mark cash prizes as paid.",
   },
   messages: {
     label: "Contact messages & replies",

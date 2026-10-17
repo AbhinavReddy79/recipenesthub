@@ -5,6 +5,7 @@ import { CalendarClock, ChevronDown, History, Pencil, RotateCw, Trash2, X, Zap }
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cancelScheduledEmail, clearScheduledEmail, listScheduledEmails, type ScheduledEmail } from "@/lib/storage/scheduled-emails";
+import { useAdminPowers } from "@/lib/storage/admin-powers";
 import { cn } from "@/lib/utils";
 import { EditScheduledEmailDialog } from "./edit-scheduled-email-dialog";
 
@@ -28,6 +29,8 @@ export function ScheduledEmailsList({ version }: { version: number }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [editing, setEditing] = useState<ScheduledEmail | null>(null);
+  // The launch invitation and the history itself belong to the owner.
+  const { owner } = useAdminPowers();
 
   const load = () =>
     listScheduledEmails()
@@ -115,19 +118,19 @@ export function ScheduledEmailsList({ version }: { version: number }) {
                   </span>
                   <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden />
                 </button>
-                {item.status === "scheduled" && item.sent_count === 0 && (
+                {item.status === "scheduled" && item.sent_count === 0 && (owner || item.variant === "teaser") && (
                   <Button size="sm" variant="outline" onClick={() => setEditing(item)}>
                     <Pencil data-icon="inline-start" />
                     Edit
                   </Button>
                 )}
-                {item.status === "scheduled" && item.sent_count === 0 && (
+                {item.status === "scheduled" && item.sent_count === 0 && (owner || item.variant === "teaser") && (
                   <Button size="sm" variant="outline" onClick={() => cancel(item)}>
                     <X data-icon="inline-start" />
                     Cancel
                   </Button>
                 )}
-                {(item.status === "sent" || item.status === "failed" || item.status === "cancelled") && (
+                {owner && (item.status === "sent" || item.status === "failed" || item.status === "cancelled") && (
                   <Button size="icon-sm" variant="ghost" aria-label={`Remove “${item.subject}” from the history`} onClick={() => clear(item)}>
                     <Trash2 />
                   </Button>

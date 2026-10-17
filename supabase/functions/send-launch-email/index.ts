@@ -17,6 +17,7 @@
 //   checked in the database with the caller's own sign-in token):
 //     { mode: "test" | "send" | "direct", subject, message, emails?, variant? }
 //     test   -> one copy to the admin who asked
+//     (send and direct with variant "launch" are owner-only; teasers need the "Members" power)
 //     send   -> the next BATCH waitlist people who haven't had this type yet; returns
 //               how many are left (the dashboard calls again until 0)
 //     direct -> the addresses the admin typed in (up to BATCH); no account is
@@ -438,6 +439,12 @@ Deno.serve(async (req) => {
 
   const { data: me } = await asCaller.auth.getUser();
   const callerId = me.user?.id ?? null;
+
+  // Only the owner sends the launch invitation; admins can send teasers (and test either).
+  if (variant === "launch" && mode !== "test") {
+    const { data: isOwner } = await asCaller.rpc("is_owner");
+    if (isOwner !== true) return reply(403, { error: "owner_only" });
+  }
 
   if (mode === "test") {
     const to = me.user?.email;

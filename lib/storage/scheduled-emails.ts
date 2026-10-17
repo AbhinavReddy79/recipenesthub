@@ -34,7 +34,9 @@ export async function scheduleEmail(input: {
     created_by: ctx.userId,
   });
   if (!error) return { ok: true };
-  if (error.code === "42501") return { ok: false, error: "Only the owner, or admins who manage members, can schedule emails." };
+  if (error.code === "42501") {
+    return { ok: false, error: "Only the owner can schedule the launch invitation; admins who manage members can schedule teasers." };
+  }
   if (error.code === "23514") return { ok: false, error: "Check the subject, message and addresses (up to 25)." };
   // The table doesn't exist yet (Postgres says 42P01, the API layer says PGRST205).
   if (error.code === "42P01" || error.code === "PGRST205" || error.code === "PGRST204") {
@@ -62,7 +64,9 @@ export async function updateScheduledEmail(
     p_send_at: input.sendAt.toISOString(),
   });
   if (!error) return data === true ? { ok: true } : { ok: false, error: "It has already started sending (or was cancelled), so it can't be changed." };
-  if (error.code === "42501") return { ok: false, error: "Only the owner, or admins who manage members, can change scheduled emails." };
+  if (error.code === "42501") {
+    return { ok: false, error: "Only the owner can change the launch invitation; admins who manage members can change teasers." };
+  }
   if (error.code === "23514") return { ok: false, error: "Check the subject, message and addresses (up to 25)." };
   if (error.code === "22023") return { ok: false, error: "Pick a time at least a minute from now." };
   if (error.code === "PGRST202" || error.code === "42883") {

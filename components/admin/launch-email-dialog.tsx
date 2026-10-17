@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useAdminPowers } from "@/lib/storage/admin-powers";
 import { scheduleEmail } from "@/lib/storage/scheduled-emails";
 import { sendLaunchEmail } from "@/lib/storage/waitlist";
 import { cn } from "@/lib/utils";
@@ -101,7 +102,6 @@ export function LaunchEmailDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** People on the waitlist not yet emailed. */
   /** Waitlist people who haven't had each type of email yet. */
   waiting: Record<Variant, number>;
   /** Called after each batch so the list can refresh. */
@@ -112,9 +112,11 @@ export function LaunchEmailDialog({
   const [audience, setAudience] = useState<Audience>(waiting.launch > 0 || waiting.teaser > 0 ? "waitlist" : "direct");
   const [timing, setTiming] = useState<Timing>("now");
   const [sendAt, setSendAt] = useState(defaultSendAt);
-  const [variant, setVariant] = useState<Variant>("launch");
-  const [subject, setSubject] = useState(TEMPLATES.launch.subject);
-  const [message, setMessage] = useState(TEMPLATES.launch.message);
+  // Only the owner sends the launch invitation; other admins start on the teaser.
+  const { owner } = useAdminPowers();
+  const [variant, setVariant] = useState<Variant>(owner ? "launch" : "teaser");
+  const [subject, setSubject] = useState(TEMPLATES[owner ? "launch" : "teaser"].subject);
+  const [message, setMessage] = useState(TEMPLATES[owner ? "launch" : "teaser"].message);
   // Swapping the type swaps in its ready-made text, unless the admin has already edited it.
   const pickVariant = (next: Variant) => {
     if (next === variant) return;
@@ -233,9 +235,10 @@ export function LaunchEmailDialog({
               <AudienceOption
                 active={variant === "launch"}
                 onClick={() => pickVariant("launch")}
+                disabled={!owner}
                 icon={<PartyPopper />}
                 title="Launch invitation"
-                detail="Button: “Join RecipeNest” (from 20 Oct)"
+                detail={owner ? "Button: “Join RecipeNest” (from 20 Oct)" : "Owner only"}
               />
             </div>
           </fieldset>
@@ -358,21 +361,25 @@ export function AudienceOption({
   icon,
   title,
   detail,
+  disabled,
 }: {
   active: boolean;
   onClick: () => void;
   icon: React.ReactNode;
   title: string;
   detail: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-pressed={active}
       className={cn(
         "flex items-center gap-3 rounded-xl border p-3 text-left transition-colors [&_svg]:size-5",
         active ? "border-primary bg-primary/10 ring-1 ring-primary/40" : "hover:bg-muted",
+        disabled && "cursor-not-allowed opacity-50 hover:bg-transparent",
       )}
     >
       <span className={cn("shrink-0", active ? "text-primary" : "text-muted-foreground")}>{icon}</span>

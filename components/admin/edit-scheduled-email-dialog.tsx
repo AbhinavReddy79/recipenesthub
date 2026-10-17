@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useAdminPowers } from "@/lib/storage/admin-powers";
 import { updateScheduledEmail, type ScheduledEmail } from "@/lib/storage/scheduled-emails";
 import { sendLaunchEmail } from "@/lib/storage/waitlist";
 import { cn } from "@/lib/utils";
@@ -35,6 +36,7 @@ export function EditScheduledEmailDialog({
 }
 
 function EditForm({ email, onClose, onSaved }: { email: ScheduledEmail; onClose: () => void; onSaved: () => void }) {
+  const { owner } = useAdminPowers();
   const [variant, setVariant] = useState<Variant>(email.variant === "teaser" ? "teaser" : "launch");
   const [audience, setAudience] = useState<"waitlist" | "direct">(email.audience === "direct" ? "direct" : "waitlist");
   const [addresses, setAddresses] = useState(email.emails.join("\n"));
@@ -90,9 +92,10 @@ function EditForm({ email, onClose, onSaved }: { email: ScheduledEmail; onClose:
             <AudienceOption
               active={variant === "launch"}
               onClick={() => setVariant("launch")}
+              disabled={!owner}
               icon={<PartyPopper />}
               title="Launch invitation"
-              detail="Button: “Join RecipeNest”"
+              detail={owner ? "Button: “Join RecipeNest”" : "Owner only"}
             />
           </div>
         </fieldset>
