@@ -4,6 +4,7 @@ import { Footer } from "@/components/layout/footer";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { Navbar } from "@/components/layout/navbar";
 import { Providers } from "@/components/providers";
+import { PreconnectSupabase } from "@/components/shared/preconnect-supabase";
 import { ScrollReveal } from "@/components/shared/scroll-reveal";
 import { ScrollToTop } from "@/components/shared/scroll-to-top";
 import { siteConfig } from "@/lib/site";
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${display.variable} ${body.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pb-0">
+        <PreconnectSupabase />
         <Providers>
           <ScrollReveal />
           <ScrollToTop />
