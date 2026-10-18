@@ -21,7 +21,8 @@
 //     send   -> the next BATCH waitlist people who haven't had this type yet; returns
 //               how many are left (the dashboard calls again until 0)
 //     direct -> the addresses the admin typed in (up to BATCH); no account is
-//               created; launch invitations are recorded on the waitlist as notified
+//               created; they're recorded on the waitlist (a teaser adds them so they
+//               get the launch email at launch; a launch invitation marks them notified)
 //     winners -> { mode: "winners", kind: "contest" | "draw", id }: after an admin
 //               announces a contest or draws a lucky draw, emails the winners'
 //               details to the owner (needs the "Contests" power)
@@ -269,14 +270,16 @@ const sentColumn = (variant: Variant) => (variant === "teaser" ? "teased_at" : "
 
 const markSent = (admin: SupabaseClient, variant: Variant) => async (email: string) =>
   check(await admin.from("launch_waitlist").update({ [sentColumn(variant)]: new Date().toISOString() }).eq("email", email), "mark sent");
-/** Launch invitations to typed-in addresses are recorded on the waitlist as notified; teasers leave it alone. */
-const recordInvited = (admin: SupabaseClient, variant: Variant) => async (email: string) => {
-  if (variant === "teaser") return;
+/**
+ * Typed-in addresses are recorded on the waitlist: a teaser adds them (teased_at)
+ * so they automatically get the launch email at launch; a launch invitation marks
+ * them notified so the waitlist launch email doesn't send them a second copy.
+ */
+const recordInvited = (admin: SupabaseClient, variant: Variant) => async (email: string) =>
   check(
-    await admin.from("launch_waitlist").upsert({ email, notified_at: new Date().toISOString() }, { onConflict: "email" }),
+    await admin.from("launch_waitlist").upsert({ email, [sentColumn(variant)]: new Date().toISOString() }, { onConflict: "email" }),
     "record invited",
   );
-};
 
 /** The next waitlist batch that hasn't had this type of email yet. */
 async function nextWaitlistBatch(admin: SupabaseClient, variant: Variant) {

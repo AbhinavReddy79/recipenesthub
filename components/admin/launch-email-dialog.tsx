@@ -276,7 +276,7 @@ export function LaunchEmailDialog({
               <p className={cn("text-xs", parsed.invalid.length ? "text-destructive" : "text-muted-foreground")}>
                 {parsed.invalid.length
                   ? `Not a valid address: ${parsed.invalid.slice(0, 3).join(", ")}`
-                  : `${parsed.valid.length} ${parsed.valid.length === 1 ? "address" : "addresses"} (up to ${DIRECT_LIMIT} at a time). No account is created${variant === "launch" ? "; they're added to the waitlist as invited" : ""}.`}
+                  : `${parsed.valid.length} ${parsed.valid.length === 1 ? "address" : "addresses"} (up to ${DIRECT_LIMIT} at a time). No account is created; ${variant === "launch" ? "they're added to the waitlist as invited" : "they're added to the waitlist, so they also get the launch email at launch"}.`}
               </p>
             </div>
           )}
