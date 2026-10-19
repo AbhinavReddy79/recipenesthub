@@ -31,7 +31,7 @@ Join today and you get:
 • Entry to our first weekly contest, "Your Favourite Telugu Dish": 2 winners get ₹500 each
 • A spot in the Launch Week Lucky Draw: 5 winners get 3 months of Premium
 
-The contest and lucky draw run until Mon 26 October.
+The contest and lucky draw run until Tue 27 October.
 
 Tap the button below to create your free account. Have a question? Just reply to this email.
 
@@ -46,7 +46,7 @@ Your next favourite recipe is waiting.`,
 
 Something delicious is coming your way 🍲
 
-RecipeNest is launching soon, and we'd love for you to be part of the journey. We open on Tuesday, 20 October.
+RecipeNest is launching soon, and we'd love for you to be part of the journey. We open on Wednesday, 21 October.
 
 Explore recipes from every corner of India and kitchens around the world, discover new flavours, plan your meals and organise your shopping lists, all in one place.
 
@@ -238,7 +238,7 @@ export function LaunchEmailDialog({
                 disabled={!owner}
                 icon={<PartyPopper />}
                 title="Launch invitation"
-                detail={owner ? "Button: “Join RecipeNest” (from 20 Oct)" : "Owner only"}
+                detail={owner ? "Button: “Join RecipeNest” (from 21 Oct)" : "Owner only"}
               />
             </div>
           </fieldset>

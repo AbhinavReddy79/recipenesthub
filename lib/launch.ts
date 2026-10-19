@@ -1,12 +1,12 @@
 /**
- * Public launch: planned for 20 October 2026, midnight India time.
+ * Public launch: planned for 21 October 2026, midnight India time.
  *
  * The site opens only when the owner presses "Launch RecipeNest" in the admin
  * dashboard (stored in the database, see site_is_launched). Until then
  * everyone except the owner and people they give early access sees the
  * countdown at /coming-soon. This date is only what the countdown shows.
  */
-export const LAUNCH_AT = new Date("2026-10-20T00:00:00+05:30");
+export const LAUNCH_AT = new Date("2026-10-21T00:00:00+05:30");
 
 export const COMING_SOON_PATH = "/coming-soon";
 
