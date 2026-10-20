@@ -37,7 +37,7 @@ export async function scheduleEmail(input: {
   if (error.code === "42501") {
     return { ok: false, error: "Only the owner can schedule the launch invitation; admins who manage members can schedule teasers." };
   }
-  if (error.code === "23514") return { ok: false, error: "Check the subject, message and addresses (up to 25)." };
+  if (error.code === "23514") return { ok: false, error: "Check the subject, message and addresses (up to 100)." };
   // The table doesn't exist yet (Postgres says 42P01, the API layer says PGRST205).
   if (error.code === "42P01" || error.code === "PGRST205" || error.code === "PGRST204") {
     return { ok: false, error: "Scheduling isn't set up yet: the scheduled-emails database script needs to be run in Supabase." };
@@ -67,7 +67,7 @@ export async function updateScheduledEmail(
   if (error.code === "42501") {
     return { ok: false, error: "Only the owner can change the launch invitation; admins who manage members can change teasers." };
   }
-  if (error.code === "23514") return { ok: false, error: "Check the subject, message and addresses (up to 25)." };
+  if (error.code === "23514") return { ok: false, error: "Check the subject, message and addresses (up to 100)." };
   if (error.code === "22023") return { ok: false, error: "Pick a time at least a minute from now." };
   if (error.code === "PGRST202" || error.code === "42883") {
     return { ok: false, error: "Editing isn't set up yet: the edit-scheduled-email database script needs to be run in Supabase." };

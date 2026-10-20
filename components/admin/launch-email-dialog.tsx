@@ -62,7 +62,9 @@ Your next favourite recipe is waiting.`,
   },
 };
 
-export const DIRECT_LIMIT = 25;
+export const DIRECT_LIMIT = 100;
+/** How many typed-in addresses the function sends per call (its BATCH). */
+const DIRECT_BATCH = 25;
 const EMAIL = /^[^@\s,;<>"]+@[^@\s,;<>"]+\.[^@\s,;<>"]+$/;
 
 /** Splits what the admin typed (commas, spaces or new lines) into valid and invalid addresses. */
@@ -178,17 +180,31 @@ export function LaunchEmailDialog({
     if (!window.confirm(`Send the invitation to ${valid.length} ${valid.length === 1 ? "address" : "addresses"}?`)) return;
     setBusy("send");
     setProgress({ sent: 0, total: valid.length });
-    const result = await sendLaunchEmail("direct", subject, message, valid, variant);
-    if (!result.ok) {
-      toast.error(result.error);
-      setBusy(null);
-      return;
+    // The function sends up to DIRECT_BATCH per call (each call has a time limit), so go a group at a time.
+    let sent = 0;
+    const failed: string[] = [];
+    const notTried: string[] = [];
+    for (let i = 0; i < valid.length; i += DIRECT_BATCH) {
+      const group = valid.slice(i, i + DIRECT_BATCH);
+      const result = await sendLaunchEmail("direct", subject, message, group, variant);
+      if (!result.ok) {
+        toast.error(result.error);
+        notTried.push(...valid.slice(i));
+        break;
+      }
+      sent += result.sent ?? 0;
+      failed.push(...(result.failed ?? []));
+      setProgress({ sent, total: valid.length });
+      onSent();
+      // Nothing went through in this group (daily limit or a login problem): stop rather than fail everyone.
+      if (!result.sent) {
+        notTried.push(...valid.slice(i + DIRECT_BATCH));
+        break;
+      }
     }
-    setProgress({ sent: result.sent ?? 0, total: valid.length });
-    onSent();
-    if (!result.failed?.length) setAddresses("");
-    else setAddresses(result.failed.join("\n"));
-    finish(result.sent ?? 0, result.failed?.length ?? 0);
+    // Leave whoever didn't get it in the box, so it can be sent again later.
+    setAddresses([...failed, ...notTried].join("\n"));
+    finish(sent, failed.length + notTried.length);
   };
 
   const schedule = async () => {

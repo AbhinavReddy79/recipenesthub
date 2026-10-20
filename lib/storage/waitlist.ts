@@ -91,7 +91,7 @@ export async function sendLaunchEmail(
     signed_out: "Please log in again.",
     no_email: "Your account has no email address to send the test to.",
     invalid_emails: "Enter at least one valid email address.",
-    too_many_emails: "You can invite up to 25 addresses at a time.",
+    too_many_emails: "Too many addresses in one go. Please try again.",
   };
   if (!code) console.error("launch email failed", error);
   return {

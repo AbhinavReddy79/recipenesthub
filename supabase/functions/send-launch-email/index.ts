@@ -326,16 +326,25 @@ async function runScheduled(admin: SupabaseClient) {
   const previousFailed = (job.failed_emails as string[] | null) ?? [];
 
   if (job.audience === "direct") {
-    const { sent, sentTo, failed } = await sendEach(cleanEmails(job.emails), send, recordInvited(admin, jobVariant));
-    await finish({
-      status: sent ? "sent" : "failed",
-      sent_count: sent,
-      sent_to: sentTo,
-      failed_emails: failed,
-      error: sent ? null : "Gmail refused every address. Check the app password.",
-      finished_at: new Date().toISOString(),
-    });
-    return { ok: true, sent, failed };
+    // Up to 100 typed-in addresses: a batch per run (each run must finish in time),
+    // carrying on from whoever hasn't been tried yet.
+    const all = cleanEmails(job.emails);
+    const tried = new Set([...previousSentTo, ...previousFailed]);
+    const batch = all.filter((e) => !tried.has(e)).slice(0, BATCH);
+    const { sent, sentTo, failed } = await sendEach(batch, send, recordInvited(admin, jobVariant));
+    const allSentTo = [...new Set([...previousSentTo, ...sentTo])];
+    const allFailed = [...new Set([...previousFailed, ...failed])].filter((e) => !allSentTo.includes(e));
+    const left = all.filter((e) => !allSentTo.includes(e) && !allFailed.includes(e)).length;
+    const progress = { sent_count: allSentTo.length, sent_to: allSentTo, failed_emails: allFailed };
+    if (batch.length && !sent) {
+      await finish({ ...progress, status: allSentTo.length ? "sent" : "failed", error: "The email service stopped sending (daily limit or login).", finished_at: new Date().toISOString() });
+    } else if (left > 0) {
+      // More to go: hand it back so the next minute's run continues.
+      await finish({ ...progress, status: "scheduled", claimed_at: null });
+    } else {
+      await finish({ ...progress, status: allSentTo.length ? "sent" : "failed", error: allSentTo.length ? null : "Every address failed.", finished_at: new Date().toISOString() });
+    }
+    return { ok: true, sent, failed, remaining: left };
   }
 
   const batch = await nextWaitlistBatch(admin, jobVariant);
