@@ -105,7 +105,7 @@ export function LaunchCard() {
             <AlertDialogTitle>{confirm === "launch" ? "Open RecipeNest to everyone?" : "Go back to the countdown?"}</AlertDialogTitle>
             <AlertDialogDescription>
               {confirm === "launch"
-                ? `The countdown disappears and anyone can create an account and use the site within about 15 seconds. People waiting on the countdown page are taken in automatically.${
+                ? `The countdown disappears and anyone can create an account and use the site within about 15 seconds. People waiting on the countdown page are taken in automatically. Scheduled launch emails go out right away.${
                     beforePlannedDate ? " This is before the date on the countdown." : ""
                   }`
                 : "Everyone except you and early-access members will see the countdown again within about 15 seconds. Accounts and data are kept."}
