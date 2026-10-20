@@ -350,7 +350,7 @@ export type Database = {
           failed_emails: string[];
           sent_to: string[];
           kind: "scheduled" | "instant";
-          variant: "launch" | "teaser";
+          variant: "launch" | "teaser" | "members";
           error: string | null;
           claimed_at: string | null;
           finished_at: string | null;
@@ -361,7 +361,7 @@ export type Database = {
           subject: string;
           message: string;
           audience: "waitlist" | "direct";
-          variant?: "launch" | "teaser";
+          variant?: "launch" | "teaser" | "members";
           emails?: string[];
           send_at: string;
           created_by: string;

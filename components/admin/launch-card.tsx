@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CalendarDays, Loader2, Rocket, RotateCcw } from "lucide-react";
+import { CalendarDays, Loader2, Megaphone, Rocket, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { LAUNCH_AT } from "@/lib/launch";
+import { MembersAnnouncementDialog } from "./members-announcement-dialog";
 import { useAdminPowers } from "@/lib/storage/admin-powers";
 import { userContext } from "@/lib/storage/remote";
 
@@ -29,6 +30,7 @@ export function LaunchCard() {
   const [launchedAt, setLaunchedAt] = useState<string | null | undefined>(undefined);
   const [confirm, setConfirm] = useState<"launch" | "undo" | null>(null);
   const [busy, setBusy] = useState(false);
+  const [announcing, setAnnouncing] = useState(false);
   // Read when the button is pressed (not while rendering).
   const [beforePlannedDate, setBeforePlannedDate] = useState(false);
 
@@ -84,10 +86,16 @@ export function LaunchCard() {
           </div>
         </div>
         {live ? (
-          <Button variant="ghost" className="text-white hover:bg-white/10 hover:text-white" onClick={() => setConfirm("undo")}>
-            <RotateCcw data-icon="inline-start" />
-            Undo launch
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button className="bg-metallic-gold text-[oklch(0.2_0.006_70)] hover:opacity-95" onClick={() => setAnnouncing(true)}>
+              <Megaphone data-icon="inline-start" />
+              Email all members
+            </Button>
+            <Button variant="ghost" className="text-white hover:bg-white/10 hover:text-white" onClick={() => setConfirm("undo")}>
+              <RotateCcw data-icon="inline-start" />
+              Undo launch
+            </Button>
+          </div>
         ) : (
           <Button size="lg" className="bg-metallic-gold text-[oklch(0.2_0.006_70)] hover:opacity-95" onClick={() => {
               setBeforePlannedDate(Date.now() < LAUNCH_AT.getTime());
@@ -98,6 +106,8 @@ export function LaunchCard() {
           </Button>
         )}
       </div>
+
+      <MembersAnnouncementDialog open={announcing} onOpenChange={setAnnouncing} />
 
       <AlertDialog open={confirm !== null} onOpenChange={(open) => !open && setConfirm(null)}>
         <AlertDialogContent>

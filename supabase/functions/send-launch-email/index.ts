@@ -17,7 +17,8 @@
 //   checked in the database with the caller's own sign-in token):
 //     { mode: "test" | "send" | "direct", subject, message, emails?, variant? }
 //     test   -> one copy to the admin who asked
-//     (send and direct with variant "launch" are owner-only; teasers need the "Members" power)
+//     (launch invitations and "members" announcements are owner-only; teasers need the "Members" power;
+//      a "members" announcement goes to typed-in member addresses, never the waitlist)
 //     send   -> the next BATCH waitlist people who haven't had this type yet; returns
 //               how many are left (the dashboard calls again until 0)
 //     direct -> the addresses the admin typed in (up to BATCH); no account is
@@ -56,13 +57,23 @@ function cors(origin: string | null) {
 const escapeHtml = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/** "launch": join now (from launch day). "teaser": get notified at launch (before it). */
-type Variant = "launch" | "teaser";
-const asVariant = (value: unknown): Variant => (value === "teaser" ? "teaser" : "launch");
+/**
+ * "launch": join now (from launch day). "teaser": get notified at launch (before it).
+ * "members": an announcement to people who already have an account (open the site).
+ */
+type Variant = "launch" | "teaser" | "members";
+const asVariant = (value: unknown): Variant => (value === "teaser" || value === "members" ? value : "launch");
 
 /** The button, its link and the footer reason for each kind of email. */
 function variantParts(variant: Variant, site: string) {
   const host = site.replace(/^https?:\/\//, "");
+  if (variant === "members") {
+    return {
+      button: "Open RecipeNest",
+      url: `${site}/`,
+      reason: `You're getting this because you have a RecipeNest account (${host}).`,
+    };
+  }
   return variant === "teaser"
     ? {
         button: "Get notified at launch",
@@ -275,11 +286,14 @@ const markSent = (admin: SupabaseClient, variant: Variant) => async (email: stri
  * so they automatically get the launch email at launch; a launch invitation marks
  * them notified so the waitlist launch email doesn't send them a second copy.
  */
-const recordInvited = (admin: SupabaseClient, variant: Variant) => async (email: string) =>
+const recordInvited = (admin: SupabaseClient, variant: Variant) => async (email: string) => {
+  // Members already have accounts: an announcement doesn't touch the waitlist.
+  if (variant === "members") return;
   check(
     await admin.from("launch_waitlist").upsert({ email, [sentColumn(variant)]: new Date().toISOString() }, { onConflict: "email" }),
     "record invited",
   );
+};
 
 /** The next waitlist batch that hasn't had this type of email yet. */
 async function nextWaitlistBatch(admin: SupabaseClient, variant: Variant) {
@@ -452,11 +466,13 @@ Deno.serve(async (req) => {
   const { data: me } = await asCaller.auth.getUser();
   const callerId = me.user?.id ?? null;
 
-  // Only the owner sends the launch invitation; admins can send teasers (and test either).
-  if (variant === "launch" && mode !== "test") {
+  // Only the owner sends the launch invitation and member announcements; admins can send teasers (and test any).
+  if (variant !== "teaser" && mode !== "test") {
     const { data: isOwner } = await asCaller.rpc("is_owner");
     if (isOwner !== true) return reply(403, { error: "owner_only" });
   }
+  // Announcements go to members' addresses, never the waitlist.
+  if (variant === "members" && mode === "send") return reply(400, { error: "invalid_mode" });
 
   if (mode === "test") {
     const to = me.user?.email;

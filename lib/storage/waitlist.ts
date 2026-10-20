@@ -69,7 +69,7 @@ export async function sendLaunchEmail(
   subject: string,
   message: string,
   emails?: string[],
-  variant: "launch" | "teaser" = "launch",
+  variant: "launch" | "teaser" | "members" = "launch",
 ): Promise<LaunchEmailResult> {
   const ctx = userContext();
   if (!ctx) return { ok: false, error: "Please log in again." };
