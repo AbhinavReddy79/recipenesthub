@@ -5,6 +5,8 @@ import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
 import { Navbar } from "@/components/layout/navbar";
 import { Providers } from "@/components/providers";
 import { PreconnectSupabase } from "@/components/shared/preconnect-supabase";
+import { LaunchCelebration } from "@/components/launch/launch-celebration";
+import { NewMemberWelcome } from "@/components/launch/new-member-welcome";
 import { ScrollReveal } from "@/components/shared/scroll-reveal";
 import { ScrollToTop } from "@/components/shared/scroll-to-top";
 import { siteConfig } from "@/lib/site";
@@ -77,6 +79,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </main>
           <Footer />
           <MobileTabBar />
+          <LaunchCelebration />
+          <NewMemberWelcome />
         </Providers>
       </body>
     </html>
