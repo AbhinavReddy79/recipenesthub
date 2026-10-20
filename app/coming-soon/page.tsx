@@ -13,6 +13,8 @@ const launchDate = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
   month: "long",
   year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
   timeZone: "Asia/Kolkata",
 }).format(LAUNCH_AT);
 

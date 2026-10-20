@@ -46,7 +46,7 @@ Your next favourite recipe is waiting.`,
 
 Something delicious is coming your way 🍲
 
-RecipeNest is launching soon, and we'd love for you to be part of the journey. We open on Wednesday, 21 October.
+RecipeNest is launching soon, and we'd love for you to be part of the journey. We open on Tuesday, 20 October at 12 pm.
 
 Explore recipes from every corner of India and kitchens around the world, discover new flavours, plan your meals and organise your shopping lists, all in one place.
 
@@ -254,7 +254,7 @@ export function LaunchEmailDialog({
                 disabled={!owner}
                 icon={<PartyPopper />}
                 title="Launch invitation"
-                detail={owner ? "Button: “Join RecipeNest” (from 21 Oct)" : "Owner only"}
+                detail={owner ? "Button: “Join RecipeNest” (works after launch)" : "Owner only"}
               />
             </div>
           </fieldset>
