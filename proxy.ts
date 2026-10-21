@@ -1,10 +1,27 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 import { isGuestOnlyPath, isPublicPath, safeNext } from "@/lib/auth-routes";
-import { COMING_SOON_PATH, isPreLaunchPath } from "@/lib/launch";
+import { COMING_SOON_PATH, LAUNCH_AT, isPreLaunchPath } from "@/lib/launch";
 
 /** What signed-out visitors see at the site's address after launch. */
 const WELCOME_PATH = "/welcome";
+
+/** Supabase's public JWT signing key (from /auth/v1/.well-known/jwks.json; public by design). */
+const SIGNING_KEYS = {
+  keys: [
+    {
+      alg: "ES256",
+      crv: "P-256",
+      ext: true,
+      key_ops: ["verify"],
+      kid: "3daa9113-3094-4822-9fc0-0a64c98e2130",
+      kty: "EC",
+      use: "sig",
+      x: "19xe7UcVnTIyTE8wx2VWPq7smrveC5ZxtXUroJI8LhM",
+      y: "XQH-w-tOXTDf44uIQHnWCFsVuTyGAKqtVxbBGmD54EI",
+    },
+  ],
+};
 import type { Database } from "@/lib/supabase/database.types";
 import { isSupabaseConfigured, supabaseKey, supabaseUrl } from "@/lib/supabase/env";
 
@@ -14,7 +31,7 @@ import { isSupabaseConfigured, supabaseKey, supabaseUrl } from "@/lib/supabase/e
  * members-only: visitors without an account are sent to /login first.
  * Before launch, only the site owner and people with early access get past the countdown page.
  */
-export async function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest, event: NextFetchEvent) {
   if (!isSupabaseConfigured) return NextResponse.next({ request });
 
   let response = NextResponse.next({ request });
@@ -32,8 +49,10 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // Validates the token and triggers a refresh when needed.
-  const { data } = await supabase.auth.getClaims();
+  // Validates the token and triggers a refresh when needed. The project's public
+  // signing key is supplied so a fresh server needn't fetch it first (a rotated
+  // key isn't in this list, and is then fetched as usual).
+  const { data } = await supabase.auth.getClaims(undefined, { jwks: SIGNING_KEYS });
   const signedIn = Boolean(data?.claims?.sub);
   const { pathname, search } = request.nextUrl;
 
@@ -42,7 +61,7 @@ export async function proxy(request: NextRequest) {
   // The site's address itself always shows a page (the countdown, or the welcome
   // page for signed-out visitors after launch) rather than redirecting, so it
   // can be shared and verified as a working website.
-  if (!(await siteLaunched(supabase))) {
+  if (!(await siteLaunched(supabase, event))) {
     if (!isPreLaunchPath(pathname) && !(signedIn && (await hasSiteAccess(supabase)))) {
       if (pathname === "/") return rewriteKeepingCookies(new URL(COMING_SOON_PATH, request.url), request, response);
       return redirectKeepingCookies(new URL(COMING_SOON_PATH, request.url), response);
@@ -77,19 +96,33 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-// Whether the owner has launched the site, remembered for 15 seconds per
-// server instance so pages don't wait on the database every time.
-const LAUNCH_CACHE_MS = 15_000;
+// Whether the owner has launched the site, remembered per server instance.
+// Pages never wait on the database for it once an answer is known (or, after
+// the launch date, on a fresh instance): the answer is refreshed in the
+// background, so "Undo launch" still takes effect within about a minute.
+const LAUNCH_CACHE_MS = 60_000;
 let launchCache: { value: boolean; at: number } | null = null;
+let launchRefresh: Promise<boolean> | null = null;
 
-async function siteLaunched(supabase: ReturnType<typeof createServerClient<Database>>): Promise<boolean> {
-  const now = Date.now();
-  if (launchCache && now - launchCache.at < LAUNCH_CACHE_MS) return launchCache.value;
-  const { data, error } = await supabase.rpc("site_is_launched");
-  // If the database can't be reached, keep the last known answer.
-  if (error) return launchCache?.value ?? false;
-  launchCache = { value: data === true, at: now };
-  return launchCache.value;
+function refreshLaunched(supabase: ReturnType<typeof createServerClient<Database>>): Promise<boolean> {
+  launchRefresh ??= Promise.resolve(supabase.rpc("site_is_launched"))
+    .then(({ data, error }) => {
+      // If the database can't be reached, keep the last known answer.
+      if (error) return launchCache?.value ?? Date.now() >= LAUNCH_AT.getTime();
+      launchCache = { value: data === true, at: Date.now() };
+      return launchCache.value;
+    })
+    .finally(() => {
+      launchRefresh = null;
+    });
+  return launchRefresh;
+}
+
+async function siteLaunched(supabase: ReturnType<typeof createServerClient<Database>>, event: NextFetchEvent): Promise<boolean> {
+  const known = launchCache?.value ?? (Date.now() >= LAUNCH_AT.getTime() ? true : null);
+  if (known === null) return refreshLaunched(supabase);
+  if (!launchCache || Date.now() - launchCache.at >= LAUNCH_CACHE_MS) event.waitUntil(refreshLaunched(supabase));
+  return known;
 }
 
 /** The signed-in user may use the site before launch: the owner, or someone they gave early access (checked in the database). */
