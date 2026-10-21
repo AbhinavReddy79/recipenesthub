@@ -138,6 +138,193 @@ export function AdminUsersTable() {
 
   const recipeCount = (id: string) => all.filter((r) => r.authorId === id).length;
 
+  const renderRow = (user: UserProfile) => {
+    // You and the owner can't be switched off; only the owner manages admins.
+    const locked = user.isOwner || user.id === me?.id;
+    const canChangeRole = isOwner && !locked;
+    const canModerate = !locked && (user.role !== "admin" || isOwner);
+    const enabled = user.status === "active";
+    return (
+      <TableRow key={user.id}>
+        <TableCell className="pl-4">
+          <div className="flex items-center gap-3">
+            <PresenceAvatar user={user} lastSeen={presence.lastSeen[user.id]} now={presence.at} />
+            <div className="grid">
+              <span className="flex items-center gap-1.5 font-medium">
+                {user.name}
+                {user.isOwner ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-metallic-gold px-2 py-px text-[0.6875rem] font-semibold text-[oklch(0.2_0.006_70)]">
+                    <Crown className="size-3" aria-hidden />
+                    Owner
+                  </span>
+                ) : user.role === "admin" ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-2 py-px text-[0.6875rem] font-semibold text-background">
+                    <ShieldCheck className="size-3" aria-hidden />
+                    Admin
+                  </span>
+                ) : null}
+                {user.id === me?.id && <span className="text-xs font-normal text-muted-foreground">(you)</span>}
+                {earlyAccess.has(user.id) && (
+                  <span className="rounded-full bg-herb-soft px-2 py-px text-[0.6875rem] font-semibold text-herb">Early access</span>
+                )}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                @{user.username} ·{" "}
+                <span className={isOnline(presence.lastSeen[user.id], presence.at) ? "font-medium text-herb" : undefined}>
+                  {lastSeenLabel(presence.lastSeen[user.id], presence.at)}
+                </span>
+              </span>
+            </div>
+          </div>
+        </TableCell>
+        <TableCell className="hidden text-muted-foreground md:table-cell">{user.email}</TableCell>
+        <TableCell>
+          <label
+            className="flex w-fit items-center gap-2.5"
+            title={canModerate ? undefined : "This account can't be disabled by you"}
+          >
+            <Switch
+              checked={enabled}
+              disabled={!canModerate}
+              aria-label={`${enabled ? "Disable" : "Enable"} ${user.name}'s account`}
+              onCheckedChange={(on) => {
+                if (on) {
+                  setStatus(user.id, "active");
+                  toast.success(`Enabled ${user.name} — they can log in again`);
+                } else {
+                  setDisabling(user);
+                }
+              }}
+            />
+            <span className={cn("text-sm font-medium", enabled ? "text-herb" : "text-destructive")}>
+              {enabled ? "Enabled" : "Disabled"}
+            </span>
+          </label>
+        </TableCell>
+        {isOwner && (
+          <TableCell>
+            <Switch
+              checked={user.role === "admin"}
+              disabled={!canChangeRole}
+              title={canChangeRole ? undefined : "Your own admin access can't be changed"}
+              aria-label={`${user.role === "admin" ? "Remove" : "Give"} admin access for ${user.name}`}
+              onCheckedChange={(on) => {
+                if (on) {
+                  setGranting(user);
+                } else {
+                  setRole(user.id, "user");
+                  toast.success(`${user.name} is no longer an admin`);
+                }
+              }}
+            />
+          </TableCell>
+        )}
+        <TableCell className="hidden sm:table-cell">
+          {plans[user.id]?.premium ? (
+            <span className="grid">
+              <span className="inline-flex w-fit items-center gap-1 rounded-full bg-metallic-gold px-2 py-px text-[0.6875rem] font-semibold text-[oklch(0.2_0.006_70)]">
+                <Crown className="size-3" aria-hidden />
+                Premium
+              </span>
+              {plans[user.id]?.premiumUntil && (
+                <span className="text-xs text-muted-foreground">until {formatDate(plans[user.id]!.premiumUntil!)}</span>
+              )}
+            </span>
+          ) : (
+            <span className="text-sm text-muted-foreground">Free</span>
+          )}
+        </TableCell>
+        <TableCell className="hidden tabular-nums sm:table-cell">{recipeCount(user.id)}</TableCell>
+        <TableCell className="hidden text-muted-foreground lg:table-cell">{formatDate(user.createdAt)}</TableCell>
+        <TableCell className="pr-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm" aria-label={`More actions for ${user.name}`}>
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {isOwner && !user.isOwner && user.role === "admin" && (
+                <DropdownMenuItem onSelect={() => setEditingPowers(user)}>
+                  <ShieldCheck />
+                  Admin permissions…
+                </DropdownMenuItem>
+              )}
+              {isOwner && !user.isOwner && (
+                <DropdownMenuItem onSelect={() => toggleEarlyAccess(user, !earlyAccess.has(user.id))}>
+                  <ShieldCheck />
+                  {earlyAccess.has(user.id) ? "Remove early access" : "Give early access (before launch)"}
+                </DropdownMenuItem>
+              )}
+              {/* Prizes, thank-yous or testing (each asks for confirmation). */}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => givePremium(user, 30)}>
+                <Crown />
+                Give 1 month Premium
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => givePremium(user, 365)}>
+                <Crown />
+                Give 1 year Premium
+              </DropdownMenuItem>
+              {plans[user.id]?.premium && (
+                <DropdownMenuItem onSelect={() => givePremium(user, 0)}>
+                  <Crown />
+                  Remove Premium
+                </DropdownMenuItem>
+              )}
+              {canModerate && <DropdownMenuSeparator />}
+              {canModerate && (
+                <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(user)}>
+                  <Trash2 />
+                  Delete user
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
+  const renderTable = (users: UserProfile[], empty: string) => (
+    <div className="overflow-hidden rounded-2xl border bg-card">
+      <Table>
+        <TableHeader className="bg-surface">
+          <TableRow>
+            <TableHead className="pl-4">User</TableHead>
+            <TableHead className="hidden md:table-cell">Email</TableHead>
+            <TableHead>Account</TableHead>
+            {isOwner && <TableHead>Admin</TableHead>}
+            <TableHead className="hidden sm:table-cell">Plan</TableHead>
+            <TableHead className="hidden sm:table-cell">Recipes</TableHead>
+            <TableHead className="hidden lg:table-cell">Joined</TableHead>
+            <TableHead className="w-12 pr-4">
+              <span className="sr-only">Actions</span>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {users.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={isOwner ? 8 : 7} className="py-12 text-center text-muted-foreground">
+                {empty}
+              </TableCell>
+            </TableRow>
+          )}
+          {users.map(renderRow)}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
+  // Admins (the owner first) and members (newest first) are listed separately.
+  const admins = visible
+    .filter((u) => u.isOwner || u.role === "admin")
+    .sort((a, b) => Number(b.isOwner) - Number(a.isOwner) || a.name.localeCompare(b.name));
+  const members = visible
+    .filter((u) => !u.isOwner && u.role !== "admin")
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+
   return (
     <div className="grid gap-5">
       <AdminToolbar
@@ -163,180 +350,27 @@ export function AdminUsersTable() {
         <span className="size-2.5 rounded-full bg-herb shadow-[0_0_0_3px_color-mix(in_oklch,var(--herb)_25%,transparent)]" aria-hidden />
         {onlineCount} {onlineCount === 1 ? "person" : "people"} using RecipeNest right now
       </p>
-      <div className="overflow-hidden rounded-2xl border bg-card">
-        <Table>
-          <TableHeader className="bg-surface">
-            <TableRow>
-              <TableHead className="pl-4">User</TableHead>
-              <TableHead className="hidden md:table-cell">Email</TableHead>
-              <TableHead>Account</TableHead>
-              {isOwner && <TableHead>Admin</TableHead>}
-              <TableHead className="hidden sm:table-cell">Plan</TableHead>
-              <TableHead className="hidden sm:table-cell">Recipes</TableHead>
-              <TableHead className="hidden lg:table-cell">Joined</TableHead>
-              <TableHead className="w-12 pr-4">
-                <span className="sr-only">Actions</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {visible.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={isOwner ? 8 : 7} className="py-12 text-center text-muted-foreground">
-                  No users match these filters.
-                </TableCell>
-              </TableRow>
-            )}
-            {visible.map((user) => {
-              // You and the owner can't be switched off; only the owner manages admins.
-              const locked = user.isOwner || user.id === me?.id;
-              const canChangeRole = isOwner && !locked;
-              const canModerate = !locked && (user.role !== "admin" || isOwner);
-              const enabled = user.status === "active";
-              return (
-                <TableRow key={user.id}>
-                  <TableCell className="pl-4">
-                    <div className="flex items-center gap-3">
-                      <PresenceAvatar user={user} lastSeen={presence.lastSeen[user.id]} now={presence.at} />
-                      <div className="grid">
-                        <span className="flex items-center gap-1.5 font-medium">
-                          {user.name}
-                          {user.isOwner ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-metallic-gold px-2 py-px text-[0.6875rem] font-semibold text-[oklch(0.2_0.006_70)]">
-                              <Crown className="size-3" aria-hidden />
-                              Owner
-                            </span>
-                          ) : user.role === "admin" ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-2 py-px text-[0.6875rem] font-semibold text-background">
-                              <ShieldCheck className="size-3" aria-hidden />
-                              Admin
-                            </span>
-                          ) : null}
-                          {user.id === me?.id && <span className="text-xs font-normal text-muted-foreground">(you)</span>}
-                          {earlyAccess.has(user.id) && (
-                            <span className="rounded-full bg-herb-soft px-2 py-px text-[0.6875rem] font-semibold text-herb">Early access</span>
-                          )}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          @{user.username} ·{" "}
-                          <span className={isOnline(presence.lastSeen[user.id], presence.at) ? "font-medium text-herb" : undefined}>
-                            {lastSeenLabel(presence.lastSeen[user.id], presence.at)}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden text-muted-foreground md:table-cell">{user.email}</TableCell>
-                  <TableCell>
-                    <label
-                      className="flex w-fit items-center gap-2.5"
-                      title={canModerate ? undefined : "This account can't be disabled by you"}
-                    >
-                      <Switch
-                        checked={enabled}
-                        disabled={!canModerate}
-                        aria-label={`${enabled ? "Disable" : "Enable"} ${user.name}'s account`}
-                        onCheckedChange={(on) => {
-                          if (on) {
-                            setStatus(user.id, "active");
-                            toast.success(`Enabled ${user.name} — they can log in again`);
-                          } else {
-                            setDisabling(user);
-                          }
-                        }}
-                      />
-                      <span className={cn("text-sm font-medium", enabled ? "text-herb" : "text-destructive")}>
-                        {enabled ? "Enabled" : "Disabled"}
-                      </span>
-                    </label>
-                  </TableCell>
-                  {isOwner && (
-                    <TableCell>
-                      <Switch
-                        checked={user.role === "admin"}
-                        disabled={!canChangeRole}
-                        title={canChangeRole ? undefined : "Your own admin access can't be changed"}
-                        aria-label={`${user.role === "admin" ? "Remove" : "Give"} admin access for ${user.name}`}
-                        onCheckedChange={(on) => {
-                          if (on) {
-                            setGranting(user);
-                          } else {
-                            setRole(user.id, "user");
-                            toast.success(`${user.name} is no longer an admin`);
-                          }
-                        }}
-                      />
-                    </TableCell>
-                  )}
-                  <TableCell className="hidden sm:table-cell">
-                    {plans[user.id]?.premium ? (
-                      <span className="grid">
-                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-metallic-gold px-2 py-px text-[0.6875rem] font-semibold text-[oklch(0.2_0.006_70)]">
-                          <Crown className="size-3" aria-hidden />
-                          Premium
-                        </span>
-                        {plans[user.id]?.premiumUntil && (
-                          <span className="text-xs text-muted-foreground">until {formatDate(plans[user.id]!.premiumUntil!)}</span>
-                        )}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">Free</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="hidden tabular-nums sm:table-cell">{recipeCount(user.id)}</TableCell>
-                  <TableCell className="hidden text-muted-foreground lg:table-cell">{formatDate(user.createdAt)}</TableCell>
-                  <TableCell className="pr-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon-sm" aria-label={`More actions for ${user.name}`}>
-                          <MoreHorizontal />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {isOwner && !user.isOwner && user.role === "admin" && (
-                          <DropdownMenuItem onSelect={() => setEditingPowers(user)}>
-                            <ShieldCheck />
-                            Admin permissions…
-                          </DropdownMenuItem>
-                        )}
-                        {isOwner && !user.isOwner && (
-                          <DropdownMenuItem onSelect={() => toggleEarlyAccess(user, !earlyAccess.has(user.id))}>
-                            <ShieldCheck />
-                            {earlyAccess.has(user.id) ? "Remove early access" : "Give early access (before launch)"}
-                          </DropdownMenuItem>
-                        )}
-                        {/* Prizes, thank-yous or testing (each asks for confirmation). */}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onSelect={() => givePremium(user, 30)}>
-                          <Crown />
-                          Give 1 month Premium
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => givePremium(user, 365)}>
-                          <Crown />
-                          Give 1 year Premium
-                        </DropdownMenuItem>
-                        {plans[user.id]?.premium && (
-                          <DropdownMenuItem onSelect={() => givePremium(user, 0)}>
-                            <Crown />
-                            Remove Premium
-                          </DropdownMenuItem>
-                        )}
-                        {canModerate && <DropdownMenuSeparator />}
-                        {canModerate && (
-                          <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(user)}>
-                            <Trash2 />
-                            Delete user
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <section aria-labelledby="admins-heading" className="grid gap-3">
+        <h2 id="admins-heading" className="flex items-center gap-2 text-xl font-semibold">
+          <ShieldCheck className="size-5 text-primary" aria-hidden />
+          Admins
+          <span className="rounded-full bg-muted px-2 py-px text-sm font-medium text-muted-foreground tabular-nums">{admins.length}</span>
+        </h2>
+        {renderTable(admins, "No admins match these filters.")}
+      </section>
+
+      <section aria-labelledby="members-heading" className="grid gap-3">
+        <h2 id="members-heading" className="flex items-center gap-2 text-xl font-semibold">
+          <Users className="size-5 text-primary" aria-hidden />
+          Members
+          <span className="rounded-full bg-muted px-2 py-px text-sm font-medium text-muted-foreground tabular-nums">{members.length}</span>
+        </h2>
+        <p className="-mt-1 text-sm text-muted-foreground">People who signed up on RecipeNest, newest first.</p>
+        {renderTable(
+          members,
+          search.trim() || status !== "all" ? "No members match these filters." : "No new members yet. People who sign up appear here.",
+        )}
+      </section>
 
       <AdminPowersDialog
         admin={editingPowers}
